@@ -25,3 +25,7 @@ vite.config.d.ts
 *.sln
 *.sw?
 .yarn/install-state.gz
+
+# Playwright
+test-results/
+playwright-report/
