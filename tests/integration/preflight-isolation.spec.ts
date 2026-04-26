@@ -52,9 +52,7 @@ test.describe("Tailwind Preflight isolation", () => {
     expect(after.h1FontSize).toBe("16px");
   });
 
-  test("fix: Shadow DOM scopes Preflight away from host page", async ({
-    page,
-  }) => {
+  test("fix: Shadow DOM scopes Preflight away from host page", async ({ page }) => {
     await page.setContent(HOST_PAGE);
 
     const before = await page.evaluate(() => ({

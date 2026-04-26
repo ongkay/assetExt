@@ -1,31 +1,28 @@
 const BADGE_COLOR = "#111827";
+
 let badgeCount = 0;
 let hasBadgeCount = false;
 
-chrome.runtime.onInstalled.addListener(() => {
+export function initializeBadge() {
   chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
   syncBadgeCount(() => updateBadge());
-});
+}
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === "INCREMENT_BADGE") {
-    syncBadgeCount(() => {
-      badgeCount += 1;
-      updateBadge();
-      sendResponse({ count: badgeCount });
-    });
-    return true;
-  }
+export function incrementBadge(done: (count: number) => void) {
+  syncBadgeCount(() => {
+    badgeCount += 1;
+    updateBadge();
+    done(badgeCount);
+  });
+}
 
-  if (message?.type === "RESET_BADGE") {
-    syncBadgeCount(() => {
-      badgeCount = 0;
-      updateBadge();
-      sendResponse({ count: badgeCount });
-    });
-    return true;
-  }
-});
+export function resetBadge(done: (count: number) => void) {
+  syncBadgeCount(() => {
+    badgeCount = 0;
+    updateBadge();
+    done(badgeCount);
+  });
+}
 
 function syncBadgeCount(done: () => void) {
   if (hasBadgeCount) {

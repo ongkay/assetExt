@@ -25,10 +25,9 @@
     /* Paths */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@lib/*": ["./lib/*"]
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "lib", "content-script/src"],
+  "include": ["src", "tests"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
