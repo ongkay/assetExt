@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "My Extension",
-  "description": "A Chrome extension built with React and TypeScript",
-  "version": "0.1.0",
+  "name": "Asset Manager",
+  "description": "Premium asset access manager for authenticated subscribers.",
+  "version": "2.0.0",
   "action": {
-    "default_title": "Open popup",
+    "default_title": "Asset Manager",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -22,14 +22,32 @@
     "page": "options.html",
     "open_in_tab": true
   },
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["cookies", "storage", "tabs"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://www.tradingview.com/*",
+    "https://*.tradingview.com/*",
+    "https://fxreplay.com/*",
+    "https://*.fxreplay.com/*",
+    "https://forextester.com/*",
+    "https://*.forextester.com/*",
+    "https://tv.checkout.com/*",
+    "https://*.tv.checkout.com/*"
+  ],
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://*.tradingview.com/*",
+        "https://fxreplay.com/*",
+        "https://*.fxreplay.com/*",
+        "https://forextester.com/*",
+        "https://*.forextester.com/*"
+      ],
       "js": ["src/content/index.tsx"]
     }
   ]
