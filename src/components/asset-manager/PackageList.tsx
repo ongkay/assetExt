@@ -47,6 +47,7 @@ export function PackageList({ apiBaseUrl, packages }: PackageListProps) {
           <CardContent className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium">{formatRupiah(extensionPackage.amountRp)}</p>
             <Button
+              nativeButton={false}
               render={
                 <a
                   href={createPackageCheckoutUrl(apiBaseUrl, extensionPackage.checkoutUrl)}

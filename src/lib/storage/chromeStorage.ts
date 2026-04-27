@@ -22,3 +22,11 @@ export async function setChromeStorageValue<TValue>(
 
   await chrome.storage.local.set({ [key]: value });
 }
+
+export async function removeChromeStorageValue(key: string): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.storage?.local) {
+    return;
+  }
+
+  await chrome.storage.local.remove(key);
+}

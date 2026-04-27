@@ -33,7 +33,10 @@ export function VersionGatePanel({ version }: VersionGatePanelProps) {
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button render={<a href={version.downloadUrl} rel="noreferrer" target="_blank" />}>
+        <Button
+          nativeButton={false}
+          render={<a href={version.downloadUrl} rel="noreferrer" target="_blank" />}
+        >
           <DownloadIcon data-icon="inline-start" />
           Download update
         </Button>

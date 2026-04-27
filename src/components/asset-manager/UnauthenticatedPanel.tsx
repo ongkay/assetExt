@@ -27,7 +27,10 @@ export function UnauthenticatedPanel({ loginUrl }: UnauthenticatedPanelProps) {
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button render={<a href={loginUrl} rel="noreferrer" target="_blank" />}>
+        <Button
+          nativeButton={false}
+          render={<a href={loginUrl} rel="noreferrer" target="_blank" />}
+        >
           <LogInIcon data-icon="inline-start" />
           Login Asset Manager
           <ExternalLinkIcon data-icon="inline-end" />

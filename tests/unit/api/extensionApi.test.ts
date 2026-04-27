@@ -12,6 +12,7 @@ import type {
 } from "@/lib/api/extensionApiTypes";
 
 const originalFetch = globalThis.fetch;
+const originalChrome = globalThis.chrome;
 
 type FetchMock = ReturnType<
   typeof vi.fn<(input: string | URL | Request, init?: RequestInit) => Promise<Response>>
@@ -26,6 +27,7 @@ const extensionApiConfig: ExtensionApiConfig = {
 describe("extension API client", () => {
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    globalThis.chrome = originalChrome;
     vi.restoreAllMocks();
   });
 
@@ -51,8 +53,54 @@ describe("extension API client", () => {
       credentials: "include",
       method: "GET",
     });
+    expect(requestHeaders.get("x-extension-version")).toBe("2.0.0");
+    expect(requestHeaders.get("x-ext-dev-extension-id")).toBe("allowed-id");
+    expect(requestHeaders.get("x-ext-dev-origin")).toBe("chrome-extension://allowed-id");
+    expect(requestHeaders.get("x-extension-id")).toBeNull();
+  });
+
+  it("sends production extension id header for non-local API hosts", async () => {
+    const fetchMock: FetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          auth: { status: "unauthenticated" },
+          version: { status: "supported" },
+        }),
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await fetchExtensionBootstrap({
+      ...extensionApiConfig,
+      apiBaseUrl: "https://app.assetnext.dev",
+    });
+
+    const [, requestInit] = fetchMock.mock.calls[0];
+    const requestHeaders = new Headers(requestInit?.headers);
+
     expect(requestHeaders.get("x-extension-id")).toBe("allowed-id");
     expect(requestHeaders.get("x-extension-version")).toBe("2.0.0");
+    expect(requestHeaders.get("x-ext-dev-extension-id")).toBeNull();
+    expect(requestHeaders.get("x-ext-dev-origin")).toBeNull();
+  });
+
+  it("adds local dev app session header when Chrome cookie is available", async () => {
+    const fetchMock: FetchMock = vi.fn(() =>
+      Promise.resolve(Response.json({ ok: true, redirectTo: "/login" })),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+    globalThis.chrome = {
+      cookies: {
+        get: vi.fn(() => Promise.resolve({ value: "local-app-session" })),
+      },
+    } as unknown as typeof chrome;
+
+    await redeemExtensionCdKey(extensionApiConfig, "ACTIVE-CODE");
+
+    const [, requestInit] = fetchMock.mock.calls[0];
+    const requestHeaders = new Headers(requestInit?.headers);
+
+    expect(requestHeaders.get("x-ext-dev-app-session")).toBe("local-app-session");
   });
 
   it("returns redeem error contract for invalid CD-Key response", async () => {

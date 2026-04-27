@@ -1,5 +1,9 @@
 import type { ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
-import { getChromeStorageValue, setChromeStorageValue } from "@/lib/storage/chromeStorage";
+import {
+  getChromeStorageValue,
+  removeChromeStorageValue,
+  setChromeStorageValue,
+} from "@/lib/storage/chromeStorage";
 
 export const bootstrapCacheStorageKey = "assetManager.bootstrapCache";
 export const bootstrapCacheTtlMs = 10 * 60 * 1_000;
@@ -61,4 +65,8 @@ export function writeBootstrapCache(
   bootstrapCacheRecord: BootstrapCacheRecord,
 ): Promise<void> {
   return setChromeStorageValue(bootstrapCacheStorageKey, bootstrapCacheRecord);
+}
+
+export function clearBootstrapCache(): Promise<void> {
+  return removeChromeStorageValue(bootstrapCacheStorageKey);
 }

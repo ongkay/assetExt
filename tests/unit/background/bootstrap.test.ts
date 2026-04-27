@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ExtensionApiResult } from "@/lib/api/extensionApiTypes";
+import type { ExtensionApiResult, ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 type Deferred<TValue> = {
@@ -15,7 +15,7 @@ const previousSnapshot = {
 };
 
 const staleSnapshot = {
-  auth: { status: "unauthenticated" as const, loginUrl: "/stale-login" },
+  auth: { status: "authenticated" as const },
   version: { status: "supported" as const },
 };
 
@@ -202,11 +202,51 @@ describe("background bootstrap core", () => {
       lastErrorMessage: "Network offline",
     });
   });
+
+  it("returns unauthenticated bootstrap for current render without persisting it", async () => {
+    const unauthenticatedSnapshot = {
+      auth: { status: "unauthenticated" as const, loginUrl: "/login" },
+      version: { status: "supported" as const },
+    };
+    const testRuntime = await importBootstrapCoreTestRuntime(null, () =>
+      Promise.resolve({ ok: true, status: 200, value: unauthenticatedSnapshot }),
+    );
+
+    await expect(testRuntime.bootstrapCore.readBootstrapState(false)).resolves.toEqual({
+      cache: {
+        fetchedAt: expect.any(Number) as number,
+        isValid: false,
+        snapshot: unauthenticatedSnapshot,
+      },
+      isSyncing: false,
+    });
+    expect(testRuntime.getCurrentCache()).toBeNull();
+    expect(testRuntime.writeBootstrapCache).not.toHaveBeenCalled();
+  });
+
+  it("clears persisted bootstrap cache on logout", async () => {
+    const testRuntime = await importBootstrapCoreTestRuntime(previousCache, () =>
+      Promise.resolve({ ok: true, status: 200, value: staleSnapshot }),
+    );
+    testRuntime.postExtensionLogout.mockResolvedValue({
+      ok: true,
+      status: 200,
+      value: { ok: true, redirectTo: "/login" },
+    });
+
+    await expect(testRuntime.bootstrapCore.logoutExtensionSession()).resolves.toEqual({
+      ok: true,
+      redirectTo: "/login",
+    });
+    expect(testRuntime.getCurrentCache()).toBeNull();
+    expect(testRuntime.clearBootstrapCache).toHaveBeenCalledTimes(1);
+    expect(testRuntime.writeBootstrapCache).not.toHaveBeenCalled();
+  });
 });
 
 async function importBootstrapCoreTestRuntime(
   initialCache: BootstrapCacheRecord | null,
-  fetchBootstrap: () => Promise<ExtensionApiResult<typeof staleSnapshot>>,
+  fetchBootstrap: () => Promise<ExtensionApiResult<ExtensionBootstrap>>,
   writeBootstrap?: (
     nextCache: BootstrapCacheRecord,
     setCurrentCache: (nextCache: BootstrapCacheRecord) => void,
@@ -235,6 +275,10 @@ async function importBootstrapCoreTestRuntime(
     return {
       ...originalBootstrapCache,
       readBootstrapCache: vi.fn(() => Promise.resolve(currentCache)),
+      clearBootstrapCache: vi.fn(() => {
+        currentCache = null;
+        return Promise.resolve();
+      }),
       writeBootstrapCache: vi.fn((nextCache: BootstrapCacheRecord) => {
         if (writeBootstrap) {
           return writeBootstrap(nextCache, setCurrentCache);
@@ -253,6 +297,8 @@ async function importBootstrapCoreTestRuntime(
   return {
     bootstrapCore,
     fetchExtensionBootstrap: vi.mocked(extensionApi.fetchExtensionBootstrap),
+    postExtensionLogout: vi.mocked(extensionApi.postExtensionLogout),
+    clearBootstrapCache: vi.mocked(bootstrapCache.clearBootstrapCache),
     getCurrentCache: () => currentCache,
     readBootstrapCache: vi.mocked(bootstrapCache.readBootstrapCache),
     writeBootstrapCache: vi.mocked(bootstrapCache.writeBootstrapCache),

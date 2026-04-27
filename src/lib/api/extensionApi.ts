@@ -16,6 +16,7 @@ const fallbackExtensionApiError: ExtensionApiError = {
   code: "EXT_REQUEST_INVALID",
   message: "Request extension gagal diproses.",
 };
+const localDevelopmentExtensionId = "allowed-id";
 
 export function fetchExtensionBootstrap(
   config: ExtensionApiConfig,
@@ -79,7 +80,7 @@ async function requestExtensionApi<TValue>(
   const response = await fetch(`${config.apiBaseUrl}${path}`, {
     ...init,
     credentials: "include",
-    headers: getExtensionApiHeaders(config),
+    headers: await getExtensionApiHeaders(config),
   });
   const responsePayload = await parseResponseJson(response);
 
@@ -98,17 +99,56 @@ async function requestExtensionApi<TValue>(
   };
 }
 
-function getExtensionApiHeaders(config: ExtensionApiConfig): HeadersInit {
+async function getExtensionApiHeaders(config: ExtensionApiConfig): Promise<HeadersInit> {
   const headers = new Headers({
     "content-type": "application/json",
     "x-extension-version": config.extensionVersion,
   });
+
+  if (isLocalDevelopmentApiBaseUrl(config.apiBaseUrl)) {
+    headers.set("x-ext-dev-extension-id", localDevelopmentExtensionId);
+    headers.set("x-ext-dev-origin", `chrome-extension://${localDevelopmentExtensionId}`);
+
+    const appSessionToken = await readLocalDevelopmentAppSession(config.apiBaseUrl);
+
+    if (appSessionToken) {
+      headers.set("x-ext-dev-app-session", appSessionToken);
+    }
+
+    return headers;
+  }
 
   if (config.extensionId) {
     headers.set("x-extension-id", config.extensionId);
   }
 
   return headers;
+}
+
+function isLocalDevelopmentApiBaseUrl(apiBaseUrl: string): boolean {
+  try {
+    const { hostname } = new URL(apiBaseUrl);
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+async function readLocalDevelopmentAppSession(apiBaseUrl: string): Promise<string | null> {
+  if (typeof chrome === "undefined" || !chrome.cookies?.get) {
+    return null;
+  }
+
+  try {
+    const appSessionCookie = await chrome.cookies.get({
+      name: "app_session",
+      url: apiBaseUrl,
+    });
+
+    return appSessionCookie?.value ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function parseResponseJson(response: Response): Promise<unknown> {

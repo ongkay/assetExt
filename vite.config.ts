@@ -7,6 +7,19 @@ import manifest from "./manifest.json";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), crx({ manifest })],
+  server: {
+    host: "127.0.0.1",
+    port: 5173,
+    strictPort: true,
+    cors: {
+      origin: [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/, /^chrome-extension:\/\/.*$/],
+    },
+    hmr: {
+      host: "127.0.0.1",
+      port: 5173,
+      protocol: "ws",
+    },
+  },
   build: {
     rollupOptions: {
       input: {
