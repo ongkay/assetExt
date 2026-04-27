@@ -10,6 +10,7 @@ import { RedeemCdKeyForm } from "./RedeemCdKeyForm";
 type RenewalActionMode = "packages" | "redeem";
 
 type RenewalActionsProps = {
+  apiBaseUrl: string;
   errorMessage?: string;
   isRedeeming?: boolean;
   packages: ExtensionPackage[];
@@ -18,6 +19,7 @@ type RenewalActionsProps = {
 };
 
 export function RenewalActions({
+  apiBaseUrl,
   errorMessage,
   isRedeeming = false,
   packages,
@@ -59,7 +61,7 @@ export function RenewalActions({
           onRedeemCdKey={onRedeemCdKey}
         />
       ) : (
-        <PackageList packages={packages} />
+        <PackageList apiBaseUrl={apiBaseUrl} packages={packages} />
       )}
     </section>
   );

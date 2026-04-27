@@ -20,8 +20,8 @@ import {
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
 
-chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
-  void handleRuntimeMessage(message)
+chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
+  void handleRuntimeMessage(message, sender)
     .then(sendResponse)
     .catch((error: unknown) => {
       sendResponse(createRuntimeErrorResponse(getErrorMessage(error)));
@@ -32,6 +32,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
 
 async function handleRuntimeMessage(
   message: RuntimeMessage,
+  sender: chrome.runtime.MessageSender,
 ): Promise<RuntimeResponse<unknown>> {
   switch (message.type) {
     case runtimeMessageType.bootstrapRequested: {
@@ -98,6 +99,7 @@ async function handleRuntimeMessage(
         mode: message.mode,
         platform: message.platform,
         shouldNavigate: false,
+        tabId: sender.tab?.id,
       });
 
       return {

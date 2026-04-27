@@ -10,11 +10,14 @@ import {
 } from "@/components/ui/card";
 import type { ExtensionPackage } from "@/lib/api/extensionApiTypes";
 
+import { createPackageCheckoutUrl } from "./packageCheckoutUrl";
+
 type PackageListProps = {
+  apiBaseUrl: string;
   packages: ExtensionPackage[];
 };
 
-export function PackageList({ packages }: PackageListProps) {
+export function PackageList({ apiBaseUrl, packages }: PackageListProps) {
   if (packages.length === 0) {
     return (
       <Card size="sm">
@@ -45,7 +48,11 @@ export function PackageList({ packages }: PackageListProps) {
             <p className="text-sm font-medium">{formatRupiah(extensionPackage.amountRp)}</p>
             <Button
               render={
-                <a href={extensionPackage.checkoutUrl} rel="noreferrer" target="_blank" />
+                <a
+                  href={createPackageCheckoutUrl(apiBaseUrl, extensionPackage.checkoutUrl)}
+                  rel="noreferrer"
+                  target="_blank"
+                />
               }
               size="sm"
               variant="outline"

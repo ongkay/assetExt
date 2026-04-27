@@ -5,6 +5,7 @@ import { markInjectionCooldown } from "@/lib/storage/injectionCooldown";
 
 import { createExtensionApiConfig } from "./bootstrap";
 import { clearAssetPlatformCookies, injectExtensionCookies } from "./cookies";
+import { startHeartbeat } from "./heartbeat";
 import { openOrReloadTab } from "./tabs";
 
 export type RunAssetAccessOptions = {
@@ -37,7 +38,14 @@ export async function runAssetAccess(
 
   if (options.shouldNavigate) {
     const platformConfig = getAssetPlatformConfig(options.platform);
-    await openOrReloadTab(platformConfig.targetUrl, options.tabId);
+    const assetTab = await openOrReloadTab(platformConfig.targetUrl, options.tabId);
+    const heartbeatTabId = assetTab.id ?? options.tabId;
+
+    if (heartbeatTabId) {
+      await startHeartbeat(heartbeatTabId, options.platform);
+    }
+  } else if (options.tabId) {
+    await startHeartbeat(options.tabId, options.platform);
   }
 
   return assetResult.value;

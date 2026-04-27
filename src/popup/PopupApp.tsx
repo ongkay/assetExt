@@ -309,6 +309,7 @@ export function PopupApp() {
         ) : null}
 
         <RenewalActions
+          apiBaseUrl={apiBaseUrl}
           errorMessage={redeemErrorMessage ?? undefined}
           isRedeeming={isRedeeming}
           packages={packages}
