@@ -1,0 +1,155 @@
+import { fetchExtensionBootstrap, postExtensionLogout } from "@/lib/api/extensionApi";
+import { getExtensionApiBaseUrl, type ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
+import type { ExtensionBootstrap, ExtensionLogoutResponse } from "@/lib/api/extensionApiTypes";
+import {
+  createBootstrapCacheErrorRecord,
+  createBootstrapCacheRecord,
+  createInvalidUnauthenticatedBootstrapCache,
+  isBootstrapCacheExpired,
+  readBootstrapCache,
+  writeBootstrapCache,
+  type BootstrapCacheRecord,
+} from "@/lib/storage/bootstrapCache";
+
+let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
+let bootstrapWriteRevision = 0;
+let latestExplicitBootstrapCache: BootstrapCacheRecord | null = null;
+
+export async function readBootstrapState(forceRefresh: boolean) {
+  const previousCache = await readBootstrapCache();
+
+  if (forceRefresh || !previousCache) {
+    const cache = await syncBootstrapCache(previousCache);
+    return { cache, isSyncing: false };
+  }
+
+  if (!isBootstrapCacheExpired(previousCache)) {
+    return { cache: previousCache, isSyncing: false };
+  }
+
+  void syncBootstrapCache(previousCache).catch(() => undefined);
+  return { cache: previousCache, isSyncing: true };
+}
+
+export async function forceRefreshBootstrapCache(): Promise<BootstrapCacheRecord> {
+  const previousCache = await readBootstrapCache();
+
+  return syncBootstrapCache(previousCache);
+}
+
+export async function replaceBootstrapCacheFromSnapshot(
+  snapshot: ExtensionBootstrap,
+): Promise<BootstrapCacheRecord> {
+  const nextCache = createBootstrapCacheRecord(snapshot);
+  latestExplicitBootstrapCache = nextCache;
+  bootstrapWriteRevision += 1;
+  await writeBootstrapCache(nextCache);
+
+  return nextCache;
+}
+
+export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse> {
+  const logoutResult = await postExtensionLogout(createExtensionApiConfig());
+
+  if (!logoutResult.ok) {
+    throw new Error(logoutResult.error.message);
+  }
+
+  const nextCache = createInvalidUnauthenticatedBootstrapCache(logoutResult.value.redirectTo);
+  latestExplicitBootstrapCache = nextCache;
+  bootstrapWriteRevision += 1;
+  await writeBootstrapCache(nextCache);
+
+  return logoutResult.value;
+}
+
+export function createExtensionApiConfig(): ExtensionApiConfig {
+  return {
+    apiBaseUrl: getExtensionApiBaseUrl(),
+    extensionId: chrome.runtime.id ?? null,
+    extensionVersion: chrome.runtime.getManifest().version,
+  };
+}
+
+async function syncBootstrapCache(
+  previousCache: BootstrapCacheRecord | null,
+): Promise<BootstrapCacheRecord> {
+  if (bootstrapSyncPromise) {
+    return bootstrapSyncPromise;
+  }
+
+  const writeRevisionAtSyncStart = bootstrapWriteRevision;
+
+  bootstrapSyncPromise = fetchAndWriteBootstrapCache(
+    previousCache,
+    writeRevisionAtSyncStart,
+  ).finally(() => {
+    bootstrapSyncPromise = null;
+  });
+
+  return bootstrapSyncPromise;
+}
+
+async function fetchAndWriteBootstrapCache(
+  previousCache: BootstrapCacheRecord | null,
+  writeRevisionAtSyncStart: number,
+): Promise<BootstrapCacheRecord> {
+  try {
+    const bootstrapResult = await fetchExtensionBootstrap(createExtensionApiConfig());
+
+    if (bootstrapResult.ok) {
+      const nextCache = createBootstrapCacheRecord(bootstrapResult.value);
+      return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
+    }
+
+    if (!previousCache) {
+      throw new Error(bootstrapResult.error.message);
+    }
+
+    const nextCache = createBootstrapCacheErrorRecord(
+      previousCache,
+      bootstrapResult.error.message,
+    );
+
+    return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
+  } catch (error) {
+    const errorMessage = getErrorMessage(error);
+
+    if (!previousCache) {
+      throw new Error(errorMessage);
+    }
+
+    const nextCache = createBootstrapCacheErrorRecord(previousCache, errorMessage);
+
+    return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
+  }
+}
+
+async function writeBootstrapCacheIfSyncIsCurrent(
+  nextCache: BootstrapCacheRecord,
+  writeRevisionAtSyncStart: number,
+): Promise<BootstrapCacheRecord> {
+  if (bootstrapWriteRevision !== writeRevisionAtSyncStart) {
+    const latestCache = await readBootstrapCache();
+
+    if (latestCache) {
+      return latestCache;
+    }
+
+    if (latestExplicitBootstrapCache) {
+      return latestExplicitBootstrapCache;
+    }
+  }
+
+  await writeBootstrapCache(nextCache);
+
+  return nextCache;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Bootstrap request failed.";
+}

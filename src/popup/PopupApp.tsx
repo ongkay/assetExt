@@ -1,135 +1,434 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { LogOutIcon, RefreshCcwIcon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { Logo } from "@/component/Logo";
-import { runtimeMessageType } from "@/lib/runtime/messages";
+import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
+import { AssetModeChooser } from "@/components/asset-manager/AssetModeChooser";
+import { BootstrapSkeleton } from "@/components/asset-manager/BootstrapSkeleton";
+import { ExtensionHeader } from "@/components/asset-manager/ExtensionHeader";
+import { ProfilePanel } from "@/components/asset-manager/ProfilePanel";
+import { RenewalActions } from "@/components/asset-manager/RenewalActions";
+import { StatusNotice } from "@/components/asset-manager/StatusNotice";
+import { SubscriptionSummary } from "@/components/asset-manager/SubscriptionSummary";
+import { UnauthenticatedPanel } from "@/components/asset-manager/UnauthenticatedPanel";
+import { VersionGatePanel } from "@/components/asset-manager/VersionGatePanel";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
+import type {
+  ExtensionAssetResponse,
+  ExtensionAssetSelectionResponse,
+  ExtensionBootstrap,
+  ExtensionMode,
+} from "@/lib/api/extensionApiTypes";
+import type { AssetPlatform } from "@/lib/asset-access/platforms";
+import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
+import { isSubscriptionActive } from "@/lib/asset-access/subscription";
+import {
+  runtimeMessageType,
+  type BootstrapRuntimeValue,
+  type RuntimeMessage,
+  type RuntimeResponse,
+} from "@/lib/runtime/messages";
+import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
+import { createBootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 import { useThemePreference } from "@/lib/useThemePreference";
 
-import { ActionButton } from "./ui/ActionButton";
+import { PopupShell } from "./ui/PopupShell";
+
+type PopupView = "main" | "profile";
+
+type AssetModeSelection = ExtensionAssetSelectionResponse & {
+  secondsRemaining: number;
+};
 
 export function PopupApp() {
   const themeTarget = typeof document === "undefined" ? null : document.documentElement;
-  const { isDark, isReady, theme, setTheme } = useThemePreference(themeTarget);
-  const [status, setStatus] = useState("");
+  const { isReady: isThemeReady } = useThemePreference(themeTarget);
+  const apiBaseUrl = getExtensionApiBaseUrl();
+  const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
+  const [popupView, setPopupView] = useState<PopupView>("main");
+  const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
+  const [assetModeSelection, setAssetModeSelection] = useState<AssetModeSelection | null>(
+    null,
+  );
+  const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
+  const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const hasSelectedDefaultModeRef = useRef(false);
+  const snapshot = bootstrapValue?.cache?.snapshot ?? null;
+  const isSyncing = Boolean(bootstrapValue?.isSyncing || isPending);
 
-  const handleOpenOptions = () => {
-    if (typeof chrome === "undefined") {
-      return;
-    }
+  const requestAssetAccess = useCallback(
+    async (platform: AssetPlatform, mode?: ExtensionMode) => {
+      setAccessingPlatform(platform);
+      setAssetAccessErrorMessage(null);
 
-    if (chrome.runtime?.openOptionsPage) {
-      chrome.runtime.openOptionsPage();
-      return;
-    }
+      const assetResult = await sendRuntimeMessage<ExtensionAssetResponse>({
+        mode,
+        platform,
+        type: runtimeMessageType.assetAccessRequested,
+      });
 
-    if (chrome.runtime?.getURL) {
-      window.open(chrome.runtime.getURL("options.html"));
-    }
-  };
+      setAccessingPlatform(null);
 
-  const handleToggleUi = () => {
-    if (typeof chrome === "undefined") {
-      return;
-    }
-
-    chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
-      const tabId = tabs?.[0]?.id;
-      if (!tabId) {
+      if (!assetResult.value) {
+        setAssetAccessErrorMessage(
+          assetResult.errorMessage ??
+            "Asset belum bisa dibuka. Coba refresh lalu akses ulang.",
+        );
         return;
       }
 
-      chrome.tabs.sendMessage(tabId, { type: runtimeMessageType.toggleUi }, () => {
-        if (chrome.runtime.lastError) {
-          setStatus("No overlay on this page.");
-          return;
+      const assetResponse = assetResult.value;
+
+      if (assetResponse.status === "selection_required") {
+        setAssetModeSelection({
+          ...assetResponse,
+          secondsRemaining: assetResponse.selectionTimeoutSeconds,
+        });
+        return;
+      }
+
+      if (assetResponse.status === "forbidden") {
+        setAssetModeSelection(null);
+        setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
+        return;
+      }
+
+      setAssetModeSelection(null);
+    },
+    [],
+  );
+
+  const handleSelectAssetMode = useCallback(
+    async (mode: ExtensionMode) => {
+      const selectedPlatform = assetModeSelection?.platform;
+
+      if (!selectedPlatform) {
+        return;
+      }
+
+      setAssetModeSelection(null);
+      await requestAssetAccess(selectedPlatform, mode);
+    },
+    [assetModeSelection?.platform, requestAssetAccess],
+  );
+
+  useEffect(() => {
+    void requestBootstrap();
+  }, []);
+
+  useEffect(() => {
+    if (!assetModeSelection) {
+      hasSelectedDefaultModeRef.current = false;
+      return;
+    }
+
+    if (assetModeSelection.secondsRemaining <= 0) {
+      if (hasSelectedDefaultModeRef.current) {
+        return;
+      }
+
+      hasSelectedDefaultModeRef.current = true;
+      void handleSelectAssetMode(assetModeSelection.defaultMode);
+      return;
+    }
+
+    const countdownId = window.setTimeout(() => {
+      setAssetModeSelection((currentSelection) => {
+        if (!currentSelection) {
+          return null;
         }
 
-        setStatus("");
+        return {
+          ...currentSelection,
+          secondsRemaining: currentSelection.secondsRemaining - 1,
+        };
       });
+    }, 1_000);
+
+    return () => window.clearTimeout(countdownId);
+  }, [assetModeSelection, handleSelectAssetMode]);
+
+  const handleRefreshBootstrap = () => {
+    startTransition(() => {
+      void refreshBootstrap();
     });
   };
 
-  const handleIncrementBadge = () => {
-    if (typeof chrome === "undefined") {
+  const handleAccessAsset = (platform: AssetPlatform) => {
+    void requestAssetAccess(platform);
+  };
+
+  const handleRedeemCdKey = async (cdKeyCode: string) => {
+    setIsRedeeming(true);
+    setRedeemErrorMessage(null);
+
+    const redeemResult = await sendRuntimeMessage<ExtensionBootstrap>({
+      code: cdKeyCode,
+      type: runtimeMessageType.redeemCdKeyRequested,
+    });
+
+    setIsRedeeming(false);
+
+    if (!redeemResult.value) {
+      setRedeemErrorMessage(
+        redeemResult.errorMessage ?? "CD Key gagal diproses. Coba lagi beberapa saat.",
+      );
       return;
     }
 
-    chrome.runtime.sendMessage({ type: runtimeMessageType.incrementBadge }, (response) => {
-      if (chrome.runtime.lastError || !response) {
-        setStatus("Could not update badge.");
+    updateBootstrapCache(createBootstrapCacheRecord(redeemResult.value));
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+
+    await sendRuntimeMessage<{ redirectTo: string }>({
+      type: runtimeMessageType.logoutRequested,
+    });
+
+    setIsLoggingOut(false);
+    setPopupView("main");
+    await requestBootstrap();
+  };
+
+  if (!snapshot) {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <BootstrapSkeleton />
+      </PopupShell>
+    );
+  }
+
+  if (snapshot.version.status === "update_required") {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <VersionGatePanel version={snapshot.version} />
+      </PopupShell>
+    );
+  }
+
+  if (snapshot.auth.status === "unauthenticated") {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <UnauthenticatedPanel
+          loginUrl={getAbsoluteApiUrl(apiBaseUrl, snapshot.auth.loginUrl)}
+        />
+      </PopupShell>
+    );
+  }
+
+  if (!snapshot.user || !snapshot.subscription) {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <StatusNotice
+          message="Data user atau subscription belum tersedia dari Asset Manager. Refresh data untuk mencoba sinkron ulang."
+          title="Data belum lengkap"
+          tone="warning"
+        />
+      </PopupShell>
+    );
+  }
+
+  if (popupView === "profile") {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <ProfilePanel
+          isLoggingOut={isLoggingOut}
+          user={snapshot.user}
+          onBack={() => setPopupView("main")}
+          onLogout={handleLogout}
+        />
+      </PopupShell>
+    );
+  }
+
+  const assets = snapshot.assets ?? [];
+  const packages = snapshot.packages ?? [];
+  const hasProcessedSubscription = snapshot.subscription.status === "processed";
+  const hasActiveSubscription = isSubscriptionActive(snapshot.subscription.status);
+
+  return (
+    <PopupShell isThemeReady={isThemeReady}>
+      <div className="flex flex-col gap-4">
+        <ExtensionHeader
+          subtitle="Akses asset langsung dari extension."
+          title="Asset Manager"
+          user={snapshot.user}
+          version={getExtensionVersion()}
+          onOpenProfile={() => setPopupView("profile")}
+        />
+
+        {snapshot.version.status === "update_available" ? (
+          <StatusNotice
+            message={`Versi ${snapshot.version.latestVersion} tersedia. Update untuk mendapatkan perbaikan terbaru.`}
+            title="Update tersedia"
+            tone="info"
+          />
+        ) : null}
+
+        {bootstrapValue?.cache?.lastErrorMessage ? (
+          <StatusNotice
+            message={bootstrapValue.cache.lastErrorMessage}
+            title="Menggunakan cache terakhir"
+            tone="warning"
+          />
+        ) : null}
+
+        <SubscriptionSummary subscription={snapshot.subscription} />
+
+        {hasProcessedSubscription ? (
+          <StatusNotice
+            message="Pembayaran sedang diproses. Akses akan aktif setelah konfirmasi selesai."
+            title="Subscription diproses"
+            tone="info"
+          />
+        ) : null}
+
+        {assetAccessErrorMessage ? (
+          <StatusNotice
+            message={assetAccessErrorMessage}
+            title="Akses asset gagal"
+            tone="danger"
+          />
+        ) : null}
+
+        {assetModeSelection ? (
+          <AssetModeChooser
+            key={`${assetModeSelection.platform}-${assetModeSelection.defaultMode}`}
+            availableModes={assetModeSelection.availableModes}
+            defaultMode={assetModeSelection.defaultMode}
+            isSubmitting={accessingPlatform === assetModeSelection.platform}
+            platformLabel={getAssetPlatformConfig(assetModeSelection.platform).label}
+            secondsRemaining={assetModeSelection.secondsRemaining}
+            onSelectMode={handleSelectAssetMode}
+          />
+        ) : null}
+
+        <RenewalActions
+          errorMessage={redeemErrorMessage ?? undefined}
+          isRedeeming={isRedeeming}
+          packages={packages}
+          redeem={snapshot.redeem}
+          onRedeemCdKey={handleRedeemCdKey}
+        />
+
+        {hasActiveSubscription ? (
+          <AssetAccessList
+            assets={assets}
+            isAccessingPlatform={accessingPlatform}
+            onAccessAsset={handleAccessAsset}
+          />
+        ) : null}
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            disabled={isSyncing}
+            type="button"
+            variant="outline"
+            onClick={handleRefreshBootstrap}
+          >
+            {isSyncing ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <RefreshCcwIcon data-icon="inline-start" />
+            )}
+            Refresh
+          </Button>
+          <Button
+            disabled={isLoggingOut}
+            type="button"
+            variant="outline"
+            onClick={() => void handleLogout()}
+          >
+            {isLoggingOut ? (
+              <Spinner data-icon="inline-start" />
+            ) : (
+              <LogOutIcon data-icon="inline-start" />
+            )}
+            Logout
+          </Button>
+        </div>
+      </div>
+    </PopupShell>
+  );
+
+  async function requestBootstrap() {
+    const nextBootstrapValue = await sendRuntimeMessage<BootstrapRuntimeValue>({
+      type: runtimeMessageType.bootstrapRequested,
+    });
+
+    if (nextBootstrapValue.value) {
+      setBootstrapValue(nextBootstrapValue.value);
+    }
+  }
+
+  async function refreshBootstrap() {
+    const bootstrapCache = await sendRuntimeMessage<BootstrapCacheRecord>({
+      type: runtimeMessageType.bootstrapRefreshRequested,
+    });
+
+    if (bootstrapCache.value) {
+      updateBootstrapCache(bootstrapCache.value);
+    }
+  }
+
+  function updateBootstrapCache(cache: BootstrapCacheRecord) {
+    setBootstrapValue({ cache, isSyncing: false });
+  }
+}
+
+type RuntimeMessageResult<TValue> = {
+  errorMessage: string | null;
+  value: TValue | null;
+};
+
+async function sendRuntimeMessage<TValue>(
+  message: RuntimeMessage,
+): Promise<RuntimeMessageResult<TValue>> {
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    return { errorMessage: "Runtime extension tidak tersedia.", value: null };
+  }
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(message, (response: RuntimeResponse<TValue> | undefined) => {
+      if (chrome.runtime.lastError) {
+        resolve({
+          errorMessage: chrome.runtime.lastError.message ?? null,
+          value: null,
+        });
         return;
       }
 
-      setStatus("");
-    });
-  };
-
-  return (
-    <div
-      className={
-        isReady
-          ? "w-[332px] bg-background px-4 py-4 text-foreground"
-          : "invisible w-[332px] bg-background px-4 py-4 text-foreground"
+      if (!response) {
+        resolve({ errorMessage: null, value: null });
+        return;
       }
-    >
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 ring-1 ring-primary/15">
-              <Logo className="h-5 w-5 shrink-0" title="My Extension logo" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-heading text-base leading-tight font-semibold tracking-tight">
-                My Extension
-              </h1>
-              <p className="max-w-[15rem] text-sm text-muted-foreground">
-                Popup tools for the active tab.
-              </p>
-            </div>
-          </div>
-          <Badge variant="outline" className="bg-background/80 capitalize shadow-xs">
-            {theme}
-          </Badge>
-        </div>
 
-        <div className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-3 py-3 shadow-xs">
-          <div className="space-y-0.5">
-            <p className="text-sm font-medium">Dark mode</p>
-            <p className="text-xs text-muted-foreground">
-              Synced across popup, options, and overlay.
-            </p>
-          </div>
-          <Switch
-            aria-label="Toggle dark mode"
-            checked={isDark}
-            onCheckedChange={(checked) => void setTheme(checked ? "dark" : "light")}
-          />
-        </div>
+      if (!response.ok) {
+        resolve({
+          errorMessage: response.errorMessage,
+          value: null,
+        });
+        return;
+      }
 
-        <Separator />
+      resolve({ errorMessage: null, value: response.value });
+    });
+  });
+}
 
-        <div className="grid grid-cols-2 gap-2.5">
-          <ActionButton variant="solid" onClick={handleToggleUi}>
-            Overlay
-          </ActionButton>
-          <ActionButton onClick={handleIncrementBadge}>Badge +</ActionButton>
-        </div>
+function getAbsoluteApiUrl(apiBaseUrl: string, path: string): string {
+  return new URL(path, apiBaseUrl).toString();
+}
 
-        <div className="flex items-start justify-between gap-3">
-          <button
-            className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-            type="button"
-            onClick={handleOpenOptions}
-          >
-            Open settings
-          </button>
-          <p className="min-h-4 text-right text-[11px] text-muted-foreground" role="status">
-            {status}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+function getExtensionVersion(): string {
+  if (typeof chrome === "undefined" || !chrome.runtime?.getManifest) {
+    return "0.0.0";
+  }
+
+  return chrome.runtime.getManifest().version;
 }
