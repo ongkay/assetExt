@@ -50,5 +50,15 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    files: ["src/components/ui/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-else-return": "off",
+      "no-param-reassign": "off",
+      "react/self-closing-comp": "off",
+      "react-refresh/only-export-components": "off",
+    },
+  },
   prettierConfig,
 );

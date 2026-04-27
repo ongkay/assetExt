@@ -30,5 +30,5 @@ vite.config.d.ts
 test-results/
 playwright-report/
 .worktrees
-.docs
+#.docs
 .playwright-mcp
