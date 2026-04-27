@@ -1,8 +1,15 @@
+import { applyThemeClass, defaultThemePreference, type ThemePreference } from "@/lib/theme";
+
 type ContentMount = {
+  host: HTMLDivElement;
   mountPoint: HTMLDivElement;
+  themeRoot: HTMLDivElement;
 };
 
-export function mountContentRoot(styles: string): ContentMount {
+export function mountContentRoot(
+  styles: string,
+  theme: ThemePreference = defaultThemePreference,
+): ContentMount {
   const existingHost = document.getElementById("extension-root") as HTMLDivElement | null;
   const host = existingHost ?? document.createElement("div");
 
@@ -18,8 +25,12 @@ export function mountContentRoot(styles: string): ContentMount {
   style.textContent = styles;
   shadowRoot.appendChild(style);
 
-  const mountPoint = document.createElement("div");
-  shadowRoot.appendChild(mountPoint);
+  const themeRoot = document.createElement("div");
+  applyThemeClass(themeRoot, theme);
+  shadowRoot.appendChild(themeRoot);
 
-  return { mountPoint };
+  const mountPoint = document.createElement("div");
+  themeRoot.appendChild(mountPoint);
+
+  return { host, mountPoint, themeRoot };
 }

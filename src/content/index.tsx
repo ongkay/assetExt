@@ -4,10 +4,10 @@ import styles from "@/lib/styles/globals.css?inline";
 import { mountContentRoot } from "./dom/mountContentRoot";
 import { ContentApp } from "./ContentApp";
 
-const { mountPoint } = mountContentRoot(styles);
+const { mountPoint, themeRoot } = mountContentRoot(styles);
 
 createRoot(mountPoint).render(
   <StrictMode>
-    <ContentApp />
+    <ContentApp themeRoot={themeRoot} />
   </StrictMode>,
 );

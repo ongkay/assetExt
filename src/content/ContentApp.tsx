@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
+
 import { runtimeMessageType, type ToggleUiResponse } from "@/lib/runtime/messages";
+import { useThemePreference } from "@/lib/useThemePreference";
+
 import { OverlayPanel } from "./ui/OverlayPanel";
 
-export function ContentApp() {
+type ContentAppProps = {
+  themeRoot: HTMLDivElement;
+};
+
+export function ContentApp({ themeRoot }: ContentAppProps) {
+  const { isDark, isReady, setTheme } = useThemePreference(themeRoot);
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -38,10 +46,13 @@ export function ContentApp() {
 
   return (
     <OverlayPanel
+      isDark={isDark}
+      isReady={isReady}
       isVisible={isVisible}
       onHide={() => setIsVisible(false)}
-      onShow={() => setIsVisible(true)}
       onIncrementBadge={handleIncrementBadge}
+      onShow={() => setIsVisible(true)}
+      onThemeChange={(checked) => void setTheme(checked ? "dark" : "light")}
     />
   );
 }
