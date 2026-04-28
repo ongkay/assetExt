@@ -54,7 +54,8 @@
         "https://forextester.com/*",
         "https://*.forextester.com/*"
       ],
-      "js": ["src/content/index.tsx"]
+      "js": ["src/content/index.tsx"],
+      "run_at": "document_start"
     }
   ]
 }

@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { LogOutIcon, RefreshCcwIcon } from "lucide-react";
 
 import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
-import { AssetModeChooser } from "@/components/asset-manager/AssetModeChooser";
 import { BootstrapSkeleton } from "@/components/asset-manager/BootstrapSkeleton";
 import { ExtensionHeader } from "@/components/asset-manager/ExtensionHeader";
 import { ProfilePanel } from "@/components/asset-manager/ProfilePanel";
@@ -16,12 +15,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
 import type {
   ExtensionAssetResponse,
-  ExtensionAssetSelectionResponse,
+  ExtensionAssetSummary,
   ExtensionBootstrap,
   ExtensionMode,
 } from "@/lib/api/extensionApiTypes";
+import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
 import { isSubscriptionActive } from "@/lib/asset-access/subscription";
 import {
   runtimeMessageType,
@@ -37,10 +36,6 @@ import { PopupShell } from "./ui/PopupShell";
 
 type PopupView = "main" | "profile";
 
-type AssetModeSelection = ExtensionAssetSelectionResponse & {
-  secondsRemaining: number;
-};
-
 export function PopupApp() {
   const themeTarget = typeof document === "undefined" ? null : document.documentElement;
   const { isReady: isThemeReady } = useThemePreference(themeTarget);
@@ -48,15 +43,11 @@ export function PopupApp() {
   const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
   const [popupView, setPopupView] = useState<PopupView>("main");
   const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
-  const [assetModeSelection, setAssetModeSelection] = useState<AssetModeSelection | null>(
-    null,
-  );
   const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
   const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const hasSelectedDefaultModeRef = useRef(false);
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isPending);
 
@@ -84,73 +75,21 @@ export function PopupApp() {
       const assetResponse = assetResult.value;
 
       if (assetResponse.status === "selection_required") {
-        setAssetModeSelection({
-          ...assetResponse,
-          secondsRemaining: assetResponse.selectionTimeoutSeconds,
-        });
+        setAssetAccessErrorMessage("Mode akses belum bisa ditentukan otomatis.");
         return;
       }
 
       if (assetResponse.status === "forbidden") {
-        setAssetModeSelection(null);
         setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
         return;
       }
-
-      setAssetModeSelection(null);
     },
     [],
-  );
-
-  const handleSelectAssetMode = useCallback(
-    async (mode: ExtensionMode) => {
-      const selectedPlatform = assetModeSelection?.platform;
-
-      if (!selectedPlatform) {
-        return;
-      }
-
-      setAssetModeSelection(null);
-      await requestAssetAccess(selectedPlatform, mode);
-    },
-    [assetModeSelection?.platform, requestAssetAccess],
   );
 
   useEffect(() => {
     void requestBootstrap();
   }, []);
-
-  useEffect(() => {
-    if (!assetModeSelection) {
-      hasSelectedDefaultModeRef.current = false;
-      return;
-    }
-
-    if (assetModeSelection.secondsRemaining <= 0) {
-      if (hasSelectedDefaultModeRef.current) {
-        return;
-      }
-
-      hasSelectedDefaultModeRef.current = true;
-      void handleSelectAssetMode(assetModeSelection.defaultMode);
-      return;
-    }
-
-    const countdownId = window.setTimeout(() => {
-      setAssetModeSelection((currentSelection) => {
-        if (!currentSelection) {
-          return null;
-        }
-
-        return {
-          ...currentSelection,
-          secondsRemaining: currentSelection.secondsRemaining - 1,
-        };
-      });
-    }, 1_000);
-
-    return () => window.clearTimeout(countdownId);
-  }, [assetModeSelection, handleSelectAssetMode]);
 
   const handleRefreshBootstrap = () => {
     startTransition(() => {
@@ -158,8 +97,15 @@ export function PopupApp() {
     });
   };
 
-  const handleAccessAsset = (platform: AssetPlatform) => {
-    void requestAssetAccess(platform);
+  const handleAccessAsset = (asset: ExtensionAssetSummary) => {
+    const mode = getAutomaticAssetMode(asset);
+
+    if (!mode) {
+      setAssetAccessErrorMessage("Asset ini belum memiliki akses private atau share.");
+      return;
+    }
+
+    void requestAssetAccess(asset.platform, mode);
   };
 
   const handleRedeemCdKey = async (cdKeyCode: string) => {
@@ -293,18 +239,6 @@ export function PopupApp() {
             message={assetAccessErrorMessage}
             title="Akses asset gagal"
             tone="danger"
-          />
-        ) : null}
-
-        {assetModeSelection ? (
-          <AssetModeChooser
-            key={`${assetModeSelection.platform}-${assetModeSelection.defaultMode}`}
-            availableModes={assetModeSelection.availableModes}
-            defaultMode={assetModeSelection.defaultMode}
-            isSubmitting={accessingPlatform === assetModeSelection.platform}
-            platformLabel={getAssetPlatformConfig(assetModeSelection.platform).label}
-            secondsRemaining={assetModeSelection.secondsRemaining}
-            onSelectMode={handleSelectAssetMode}
           />
         ) : null}
 

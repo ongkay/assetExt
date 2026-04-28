@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, LockKeyholeIcon, Share2Icon } from "lucide-react";
+import { ExternalLinkIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
 type AssetAccessListProps = {
   assets: ExtensionAssetSummary[];
   isAccessingPlatform?: AssetPlatform | null;
-  onAccessAsset: (platform: AssetPlatform) => void | Promise<void>;
+  onAccessAsset: (asset: ExtensionAssetSummary) => void | Promise<void>;
 };
 
 export function AssetAccessList({
@@ -55,20 +55,10 @@ export function AssetAccessList({
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant={asset.hasPrivateAccess ? "secondary" : "outline"}>
-                  <LockKeyholeIcon data-icon="inline-start" />
-                  Private
-                </Badge>
-                <Badge variant={asset.hasShareAccess ? "secondary" : "outline"}>
-                  <Share2Icon data-icon="inline-start" />
-                  Share
-                </Badge>
-              </div>
               <Button
                 disabled={!hasAnyAccess || Boolean(isAccessingPlatform)}
                 type="button"
-                onClick={() => void onAccessAsset(asset.platform)}
+                onClick={() => void onAccessAsset(asset)}
               >
                 <ExternalLinkIcon data-icon="inline-start" />
                 Akses {platformConfig.label}

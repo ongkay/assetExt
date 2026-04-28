@@ -15,7 +15,7 @@ export function mountContentRoot(
 
   if (!existingHost) {
     host.id = "extension-root";
-    document.body.appendChild(host);
+    (document.body ?? document.documentElement).appendChild(host);
   }
 
   const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: "open" });
