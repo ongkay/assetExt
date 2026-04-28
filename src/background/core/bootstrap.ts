@@ -1,5 +1,9 @@
 import { fetchExtensionBootstrap, postExtensionLogout } from "@/lib/api/extensionApi";
-import { getExtensionApiBaseUrl, type ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
+import {
+  getExtensionApiBaseUrl,
+  isDev,
+  type ExtensionApiConfig,
+} from "@/lib/api/extensionApiConfig";
 import type { ExtensionBootstrap, ExtensionLogoutResponse } from "@/lib/api/extensionApiTypes";
 import {
   clearBootstrapCache,
@@ -67,6 +71,7 @@ export function createExtensionApiConfig(): ExtensionApiConfig {
     apiBaseUrl: getExtensionApiBaseUrl(),
     extensionId: chrome.runtime.id ?? null,
     extensionVersion: chrome.runtime.getManifest().version,
+    isDev,
   };
 }
 

@@ -19,6 +19,9 @@ import {
 } from "./core/bootstrap";
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
+import { syncProductionOriginHeaderRule } from "./core/productionOrigin";
+
+void syncProductionOriginHeaderRule().catch(() => undefined);
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)

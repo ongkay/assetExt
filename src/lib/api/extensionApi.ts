@@ -105,7 +105,7 @@ async function getExtensionApiHeaders(config: ExtensionApiConfig): Promise<Heade
     "x-extension-version": config.extensionVersion,
   });
 
-  if (isLocalDevelopmentApiBaseUrl(config.apiBaseUrl)) {
+  if (config.isDev) {
     headers.set("x-ext-dev-extension-id", localDevelopmentExtensionId);
     headers.set("x-ext-dev-origin", `chrome-extension://${localDevelopmentExtensionId}`);
 
@@ -120,18 +120,10 @@ async function getExtensionApiHeaders(config: ExtensionApiConfig): Promise<Heade
 
   if (config.extensionId) {
     headers.set("x-extension-id", config.extensionId);
+    headers.set("origin", `chrome-extension://${config.extensionId}`);
   }
 
   return headers;
-}
-
-function isLocalDevelopmentApiBaseUrl(apiBaseUrl: string): boolean {
-  try {
-    const { hostname } = new URL(apiBaseUrl);
-    return hostname === "localhost" || hostname === "127.0.0.1";
-  } catch {
-    return false;
-  }
 }
 
 async function readLocalDevelopmentAppSession(apiBaseUrl: string): Promise<string | null> {

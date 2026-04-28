@@ -1,9 +1,11 @@
 export const defaultExtensionApiBaseUrl = "http://localhost:3000";
+export const isDev = true;
 
 export type ExtensionApiConfig = {
   apiBaseUrl: string;
   extensionId: string | null;
   extensionVersion: string;
+  isDev: boolean;
 };
 
 export function getExtensionApiBaseUrl(): string {

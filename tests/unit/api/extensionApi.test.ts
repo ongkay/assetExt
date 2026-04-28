@@ -22,6 +22,7 @@ const extensionApiConfig: ExtensionApiConfig = {
   apiBaseUrl: "http://localhost:3000",
   extensionId: "allowed-id",
   extensionVersion: "2.0.0",
+  isDev: true,
 };
 
 describe("extension API client", () => {
@@ -73,15 +74,43 @@ describe("extension API client", () => {
     await fetchExtensionBootstrap({
       ...extensionApiConfig,
       apiBaseUrl: "https://app.assetnext.dev",
+      isDev: false,
     });
 
     const [, requestInit] = fetchMock.mock.calls[0];
     const requestHeaders = new Headers(requestInit?.headers);
 
     expect(requestHeaders.get("x-extension-id")).toBe("allowed-id");
+    expect(requestHeaders.get("origin")).toBe("chrome-extension://allowed-id");
     expect(requestHeaders.get("x-extension-version")).toBe("2.0.0");
     expect(requestHeaders.get("x-ext-dev-extension-id")).toBeNull();
     expect(requestHeaders.get("x-ext-dev-origin")).toBeNull();
+  });
+
+  it("uses production headers for local API hosts when isDev is false", async () => {
+    const fetchMock: FetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          auth: { status: "unauthenticated" },
+          version: { status: "supported" },
+        }),
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await fetchExtensionBootstrap({
+      ...extensionApiConfig,
+      isDev: false,
+    });
+
+    const [, requestInit] = fetchMock.mock.calls[0];
+    const requestHeaders = new Headers(requestInit?.headers);
+
+    expect(requestHeaders.get("x-extension-id")).toBe("allowed-id");
+    expect(requestHeaders.get("origin")).toBe("chrome-extension://allowed-id");
+    expect(requestHeaders.get("x-ext-dev-extension-id")).toBeNull();
+    expect(requestHeaders.get("x-ext-dev-origin")).toBeNull();
+    expect(requestHeaders.get("x-ext-dev-app-session")).toBeNull();
   });
 
   it("adds local dev app session header when Chrome cookie is available", async () => {
