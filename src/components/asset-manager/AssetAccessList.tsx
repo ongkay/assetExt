@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 import type { ExtensionAssetSummary } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
@@ -42,25 +43,46 @@ export function AssetAccessList({
         const hasAnyAccess = asset.hasPrivateAccess || asset.hasShareAccess;
 
         return (
-          <Card key={asset.platform} size="sm">
-            <CardHeader>
+          <Card
+            key={asset.platform}
+            size="sm"
+            className="group relative overflow-hidden border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardHeader className="relative z-10 pb-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <CardTitle>{platformConfig.label}</CardTitle>
-                  <CardDescription>{platformConfig.targetUrl}</CardDescription>
+                  <CardTitle className="text-base font-semibold">
+                    {platformConfig.label}
+                  </CardTitle>
+                  <CardDescription className="truncate text-xs">
+                    {platformConfig.targetUrl}
+                  </CardDescription>
                 </div>
-                <Badge variant={hasAnyAccess ? "secondary" : "outline"}>
+                <Badge
+                  variant={hasAnyAccess ? "default" : "secondary"}
+                  className={
+                    hasAnyAccess
+                      ? "shadow-[0_0_10px_rgba(var(--color-primary),0.2)] transition-transform duration-300 group-hover:scale-105"
+                      : ""
+                  }
+                >
                   {hasAnyAccess ? "Tersedia" : "Terkunci"}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3">
+            <CardContent className="relative z-10">
               <Button
+                className="w-full transition-transform active:scale-[0.98]"
                 disabled={!hasAnyAccess || Boolean(isAccessingPlatform)}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
               >
-                <ExternalLinkIcon data-icon="inline-start" />
+                {isAccessingPlatform === asset.platform ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <ExternalLinkIcon data-icon="inline-start" />
+                )}
                 Akses {platformConfig.label}
               </Button>
             </CardContent>

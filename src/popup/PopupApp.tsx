@@ -38,7 +38,7 @@ type PopupView = "main" | "profile";
 
 export function PopupApp() {
   const themeTarget = typeof document === "undefined" ? null : document.documentElement;
-  const { isReady: isThemeReady } = useThemePreference(themeTarget);
+  const { isReady: isThemeReady, theme, setTheme } = useThemePreference(themeTarget);
   const apiBaseUrl = getExtensionApiBaseUrl();
   const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
   const [popupView, setPopupView] = useState<PopupView>("main");
@@ -184,9 +184,13 @@ export function PopupApp() {
       <PopupShell isThemeReady={isThemeReady}>
         <ProfilePanel
           isLoggingOut={isLoggingOut}
+          theme={theme}
           user={snapshot.user}
           onBack={() => setPopupView("main")}
           onLogout={handleLogout}
+          onThemeChange={(newTheme) => {
+            void setTheme(newTheme);
+          }}
         />
       </PopupShell>
     );
@@ -242,14 +246,16 @@ export function PopupApp() {
           />
         ) : null}
 
-        <RenewalActions
-          apiBaseUrl={apiBaseUrl}
-          errorMessage={redeemErrorMessage ?? undefined}
-          isRedeeming={isRedeeming}
-          packages={packages}
-          redeem={snapshot.redeem}
-          onRedeemCdKey={handleRedeemCdKey}
-        />
+        {packages.length > 0 ? (
+          <RenewalActions
+            apiBaseUrl={apiBaseUrl}
+            errorMessage={redeemErrorMessage ?? undefined}
+            isRedeeming={isRedeeming}
+            packages={packages}
+            redeem={snapshot.redeem}
+            onRedeemCdKey={handleRedeemCdKey}
+          />
+        ) : null}
 
         {hasActiveSubscription ? (
           <AssetAccessList
@@ -259,7 +265,7 @@ export function PopupApp() {
           />
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 pt-2">
           <Button
             disabled={isSyncing}
             type="button"
@@ -269,14 +275,17 @@ export function PopupApp() {
             {isSyncing ? (
               <Spinner data-icon="inline-start" />
             ) : (
-              <RefreshCcwIcon data-icon="inline-start" />
+              <RefreshCcwIcon
+                className={isSyncing ? "animate-spin" : ""}
+                data-icon="inline-start"
+              />
             )}
             Refresh
           </Button>
           <Button
             disabled={isLoggingOut}
             type="button"
-            variant="outline"
+            variant="destructive"
             onClick={() => void handleLogout()}
           >
             {isLoggingOut ? (

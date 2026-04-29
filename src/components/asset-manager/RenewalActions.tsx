@@ -32,10 +32,9 @@ export function RenewalActions({
   return (
     <section className="flex flex-col gap-3" aria-label="Renewal actions">
       <ToggleGroup
-        className="w-full"
+        className="w-full rounded-xl bg-zinc-100 p-1 shadow-inner ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/5"
         spacing={1}
         value={[renewalActionMode]}
-        variant="outline"
         onValueChange={(nextRenewalActionModes) => {
           const nextRenewalActionMode = nextRenewalActionModes[0];
 
@@ -44,11 +43,18 @@ export function RenewalActions({
           }
         }}
       >
-        <ToggleGroupItem className="flex-1" value="packages">
+        <ToggleGroupItem
+          className="flex-1 rounded-lg text-zinc-500 transition-all hover:text-zinc-700 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-black/5 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-pressed:bg-zinc-800 dark:aria-pressed:text-zinc-50 dark:aria-pressed:ring-white/10"
+          value="packages"
+        >
           <PackageIcon data-icon="inline-start" />
           Paket
         </ToggleGroupItem>
-        <ToggleGroupItem className="flex-1" disabled={!isRedeemEnabled} value="redeem">
+        <ToggleGroupItem
+          className="flex-1 rounded-lg text-zinc-500 transition-all hover:text-zinc-700 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-black/5 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-pressed:bg-zinc-800 dark:aria-pressed:text-zinc-50 dark:aria-pressed:ring-white/10"
+          disabled={!isRedeemEnabled}
+          value="redeem"
+        >
           <KeyRoundIcon data-icon="inline-start" />
           CD Key
         </ToggleGroupItem>

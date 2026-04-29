@@ -22,19 +22,24 @@ export function ExtensionHeader({
   version,
 }: ExtensionHeaderProps) {
   return (
-    <header className="flex items-start justify-between gap-3">
+    <header className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary ring-1 ring-primary/15">
-          <Logo className="size-5 shrink-0" />
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(var(--color-primary),0.1)]">
+          <Logo className="size-6 shrink-0" />
         </div>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-heading truncate text-base leading-tight font-semibold tracking-tight">
+        <div className="min-w-0 flex flex-col justify-center">
+          <div className="flex items-center gap-2">
+            <h1 className="font-heading truncate text-lg font-semibold tracking-tight text-foreground">
               {title}
             </h1>
-            <Badge variant="outline">v{version}</Badge>
+            <Badge
+              variant="secondary"
+              className="px-1.5 py-0 text-[10px] font-mono opacity-80"
+            >
+              v{version}
+            </Badge>
           </div>
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
         </div>
       </div>
       {user && onOpenProfile ? (
