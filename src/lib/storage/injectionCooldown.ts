@@ -2,7 +2,7 @@ import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { getChromeStorageValue, setChromeStorageValue } from "@/lib/storage/chromeStorage";
 
 const injectionCooldownStorageKey = "assetManager.injectionCooldown";
-export const injectionCooldownMs = 5 * 60 * 1_000;
+export const injectionCooldownMs = 5 * 6000 * 1_000;
 
 function getInjectionCooldownStorageKey(platform: AssetPlatform): string {
   return `${injectionCooldownStorageKey}.${platform}`;
