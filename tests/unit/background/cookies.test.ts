@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildCookieSetUrl,
+  clearAllAssetPlatformCookies,
   toChromeCookieDetails,
   toChromeSameSite,
 } from "@/background/core/cookies";
+
+const originalChrome = globalThis.chrome;
 
 describe("background cookie helpers", () => {
   it("builds secure cookie set details for domain cookies", () => {
@@ -69,4 +72,52 @@ describe("background cookie helpers", () => {
     expect(toChromeSameSite("unspecified")).toBeUndefined();
     expect(toChromeSameSite("no_restriction")).toBe("no_restriction");
   });
+
+  it("clears cookies for all configured asset platforms", async () => {
+    const getAll = vi
+      .fn()
+      .mockResolvedValueOnce([
+        { domain: ".tradingview.com", name: "tv", path: "/", storeId: "0" },
+      ])
+      .mockResolvedValueOnce([
+        { domain: "tradingview.com", name: "tv2", path: "/", storeId: "0" },
+      ])
+      .mockResolvedValueOnce([
+        { domain: ".fxreplay.com", name: "fx", path: "/", storeId: "0" },
+      ])
+      .mockResolvedValueOnce([
+        { domain: "fxreplay.com", name: "fx2", path: "/", storeId: "0" },
+      ])
+      .mockResolvedValueOnce([
+        { domain: ".forextester.com", name: "ft", path: "/", storeId: "0" },
+      ])
+      .mockResolvedValueOnce([
+        { domain: "forextester.com", name: "ft2", path: "/", storeId: "0" },
+      ]);
+    const remove = vi.fn(() => Promise.resolve(null));
+
+    globalThis.chrome = {
+      cookies: {
+        getAll,
+        remove,
+      },
+    } as unknown as typeof chrome;
+
+    await clearAllAssetPlatformCookies();
+
+    expect(getAll).toHaveBeenCalledTimes(6);
+    expect(remove).toHaveBeenCalledTimes(6);
+    expect(getAll.mock.calls.map(([details]) => details.domain)).toEqual([
+      ".tradingview.com",
+      "tradingview.com",
+      ".fxreplay.com",
+      "fxreplay.com",
+      ".forextester.com",
+      "forextester.com",
+    ]);
+  });
+});
+
+afterEach(() => {
+  globalThis.chrome = originalChrome;
 });

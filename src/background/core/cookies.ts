@@ -1,5 +1,8 @@
-import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
+import {
+  assetPlatforms,
+  getAssetPlatformConfig,
+  type AssetPlatform,
+} from "@/lib/asset-access/platforms";
 import type {
   ExtensionCookiePayload,
   ExtensionCookieSameSite,
@@ -20,6 +23,12 @@ export async function clearAssetPlatformCookies(platform: AssetPlatform): Promis
         }),
       ),
     );
+  }
+}
+
+export async function clearAllAssetPlatformCookies(): Promise<void> {
+  for (const platform of assetPlatforms) {
+    await clearAssetPlatformCookies(platform);
   }
 }
 

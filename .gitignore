@@ -32,3 +32,4 @@ playwright-report/
 .worktrees
 #.docs
 .playwright-mcp
+zzz.html

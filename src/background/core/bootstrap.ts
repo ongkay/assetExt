@@ -15,6 +15,8 @@ import {
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
 
+import { clearAllAssetPlatformCookies } from "./cookies";
+
 let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
 let bootstrapWriteRevision = 0;
 let latestExplicitBootstrapCache: BootstrapCacheRecord | null = null;
@@ -53,7 +55,8 @@ export async function replaceBootstrapCacheFromSnapshot(
 }
 
 export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse> {
-  const logoutResult = await postExtensionLogout(createExtensionApiConfig());
+  const extensionApiConfig = createExtensionApiConfig();
+  const logoutResult = await postExtensionLogout(extensionApiConfig);
 
   if (!logoutResult.ok) {
     throw new Error(logoutResult.error.message);
@@ -62,8 +65,15 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
   latestExplicitBootstrapCache = null;
   bootstrapWriteRevision += 1;
   await clearBootstrapCache();
+  await clearAllAssetPlatformCookies();
 
-  return logoutResult.value;
+  return {
+    ...logoutResult.value,
+    redirectTo: new URL(
+      logoutResult.value.redirectTo,
+      extensionApiConfig.apiBaseUrl,
+    ).toString(),
+  };
 }
 
 export function createExtensionApiConfig(): ExtensionApiConfig {

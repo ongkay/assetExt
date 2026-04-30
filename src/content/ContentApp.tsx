@@ -14,6 +14,7 @@ import {
 import { useThemePreference } from "@/lib/useThemePreference";
 
 import { markRecentAutoAccessReload } from "./autoAccessReloadGuard";
+import { installTradingViewAvatarOverride } from "./dom/installTradingViewAvatarOverride";
 import { prepareManualAutoAccessPageLoad } from "./pageLoadControl";
 import { AccessOverlay } from "./ui/AccessOverlay";
 
@@ -33,6 +34,14 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
   const [message, setMessage] = useState("");
   const [state, setState] = useState<AccessOverlayState>("idle");
   const platform = detectAssetPlatformFromHostname(window.location.hostname);
+
+  useEffect(() => {
+    if (platform !== "tradingview") {
+      return;
+    }
+
+    return installTradingViewAvatarOverride();
+  }, [platform]);
 
   useEffect(() => {
     if (!platform) {
