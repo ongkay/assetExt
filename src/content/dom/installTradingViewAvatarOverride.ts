@@ -5,9 +5,11 @@ import { runtimeMessageType } from "@/lib/runtime/messages";
 const mainMenuButtonSelector = 'button[data-qa-id="main-menu-button"]';
 const mainAvatarImageSelector = `${mainMenuButtonSelector} img`;
 const mainAvatarBadgeSelector = `${mainMenuButtonSelector} + span`;
-const popupMenuSelector = '[data-qa-id="popup-menu-container"][role="treegrid"]';
-const profileMenuItemSelector =
+const desktopPopupMenuSelector = '[data-qa-id="popup-menu-container"][role="treegrid"]';
+const mobilePopupMenuSelector = '[data-qa-id="overlap-manager-root"] .container-U2jIw4km';
+const desktopProfileMenuItemSelector =
   '[data-qa-id="main-menu-user-menu-item"][data-role="menuitem"]';
+const profileMenuImageSelector = "img.profileItem-U2jIw4km";
 const homeMenuItemSelector = 'a[aria-label="Home"][data-role="menuitem"]';
 const logoutMenuItemSelector = '[data-qa-id="main-menu-sign-out-item"][data-role="menuitem"]';
 
@@ -25,13 +27,16 @@ const relevantTradingViewSelectors = [
   mainMenuButtonSelector,
   mainAvatarImageSelector,
   mainAvatarBadgeSelector,
-  popupMenuSelector,
-  profileMenuItemSelector,
+  desktopPopupMenuSelector,
+  mobilePopupMenuSelector,
+  desktopProfileMenuItemSelector,
+  profileMenuImageSelector,
   homeMenuItemSelector,
   logoutMenuItemSelector,
 ].join(", ");
 
 type TradingViewMenuMode = "default" | "restricted";
+type TradingViewMenuVariant = "desktop" | "mobile";
 
 type TradingViewOverrideState = {
   avatarAlt: string | null;
@@ -46,6 +51,7 @@ export function installTradingViewAvatarOverride(): () => void {
     return () => undefined;
   }
 
+  const usesMobileLayout = isTradingViewMobileLayout();
   let overrideState: TradingViewOverrideState | null = null;
   let logoutStatus: TradingViewLogoutStatus = "idle";
   let isWaitingForFirstMenuOpen = false;
@@ -57,7 +63,7 @@ export function installTradingViewAvatarOverride(): () => void {
     runWithoutObserver(() => {
       syncMainAvatar(overrideState);
       removeMainAvatarBadge();
-      syncPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
+      syncOpenPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
     });
   };
 
@@ -83,13 +89,21 @@ export function installTradingViewAvatarOverride(): () => void {
   };
 
   const handleMutations: MutationCallback = (mutations) => {
+    const openMenu = findOpenTradingViewMenu();
+
+    if (openMenu && !overrideState) {
+      hideMenuUntilStateIsReady(openMenu.root);
+      void ensureOverrideStateLoaded().catch(() => undefined);
+      return;
+    }
+
     if (mutations.some(isRelevantTradingViewMutation)) {
       syncTradingViewPage();
     }
   };
 
   const handleMainMenuButtonClick = (event: Event) => {
-    if (overrideState) {
+    if (usesMobileLayout || overrideState) {
       return;
     }
 
@@ -199,6 +213,10 @@ function isTradingViewPage() {
   return detectAssetPlatformFromHostname(window.location.hostname) === "tradingview";
 }
 
+function isTradingViewMobileLayout() {
+  return document.documentElement.classList.contains("feature-mobiletouch");
+}
+
 function syncMainAvatar(overrideState: TradingViewOverrideState | null) {
   const avatarImage = document.querySelector(mainAvatarImageSelector);
 
@@ -223,35 +241,37 @@ function removeMainAvatarBadge() {
   }
 }
 
-function syncPopupMenu(options: {
+function syncOpenPopupMenu(options: {
   overrideState: TradingViewOverrideState | null;
   logoutStatus: TradingViewLogoutStatus;
   onLogoutClick: (event: Event) => void;
 }) {
-  const popupMenu = document.querySelector(popupMenuSelector);
+  const openMenu = findOpenTradingViewMenu();
 
-  if (!(popupMenu instanceof HTMLElement)) {
+  if (!openMenu) {
     return;
   }
 
   patchLogoutMenuItem(
-    popupMenu.querySelector(logoutMenuItemSelector) as HTMLElement | null,
+    openMenu.root.querySelector(logoutMenuItemSelector) as HTMLElement | null,
     options.logoutStatus,
     options.onLogoutClick,
   );
+
+  showReadyMenu(openMenu.root);
 
   if (options.overrideState?.menuMode !== "restricted") {
     return;
   }
 
-  removeRestrictedPopupMenuItems(popupMenu);
+  removeRestrictedPopupMenuItems(openMenu.root);
   patchRestrictedHomeMenuItem(
-    popupMenu.querySelector(homeMenuItemSelector) as HTMLAnchorElement | null,
+    openMenu.root.querySelector(homeMenuItemSelector) as HTMLAnchorElement | null,
   );
 }
 
 function removeRestrictedPopupMenuItems(popupMenu: HTMLElement) {
-  removeMenuItem(popupMenu.querySelector(profileMenuItemSelector) as HTMLElement | null);
+  removeMenuItem(findProfileMenuItem(popupMenu));
 
   for (const ariaLabel of restrictedMenuLabels) {
     removeMenuItem(findMenuItemByAriaLabel(popupMenu, ariaLabel));
@@ -307,6 +327,39 @@ function removeMenuItem(menuItem: HTMLElement | null) {
   }
 }
 
+function findOpenTradingViewMenu(): {
+  root: HTMLElement;
+  variant: TradingViewMenuVariant;
+} | null {
+  const desktopMenu = document.querySelector(desktopPopupMenuSelector);
+
+  if (desktopMenu instanceof HTMLElement) {
+    return { root: desktopMenu, variant: "desktop" };
+  }
+
+  const mobileMenu = document.querySelector(mobilePopupMenuSelector);
+
+  if (mobileMenu instanceof HTMLElement) {
+    return { root: mobileMenu, variant: "mobile" };
+  }
+
+  return null;
+}
+
+function findProfileMenuItem(popupMenu: HTMLElement) {
+  const desktopProfileMenuItem = popupMenu.querySelector(desktopProfileMenuItemSelector);
+
+  if (desktopProfileMenuItem instanceof HTMLElement) {
+    return desktopProfileMenuItem;
+  }
+
+  return (
+    getPopupMenuItems(popupMenu).find((menuItem) =>
+      Boolean(menuItem.querySelector(profileMenuImageSelector)),
+    ) ?? null
+  );
+}
+
 function findMenuItemByAriaLabel(popupMenu: HTMLElement, ariaLabel: string) {
   return (
     getPopupMenuItems(popupMenu).find(
@@ -327,6 +380,16 @@ function getPopupMenuItems(popupMenu: HTMLElement) {
   return [...popupMenu.querySelectorAll('[data-role="menuitem"]')].filter(
     (menuItem): menuItem is HTMLElement => menuItem instanceof HTMLElement,
   );
+}
+
+function hideMenuUntilStateIsReady(popupMenu: HTMLElement) {
+  popupMenu.style.visibility = "hidden";
+  popupMenu.style.pointerEvents = "none";
+}
+
+function showReadyMenu(popupMenu: HTMLElement) {
+  popupMenu.style.visibility = "";
+  popupMenu.style.pointerEvents = "";
 }
 
 function getMenuItemContainer(menuItem: HTMLElement) {

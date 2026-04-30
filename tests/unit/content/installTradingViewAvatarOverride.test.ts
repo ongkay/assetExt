@@ -14,6 +14,7 @@ const mainAvatarImageSelector = `${mainMenuButtonSelector} img`;
 const logoutMenuItemSelector = '[data-qa-id="main-menu-sign-out-item"][data-role="menuitem"]';
 
 const originalChrome = globalThis.chrome;
+const originalDocumentClassName = document.documentElement.className;
 
 type Deferred<TValue> = {
   promise: Promise<TValue>;
@@ -24,7 +25,7 @@ type Deferred<TValue> = {
 describe("TradingView avatar override", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    vi.spyOn(assetPlatforms, "detectAssetPlatformFromHostname").mockReturnValue("tradingview");
+    mockDetectedPlatform("tradingview");
   });
 
   afterEach(() => {
@@ -32,6 +33,7 @@ describe("TradingView avatar override", () => {
     vi.restoreAllMocks();
     globalThis.chrome = originalChrome;
     document.body.innerHTML = "";
+    document.documentElement.className = originalDocumentClassName;
   });
 
   it("applies restricted menu rules when private access is unavailable", async () => {
@@ -72,7 +74,7 @@ describe("TradingView avatar override", () => {
         hasPrivateAccess: false,
       }),
     );
-    vi.spyOn(assetPlatforms, "detectAssetPlatformFromHostname").mockReturnValue("fxreplay");
+    mockDetectedPlatform("fxreplay");
     renderTradingViewPage();
 
     const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
@@ -87,7 +89,7 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
-  it("delays the first avatar click until TradingView state is ready", async () => {
+  it("delays the first desktop avatar click until TradingView state is ready", async () => {
     const pendingBootstrapCache = createDeferred<BootstrapCacheRecord | null>();
 
     installChromeExtensionMocks(
@@ -113,6 +115,28 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-delayed.png");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("does not block the first mobile avatar click while state is still loading", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile.png",
+        hasPrivateAccess: false,
+      }),
+      {
+        pendingBootstrapCache: createDeferred<BootstrapCacheRecord | null>(),
+      },
+    );
+    document.body.innerHTML = createTradingViewHeaderMarkup();
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const avatarClick = new MouseEvent("click", { bubbles: true, cancelable: true });
+
+    expect(getMainMenuButton().dispatchEvent(avatarClick)).toBe(true);
 
     disposeTradingViewAvatarOverride();
   });
@@ -150,6 +174,66 @@ describe("TradingView avatar override", () => {
     expect(getHomeMenuItem().target).toBe("_blank");
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
     expect(getLogoutMenuItem().textContent).toContain("Logout");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("applies restricted menu rules to the mobile TradingView menu", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-restricted.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileTradingViewMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeNull();
+    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeNull();
+    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeNull();
+    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeNull();
+    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeNull();
+    expect(getMenuItemByTextPrefix("Language")).toBeNull();
+    expect(getHomeMenuItem().href).toBe("https://google.com/");
+    expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps non-logout rows visible in the mobile TradingView menu when private access is available", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-private.png",
+        hasPrivateAccess: true,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileTradingViewMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(getMenuItemByTextPrefix("Language")).toBeInstanceOf(HTMLElement);
+    expect(getHomeMenuItem().getAttribute("href")).toBe("/");
+    expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
 
     disposeTradingViewAvatarOverride();
   });
@@ -356,6 +440,28 @@ function createTradingViewMenuMarkup() {
   `;
 }
 
+function createMobileTradingViewMenuMarkup() {
+  return `
+    <div data-qa-id="overlap-manager-root">
+      <div class="container-U2jIw4km">
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Watchlist" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Watchlist</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Alerts" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Alerts</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" data-role="menuitem" class="button-HZXWyU6m"><img class="userPic-U2jIw4km profileItem-U2jIw4km" src="https://s3.tradingview.com/userpics/67477063-Wsks_mid.png" /><span class="userName-U2jIw4km userNameMobile-U2jIw4km">ongkaytrade</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><a role="row" aria-label="Home" data-role="menuitem" href="/" target="_blank" class="button-HZXWyU6m"><span role="gridcell">Home</span></a></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Help Center" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Help Center</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Support requests" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Support requests</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="What's new" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">What's new</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Dark theme" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Dark theme</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Drawings panel" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Drawings panel</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" data-role="menuitem" class="button-HZXWyU6m">Language<span>English</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Keyboard shortcuts" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Keyboard shortcuts</span></div></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><a role="row" aria-label="Get desktop app" data-role="menuitem" href="/desktop/" target="_blank" class="button-HZXWyU6m"><span role="gridcell">Get desktop app</span></a></div>
+        <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Sign out" data-qa-id="main-menu-sign-out-item" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Sign out</span></div></div>
+      </div>
+    </div>
+  `;
+}
+
 function installChromeExtensionMocks(
   initialBootstrapCache: BootstrapCacheRecord,
   options?: {
@@ -468,4 +574,10 @@ function createDeferred<TValue>(): Deferred<TValue> {
 
 function normalizeText(textContent: string | null | undefined) {
   return textContent?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function mockDetectedPlatform(
+  platform: ReturnType<typeof assetPlatforms.detectAssetPlatformFromHostname>,
+) {
+  vi.spyOn(assetPlatforms, "detectAssetPlatformFromHostname").mockReturnValue(platform);
 }
