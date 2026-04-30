@@ -12,6 +12,25 @@ import {
 const mainMenuButtonSelector = 'button[data-qa-id="main-menu-button"]';
 const mainAvatarImageSelector = `${mainMenuButtonSelector} img`;
 const logoutMenuItemSelector = '[data-qa-id="main-menu-sign-out-item"][data-role="menuitem"]';
+const desktopPublishSelector = "#header-toolbar-publish-desktop";
+const mobilePublishWrapperSelector = ".mobilePublish-OhqNVIYA";
+const desktopTradeSelector = "#header-toolbar-trade-desktop";
+const quickSearchSelector = "#header-toolbar-quick-search";
+const createAlertSelector = "#header-toolbar-alerts";
+const favoriteIndicatorsSelector =
+  '#header-toolbar-indicators button[data-name="show-favorite-indicators"]';
+const sidebarWatchlistSelector = 'button[aria-label="Watchlist, details, and news"]';
+const sidebarAlertsSelector = 'button[data-name="alerts"]';
+const sidebarChatsSelector = 'button[data-name="union_chats"]';
+const sidebarProductsSelector = 'button[data-qa-id="products-button"]';
+const sidebarHelpSelector = 'button[data-name="help-button"]';
+const helpCenterMenuItemSelector = '[aria-label="Help Center"][data-role="menuitem"]';
+const supportRequestsMenuItemSelector =
+  '[aria-label="Support requests"][data-role="menuitem"]';
+const whatsNewMenuItemSelector = '[aria-label="What\'s new"][data-role="menuitem"]';
+const keyboardShortcutsMenuItemSelector =
+  '[aria-label="Keyboard shortcuts"][data-role="menuitem"]';
+const getDesktopAppMenuItemSelector = '[aria-label="Get desktop app"][data-role="menuitem"]';
 
 const originalChrome = globalThis.chrome;
 const originalDocumentClassName = document.documentElement.className;
@@ -51,12 +70,29 @@ describe("TradingView avatar override", () => {
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-a.png");
     expect(document.querySelector(".menuNotifications-U2jIw4km")).toBeNull();
+    expect(getMenuItemBySelector(desktopPublishSelector)).toBeNull();
+    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeNull();
+    expect(getMenuItemBySelector(desktopTradeSelector)).toBeNull();
+    expect(getMenuItemBySelector(quickSearchSelector)).toBeNull();
+    expect(getMenuItemBySelector(createAlertSelector)).toBeNull();
+    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeNull();
+    expect(getMenuItemBySelector(sidebarWatchlistSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarAlertsSelector)).toBeNull();
+    expect(getMenuItemBySelector(sidebarChatsSelector)).toBeNull();
+    expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(true);
+    expect(getButtonBySelector(sidebarProductsSelector).getAttribute("aria-disabled")).toBe(
+      "true",
+    );
+    expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(true);
+    expect(getButtonBySelector(sidebarHelpSelector).getAttribute("aria-disabled")).toBe(
+      "true",
+    );
     expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeNull();
+    expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeNull();
     expect(getMenuItemByTextPrefix("Language")).toBeNull();
     expect(getHomeMenuItem().href).toBe("https://google.com/");
     expect(getHomeMenuItem().target).toBe("_blank");
@@ -83,6 +119,17 @@ describe("TradingView avatar override", () => {
 
     expect(getMainAvatarImage().src).toBe("https://old.example.com/avatar.png");
     expect(document.querySelector(".menuNotifications-U2jIw4km")).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(desktopPublishSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarAlertsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(desktopTradeSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(quickSearchSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(createAlertSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarWatchlistSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarChatsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(false);
+    expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(false);
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Sign out");
     expect(getLogoutMenuItem().textContent).toContain("Sign out");
 
@@ -154,20 +201,27 @@ describe("TradingView avatar override", () => {
 
     await flushAsyncWork();
 
+    expect(getMenuItemBySelector(desktopPublishSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarAlertsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(desktopTradeSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(quickSearchSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(createAlertSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarWatchlistSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(sidebarChatsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(false);
+    expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(false);
     expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeInstanceOf(
       HTMLElement,
     );
-    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeInstanceOf(
+    expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(
       HTMLElement,
     );
-    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeInstanceOf(
-      HTMLElement,
-    );
-    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeInstanceOf(
-      HTMLElement,
-    );
+    expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemByTextPrefix("Language")).toBeInstanceOf(HTMLElement);
     expect(getHomeMenuItem().getAttribute("href")).toBe("/");
     expect(getHomeMenuItem().href).not.toBe("https://google.com/");
@@ -193,11 +247,16 @@ describe("TradingView avatar override", () => {
 
     await flushAsyncWork();
 
-    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeNull();
+    expect(getMenuItemBySelector(desktopPublishSelector)).toBeNull();
+    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeNull();
+    expect(getMenuItemBySelector(quickSearchSelector)).toBeNull();
+    expect(getMenuItemBySelector(createAlertSelector)).toBeNull();
+    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeNull();
+    expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeNull();
+    expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeNull();
     expect(getMenuItemByTextPrefix("Language")).toBeNull();
     expect(getHomeMenuItem().href).toBe("https://google.com/");
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
@@ -220,17 +279,20 @@ describe("TradingView avatar override", () => {
 
     await flushAsyncWork();
 
-    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector('[aria-label="Support requests"]')).toBeInstanceOf(
+    expect(getMenuItemBySelector(desktopPublishSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(quickSearchSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(createAlertSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeInstanceOf(HTMLElement);
+    expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(false);
+    expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(false);
+    expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeInstanceOf(HTMLElement);
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(
       HTMLElement,
     );
-    expect(getMenuItemBySelector('[aria-label="What\'s new"]')).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector('[aria-label="Keyboard shortcuts"]')).toBeInstanceOf(
-      HTMLElement,
-    );
-    expect(getMenuItemBySelector('[aria-label="Get desktop app"]')).toBeInstanceOf(
-      HTMLElement,
-    );
+    expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemByTextPrefix("Language")).toBeInstanceOf(HTMLElement);
     expect(getHomeMenuItem().getAttribute("href")).toBe("/");
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
@@ -282,7 +344,7 @@ describe("TradingView avatar override", () => {
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-b.png");
     expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeNull();
-    expect(getMenuItemBySelector('[aria-label="Help Center"]')).toBeNull();
+    expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
     expect(getMenuItemByTextPrefix("Language")).toBeNull();
     expect(getHomeMenuItem().href).toBe("https://google.com/");
 
@@ -360,6 +422,14 @@ function getLogoutMenuItem() {
   return logoutMenuItem as HTMLElement;
 }
 
+function getButtonBySelector(selector: string) {
+  const button = document.querySelector(selector);
+
+  expect(button).toBeInstanceOf(HTMLButtonElement);
+
+  return button as HTMLButtonElement;
+}
+
 function getMenuItemBySelector(selector: string) {
   return document.querySelector(selector);
 }
@@ -413,6 +483,39 @@ function createTradingViewHeaderMarkup(avatarUrl = "https://old.example.com/avat
           <span class="menuNotifications-U2jIw4km notifications-U2jIw4km">11</span>
         </div>
       </div>
+    </div>
+    <div class="group-MBOVGQRI">
+      <button
+        id="header-toolbar-quick-search"
+        aria-label="Quick search"
+        data-name="header-toolbar-quick-search"
+        type="button"
+      ></button>
+      <button id="header-toolbar-alerts" aria-label="Create alert" type="button">Alert</button>
+    </div>
+    <div id="header-toolbar-indicators" class="wrap-n5bmFxyX">
+      <button type="button" aria-label="Indicators, metrics, and strategies">Indicators</button>
+      <button type="button" data-name="show-favorite-indicators" aria-label="Favorite indicators"></button>
+    </div>
+    <div class="inner-OhqNVIYA">
+      <div id="header-toolbar-trade-desktop" class="desktopTrade-OhqNVIYA container-AoI2iZaK">
+        <button type="button" title="Trade with your broker">Trade</button>
+      </div>
+      <div id="header-toolbar-publish-desktop" class="desktopPublish-OhqNVIYA container-yRWAMXSg">
+        <button type="button" aria-label="Share your idea with the trade community">Publish</button>
+      </div>
+    </div>
+    <div class="mobilePublish-OhqNVIYA group-MBOVGQRI noRightDecoration-MBOVGQRI">
+      <div id="header-toolbar-publish-mobile" class="container-yRWAMXSg">
+      <button type="button" aria-label="Alerts" data-name="alerts"></button>
+        <button type="button" aria-label="Share your idea with the trade community">Publish</button>
+      </div>
+    </div>
+    <div class="toolbar-S4V6IoxY" data-name="right-toolbar">
+      <button type="button" aria-label="Watchlist, details, and news" data-name="base"></button>
+      <button type="button" aria-label="Chats" data-name="union_chats"></button>
+      <button type="button" aria-label="Products" data-qa-id="products-button"></button>
+      <button type="button" aria-label="Help Center" data-name="help-button"></button>
     </div>
   `;
 }
@@ -579,5 +682,10 @@ function normalizeText(textContent: string | null | undefined) {
 function mockDetectedPlatform(
   platform: ReturnType<typeof assetPlatforms.detectAssetPlatformFromHostname>,
 ) {
+  if (vi.isMockFunction(assetPlatforms.detectAssetPlatformFromHostname)) {
+    vi.mocked(assetPlatforms.detectAssetPlatformFromHostname).mockReturnValue(platform);
+    return;
+  }
+
   vi.spyOn(assetPlatforms, "detectAssetPlatformFromHostname").mockReturnValue(platform);
 }

@@ -12,6 +12,18 @@ const desktopProfileMenuItemSelector =
 const profileMenuImageSelector = "img.profileItem-U2jIw4km";
 const homeMenuItemSelector = 'a[aria-label="Home"][data-role="menuitem"]';
 const logoutMenuItemSelector = '[data-qa-id="main-menu-sign-out-item"][data-role="menuitem"]';
+const desktopPublishSelector = "#header-toolbar-publish-desktop";
+const mobilePublishSelector = "#header-toolbar-publish-mobile";
+const mobilePublishWrapperSelector = ".mobilePublish-OhqNVIYA";
+const desktopTradeSelector = "#header-toolbar-trade-desktop";
+const quickSearchSelector = "#header-toolbar-quick-search";
+const createAlertSelector = "#header-toolbar-alerts";
+const favoriteIndicatorsSelector =
+  '#header-toolbar-indicators button[data-name="show-favorite-indicators"]';
+const sidebarAlertsSelector = 'button[data-name="alerts"]';
+const sidebarChatsSelector = 'button[data-name="union_chats"]';
+const sidebarProductsSelector = 'button[data-qa-id="products-button"]';
+const sidebarHelpSelector = 'button[data-name="help-button"]';
 
 const restrictedMenuLabels = [
   "Help Center",
@@ -33,6 +45,17 @@ const relevantTradingViewSelectors = [
   profileMenuImageSelector,
   homeMenuItemSelector,
   logoutMenuItemSelector,
+  desktopPublishSelector,
+  mobilePublishSelector,
+  mobilePublishWrapperSelector,
+  desktopTradeSelector,
+  quickSearchSelector,
+  createAlertSelector,
+  favoriteIndicatorsSelector,
+  sidebarAlertsSelector,
+  sidebarChatsSelector,
+  sidebarProductsSelector,
+  sidebarHelpSelector,
 ].join(", ");
 
 type TradingViewMenuMode = "default" | "restricted";
@@ -63,6 +86,7 @@ export function installTradingViewAvatarOverride(): () => void {
     runWithoutObserver(() => {
       syncMainAvatar(overrideState);
       removeMainAvatarBadge();
+      syncRestrictedTradingViewActions(overrideState);
       syncOpenPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
     });
   };
@@ -233,12 +257,53 @@ function syncMainAvatar(overrideState: TradingViewOverrideState | null) {
   }
 }
 
+function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideState | null) {
+  if (!overrideState || overrideState.menuMode !== "restricted") {
+    return;
+  }
+
+  removeRestrictedHeaderActions();
+  removeRestrictedRightSidebarActions();
+  disableRestrictedRightSidebarActions();
+}
+
+function removeRestrictedHeaderActions() {
+  removeElement(document.querySelector(desktopPublishSelector));
+  removeElement(findMobilePublishWrapper());
+  removeElement(document.querySelector(desktopTradeSelector));
+  removeElement(document.querySelector(quickSearchSelector));
+  removeElement(document.querySelector(createAlertSelector));
+  removeElement(document.querySelector(favoriteIndicatorsSelector));
+}
+
+function removeRestrictedRightSidebarActions() {
+  removeElement(document.querySelector(sidebarAlertsSelector));
+  removeElement(document.querySelector(sidebarChatsSelector));
+}
+
+function disableRestrictedRightSidebarActions() {
+  disableButton(document.querySelector(sidebarProductsSelector));
+  disableButton(document.querySelector(sidebarHelpSelector));
+}
+
 function removeMainAvatarBadge() {
   const avatarBadge = document.querySelector(mainAvatarBadgeSelector);
 
   if (avatarBadge instanceof HTMLElement) {
     avatarBadge.remove();
   }
+}
+
+function findMobilePublishWrapper() {
+  const mobilePublish = document.querySelector(mobilePublishSelector);
+
+  if (mobilePublish instanceof HTMLElement) {
+    return mobilePublish.closest(mobilePublishWrapperSelector) ?? mobilePublish;
+  }
+
+  const mobilePublishWrapper = document.querySelector(mobilePublishWrapperSelector);
+
+  return mobilePublishWrapper instanceof HTMLElement ? mobilePublishWrapper : null;
 }
 
 function syncOpenPopupMenu(options: {
@@ -325,6 +390,23 @@ function removeMenuItem(menuItem: HTMLElement | null) {
   if (menuItemContainer instanceof HTMLElement) {
     menuItemContainer.remove();
   }
+}
+
+function removeElement(element: Element | null) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  element.remove();
+}
+
+function disableButton(button: Element | null) {
+  if (!(button instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  button.disabled = true;
+  button.setAttribute("aria-disabled", "true");
 }
 
 function findOpenTradingViewMenu(): {
