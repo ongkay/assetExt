@@ -19,6 +19,9 @@ const quickSearchSelector = "#header-toolbar-quick-search";
 const createAlertSelector = "#header-toolbar-alerts";
 const favoriteIndicatorsSelector =
   '#header-toolbar-indicators button[data-name="show-favorite-indicators"]';
+const presetMenuFavoriteButtonSelector = 'button[data-qa-id="preset-menu-favorite-button"]';
+const presetMenuFavoriteIconSelector =
+  'span.favorite-_FRQhM5Y[aria-label="Add to favorites"], span.favorite-_FRQhM5Y[aria-label="Remove from favorites"]';
 const sidebarWatchlistSelector = 'button[aria-label="Watchlist, details, and news"]';
 const sidebarAlertsSelector = 'button[data-name="alerts"]';
 const sidebarChatsSelector = 'button[data-name="union_chats"]';
@@ -415,6 +418,83 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("disables favorite buttons and removes their tooltip in restricted mode", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-favorite-restricted.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createFavoriteButtonsMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getFavoriteButtons()).toHaveLength(2);
+    expect(getFavoriteIcons()).toHaveLength(2);
+
+    for (const favoriteButton of getFavoriteButtons()) {
+      expect(favoriteButton.disabled).toBe(true);
+      expect(favoriteButton.getAttribute("aria-disabled")).toBe("true");
+      expect(favoriteButton.getAttribute("title")).toBeNull();
+      expect(favoriteButton.getAttribute("data-tooltip")).toBeNull();
+      expect(favoriteButton.classList.contains("apply-common-tooltip")).toBe(false);
+    }
+
+    for (const favoriteIcon of getFavoriteIcons()) {
+      expect(favoriteIcon.getAttribute("aria-disabled")).toBe("true");
+      expect(favoriteIcon.getAttribute("title")).toBeNull();
+      expect(favoriteIcon.getAttribute("data-tooltip")).toBeNull();
+      expect(favoriteIcon.classList.contains("apply-common-tooltip")).toBe(false);
+      expect(
+        favoriteIcon.dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true }),
+        ),
+      ).toBe(false);
+    }
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps favorite buttons interactive when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-favorite-private.png",
+        hasPrivateAccess: true,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createFavoriteButtonsMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getFavoriteButtons()).toHaveLength(2);
+    expect(getFavoriteIcons()).toHaveLength(2);
+
+    for (const favoriteButton of getFavoriteButtons()) {
+      expect(favoriteButton.disabled).toBe(false);
+      expect(favoriteButton.getAttribute("aria-disabled")).toBeNull();
+      expect(favoriteButton.getAttribute("title")).toMatch(/favorites/i);
+      expect(favoriteButton.getAttribute("data-tooltip")).toMatch(/favorites/i);
+      expect(favoriteButton.classList.contains("apply-common-tooltip")).toBe(true);
+    }
+
+    for (const favoriteIcon of getFavoriteIcons()) {
+      expect(favoriteIcon.getAttribute("aria-disabled")).toBeNull();
+      expect(favoriteIcon.getAttribute("data-tooltip")).toMatch(/favorites/i);
+      expect(favoriteIcon.classList.contains("apply-common-tooltip")).toBe(true);
+      expect(
+        favoriteIcon.dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true }),
+        ),
+      ).toBe(true);
+    }
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("uses a generated fallback avatar when the user has no avatar URL", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -543,6 +623,18 @@ function getButtonBySelector(selector: string) {
   expect(button).toBeInstanceOf(HTMLButtonElement);
 
   return button as HTMLButtonElement;
+}
+
+function getFavoriteButtons() {
+  return [...document.querySelectorAll(presetMenuFavoriteButtonSelector)].filter(
+    (button): button is HTMLButtonElement => button instanceof HTMLButtonElement,
+  );
+}
+
+function getFavoriteIcons() {
+  return [...document.querySelectorAll(presetMenuFavoriteIconSelector)].filter(
+    (icon): icon is HTMLSpanElement => icon instanceof HTMLSpanElement,
+  );
 }
 
 function getMenuItemBySelector(selector: string) {
@@ -744,6 +836,47 @@ function createTradingViewRecentMenusMarkup(options?: { useMobileWatchlistsTitle
       </div>
       <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
       <div data-role="menuitem">Open list...</div>
+    </div>
+  `;
+}
+
+function createFavoriteButtonsMarkup() {
+  return `
+    <div>
+      <button
+        title="Remove from favorites"
+        data-tooltip="Remove from favorites"
+        type="button"
+        role="button"
+        aria-label="Remove from favorites"
+        tabindex="-1"
+        class="iconButton-RAiBjVep primary-RAiBjVep square-RAiBjVep favoritesIconButtonToggled-vqp9wWRj primary-vqp9wWRj apply-common-tooltip"
+        data-qa-id="preset-menu-favorite-button"
+      ></button>
+      <button
+        title="Add to favorites"
+        data-tooltip="Add to favorites"
+        type="button"
+        role="button"
+        aria-label="Add to favorites"
+        tabindex="-1"
+        class="iconButton-RAiBjVep primary-RAiBjVep square-RAiBjVep apply-common-tooltip"
+        data-qa-id="preset-menu-favorite-button"
+      ></button>
+      <span
+        role="img"
+        class="favorite-_FRQhM5Y apply-common-tooltip checked-_FRQhM5Y favorite-WeNdU0sq isActive-WeNdU0sq"
+        aria-label="Remove from favorites"
+        aria-hidden="false"
+        data-tooltip="Remove from favorites"
+      ></span>
+      <span
+        role="img"
+        class="favorite-_FRQhM5Y apply-common-tooltip favorite-WeNdU0sq"
+        aria-label="Add to favorites"
+        aria-hidden="false"
+        data-tooltip="Add to favorites"
+      ></span>
     </div>
   `;
 }

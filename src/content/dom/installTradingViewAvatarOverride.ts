@@ -24,6 +24,9 @@ const sidebarAlertsSelector = 'button[data-name="alerts"]';
 const sidebarChatsSelector = 'button[data-name="union_chats"]';
 const sidebarProductsSelector = 'button[data-qa-id="products-button"]';
 const sidebarHelpSelector = 'button[data-name="help-button"]';
+const presetMenuFavoriteButtonSelector = 'button[data-qa-id="preset-menu-favorite-button"]';
+const presetMenuFavoriteIconSelector =
+  'span.favorite-_FRQhM5Y[aria-label="Add to favorites"], span.favorite-_FRQhM5Y[aria-label="Remove from favorites"]';
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
@@ -65,6 +68,8 @@ const relevantTradingViewSelectors = [
   sidebarChatsSelector,
   sidebarProductsSelector,
   sidebarHelpSelector,
+  presetMenuFavoriteButtonSelector,
+  presetMenuFavoriteIconSelector,
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
@@ -283,6 +288,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   removeRestrictedHeaderActions();
   removeRestrictedRightSidebarActions();
   disableRestrictedRightSidebarActions();
+  disableRestrictedFavoriteButtons();
   removeRestrictedRecentSections();
 }
 
@@ -303,6 +309,19 @@ function removeRestrictedRightSidebarActions() {
 function disableRestrictedRightSidebarActions() {
   disableButton(document.querySelector(sidebarProductsSelector));
   disableButton(document.querySelector(sidebarHelpSelector));
+}
+
+function disableRestrictedFavoriteButtons() {
+  const favoriteButtons = document.querySelectorAll(presetMenuFavoriteButtonSelector);
+  const favoriteIcons = document.querySelectorAll(presetMenuFavoriteIconSelector);
+
+  for (const favoriteButton of favoriteButtons) {
+    disableFavoriteButton(favoriteButton);
+  }
+
+  for (const favoriteIcon of favoriteIcons) {
+    disableFavoriteIcon(favoriteIcon);
+  }
 }
 
 function removeRestrictedRecentSections() {
@@ -513,6 +532,42 @@ function disableButton(button: Element | null) {
 
   button.disabled = true;
   button.setAttribute("aria-disabled", "true");
+}
+
+function disableFavoriteButton(button: Element | null) {
+  if (!(button instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  disableButton(button);
+  button.removeAttribute("title");
+  button.removeAttribute("data-tooltip");
+  button.classList.remove("apply-common-tooltip");
+}
+
+function disableFavoriteIcon(icon: Element | null) {
+  if (!(icon instanceof HTMLSpanElement)) {
+    return;
+  }
+
+  icon.setAttribute("aria-disabled", "true");
+  icon.removeAttribute("title");
+  icon.removeAttribute("data-tooltip");
+  icon.classList.remove("apply-common-tooltip");
+
+  if (icon.dataset.assetManagerFavoriteDisabled === "true") {
+    return;
+  }
+
+  icon.dataset.assetManagerFavoriteDisabled = "true";
+  icon.addEventListener("click", preventFavoriteInteraction);
+  icon.addEventListener("mousedown", preventFavoriteInteraction);
+  icon.addEventListener("pointerdown", preventFavoriteInteraction);
+}
+
+function preventFavoriteInteraction(event: Event) {
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 function findOpenTradingViewMenu(): {
