@@ -31,6 +31,15 @@ const whatsNewMenuItemSelector = '[aria-label="What\'s new"][data-role="menuitem
 const keyboardShortcutsMenuItemSelector =
   '[aria-label="Keyboard shortcuts"][data-role="menuitem"]';
 const getDesktopAppMenuItemSelector = '[aria-label="Get desktop app"][data-role="menuitem"]';
+const layoutRecentMenuRootSelector = "#layout-recent-root";
+const indicatorRecentMenuRootSelector = "#indicator-recent-root";
+const watchlistsRecentMenuRootSelector = "#watchlists-recent-root";
+const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
+const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
+const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
+const watchlistsRecentTitleSelector = ".columnsTitle-mQBvegEO.title-GlrQ9d9L";
+const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
+const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
 
 const originalChrome = globalThis.chrome;
 const originalDocumentClassName = document.documentElement.className;
@@ -300,6 +309,112 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("removes only the restricted Recently used sections on desktop", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-recent-desktop.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector)).toBeNull();
+    expect(queryWithin(layoutRecentMenuRootSelector, recentTitleListItemSelector)).toBeNull();
+    expect(countWithin(layoutRecentMenuRootSelector, menuDividerSelector)).toBe(1);
+    expect(getRootText(layoutRecentMenuRootSelector)).toContain("Open layout");
+    expect(getRootText(layoutRecentMenuRootSelector)).not.toContain("Recently used");
+
+    expect(
+      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
+    ).toBeNull();
+    expect(
+      queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector),
+    ).toBeNull();
+    expect(countWithin(indicatorRecentMenuRootSelector, menuDividerSelector)).toBe(1);
+    expect(getRootText(indicatorRecentMenuRootSelector)).toContain("Open template");
+    expect(getRootText(indicatorRecentMenuRootSelector)).not.toContain("Recently used");
+
+    expect(
+      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
+    ).toBeNull();
+    expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(2);
+    expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Create new list");
+    expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
+    expect(getRootText(watchlistsRecentMenuRootSelector)).not.toContain("Recently used");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps the Recently used sections when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-recent-private.png",
+        hasPrivateAccess: true,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(
+      queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector),
+    ).toBeInstanceOf(HTMLElement);
+    expect(
+      queryWithin(layoutRecentMenuRootSelector, recentTitleListItemSelector),
+    ).toBeInstanceOf(HTMLElement);
+    expect(countWithin(layoutRecentMenuRootSelector, menuDividerSelector)).toBe(2);
+
+    expect(
+      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
+    ).toBeInstanceOf(HTMLElement);
+    expect(
+      queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector),
+    ).toBeInstanceOf(HTMLElement);
+    expect(countWithin(indicatorRecentMenuRootSelector, menuDividerSelector)).toBe(2);
+
+    expect(
+      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
+    ).toBeInstanceOf(HTMLElement);
+    expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(3);
+    expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Recently used");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("removes the restricted Recently used sections on mobile", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-recent-mobile.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup({ useMobileWatchlistsTitle: true })}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector)).toBeNull();
+    expect(
+      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
+    ).toBeNull();
+    expect(
+      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
+    ).toBeNull();
+    expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(2);
+    expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("uses a generated fallback avatar when the user has no avatar URL", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -446,6 +561,22 @@ function getMenuItemByTextPrefix(textPrefix: string) {
   );
 }
 
+function queryWithin(rootSelector: string, selector: string) {
+  return document.querySelector(`${rootSelector} ${selector}`);
+}
+
+function countWithin(rootSelector: string, selector: string) {
+  return document.querySelectorAll(`${rootSelector} ${selector}`).length;
+}
+
+function getRootText(rootSelector: string) {
+  const root = document.querySelector(rootSelector);
+
+  expect(root).toBeInstanceOf(HTMLElement);
+
+  return normalizeText(root?.textContent);
+}
+
 function createBootstrapCacheRecordWithUser(
   userOverrides: Partial<NonNullable<BootstrapCacheRecord["snapshot"]["user"]>> & {
     avatarUrl: string | null;
@@ -561,6 +692,58 @@ function createMobileTradingViewMenuMarkup() {
         <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><a role="row" aria-label="Get desktop app" data-role="menuitem" href="/desktop/" target="_blank" class="button-HZXWyU6m"><span role="gridcell">Get desktop app</span></a></div>
         <div class="background-wJ4EfuBP large-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="Sign out" data-qa-id="main-menu-sign-out-item" data-role="menuitem" class="button-HZXWyU6m"><span role="gridcell">Sign out</span></div></div>
       </div>
+    </div>
+  `;
+}
+
+function createTradingViewRecentMenusMarkup(options?: { useMobileWatchlistsTitle?: boolean }) {
+  return `
+    <div id="layout-recent-root" data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+      <div class="desktop-Uy_he976 newMenuWrapper-Uy_he976">
+        <div data-role="menuitem">Create new layout...</div>
+        <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+        <div>
+          <div class="customListItem-KOmCbcJ6" aria-label="Recently used" role="row" data-qa-id="ui-lib-title-list-item">
+            <div><div class="wrapper-AO80rc_p secondaryTitleWrapper-AO80rc_p"><div class="content-AO80rc_p"><div class="title-AO80rc_p" id=":layout-title:"><span role="gridcell">Recently used</span></div></div></div></div>
+          </div>
+          <div id=":layout-menu:" role="menu" aria-orientation="horizontal"></div>
+        </div>
+        <div aria-labelledby=":layout-title:" id=":layout-group:" role="rowgroup">
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" class="button-HZXWyU6m" tabindex="-1" data-qa-id="save-load-menu-item-recent" data-role="menuitem"><span role="gridcell">bma</span></div></div>
+        </div>
+        <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+        <div data-role="menuitem">Open layout...</div>
+      </div>
+    </div>
+    <div id="indicator-recent-root" data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+      <div class="desktop-Uy_he976 newMenuWrapper-Uy_he976">
+        <div data-role="menuitem">Save indicator template...</div>
+        <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+        <div>
+          <div class="customListItem-KOmCbcJ6" aria-label="Recently used" data-qa-id="ui-lib-title-list-item">
+            <div><div class="wrapper-AO80rc_p secondaryTitleWrapper-AO80rc_p"><div class="content-AO80rc_p"><div class="title-AO80rc_p" id=":indicator-title:"><span role="gridcell">Recently used</span></div></div></div></div>
+          </div>
+          <div id=":indicator-menu:" role="menu" aria-orientation="horizontal"></div>
+        </div>
+        <div aria-labelledby=":indicator-title:" id=":indicator-group:" role="rowgroup">
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP"><div role="row" aria-label="template lima" class="button-HZXWyU6m" tabindex="-1" data-group-name="recent" data-role="menuitem"><span role="gridcell">template lima</span></div></div>
+        </div>
+        <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+        <div data-role="menuitem">Open template...</div>
+      </div>
+    </div>
+    <div id="watchlists-recent-root" data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+      <div data-role="menuitem">Create new list...</div>
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      <div data-role="menuitem">Upload list...</div>
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      <div>
+        <div class="columnsTitle-mQBvegEO ${options?.useMobileWatchlistsTitle ? "small-mQBvegEO " : ""}title-GlrQ9d9L">Recently used</div>
+        <div data-role="menuitem">dua</div>
+        <div data-role="menuitem">empat</div>
+      </div>
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      <div data-role="menuitem">Open list...</div>
     </div>
   `;
 }

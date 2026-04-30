@@ -24,6 +24,15 @@ const sidebarAlertsSelector = 'button[data-name="alerts"]';
 const sidebarChatsSelector = 'button[data-name="union_chats"]';
 const sidebarProductsSelector = 'button[data-qa-id="products-button"]';
 const sidebarHelpSelector = 'button[data-name="help-button"]';
+const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
+const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
+const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
+const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
+const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
+const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
+const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
+const watchlistsRecentTitleSelector = ".columnsTitle-mQBvegEO.title-GlrQ9d9L";
+const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
 
 const restrictedMenuLabels = [
   "Help Center",
@@ -56,6 +65,15 @@ const relevantTradingViewSelectors = [
   sidebarChatsSelector,
   sidebarProductsSelector,
   sidebarHelpSelector,
+  saveLoadMenuButtonSelector,
+  indicatorTemplatesButtonSelector,
+  watchlistsButtonSelector,
+  recentTitleListItemSelector,
+  recentLayoutMenuItemSelector,
+  recentIndicatorMenuItemSelector,
+  menuDividerSelector,
+  watchlistsRecentTitleSelector,
+  watchlistsSeparatorSelector,
 ].join(", ");
 
 type TradingViewMenuMode = "default" | "restricted";
@@ -265,6 +283,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   removeRestrictedHeaderActions();
   removeRestrictedRightSidebarActions();
   disableRestrictedRightSidebarActions();
+  removeRestrictedRecentSections();
 }
 
 function removeRestrictedHeaderActions() {
@@ -286,6 +305,51 @@ function disableRestrictedRightSidebarActions() {
   disableButton(document.querySelector(sidebarHelpSelector));
 }
 
+function removeRestrictedRecentSections() {
+  removeRestrictedRecentLayoutSection();
+  removeRestrictedRecentIndicatorSection();
+  removeRestrictedRecentWatchlistsSection();
+}
+
+function removeRestrictedRecentLayoutSection() {
+  removeRecentRowgroupSections(recentLayoutMenuItemSelector);
+}
+
+function removeRestrictedRecentIndicatorSection() {
+  removeRecentRowgroupSections(recentIndicatorMenuItemSelector);
+}
+
+function removeRestrictedRecentWatchlistsSection() {
+  const recentTitleNodes = document.querySelectorAll(watchlistsRecentTitleSelector);
+
+  for (const recentTitleNode of recentTitleNodes) {
+    if (!(recentTitleNode instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (normalizeText(recentTitleNode.textContent) !== "Recently used") {
+      continue;
+    }
+
+    const sectionRoot = recentTitleNode.parentElement;
+
+    if (!(sectionRoot instanceof HTMLElement)) {
+      continue;
+    }
+
+    const previousElement = sectionRoot.previousElementSibling;
+
+    if (
+      previousElement instanceof HTMLElement &&
+      previousElement.matches(watchlistsSeparatorSelector)
+    ) {
+      previousElement.remove();
+    }
+
+    sectionRoot.remove();
+  }
+}
+
 function removeMainAvatarBadge() {
   const avatarBadge = document.querySelector(mainAvatarBadgeSelector);
 
@@ -304,6 +368,48 @@ function findMobilePublishWrapper() {
   const mobilePublishWrapper = document.querySelector(mobilePublishWrapperSelector);
 
   return mobilePublishWrapper instanceof HTMLElement ? mobilePublishWrapper : null;
+}
+
+function removeRecentRowgroupSections(recentItemSelector: string) {
+  const rowgroups = document.querySelectorAll('[role="rowgroup"]');
+
+  for (const rowgroup of rowgroups) {
+    if (!(rowgroup instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (!rowgroup.querySelector(recentItemSelector)) {
+      continue;
+    }
+
+    const titleContainer = rowgroup.previousElementSibling;
+
+    if (
+      !(titleContainer instanceof HTMLElement) ||
+      !isRecentlyUsedTitleContainer(titleContainer)
+    ) {
+      continue;
+    }
+
+    const separator = titleContainer.previousElementSibling;
+
+    if (separator instanceof HTMLElement && separator.matches(menuDividerSelector)) {
+      separator.remove();
+    }
+
+    titleContainer.remove();
+    rowgroup.remove();
+  }
+}
+
+function isRecentlyUsedTitleContainer(titleContainer: HTMLElement) {
+  const titleListItem = titleContainer.querySelector(recentTitleListItemSelector);
+
+  if (!(titleListItem instanceof HTMLElement)) {
+    return false;
+  }
+
+  return normalizeText(titleListItem.textContent) === "Recently used";
 }
 
 function syncOpenPopupMenu(options: {
