@@ -60,6 +60,5 @@ Gate yang benar-benar tersedia di repo saat ini:
 - `pnpm typecheck`
 - `pnpm test`
 - `pnpm test:web`
-- `pnpm build`
-- browser verification untuk flow yang terdampak menggunakan ` next-devtools_browser_eval` atau `playwright` mcp tools
+- browser verification untuk flow yang terdampak menggunakan `browser-use`
 - tidak ada error log
