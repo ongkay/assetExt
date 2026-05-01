@@ -27,6 +27,31 @@ const sidebarHelpSelector = 'button[data-name="help-button"]';
 const presetMenuFavoriteButtonSelector = 'button[data-qa-id="preset-menu-favorite-button"]';
 const presetMenuFavoriteIconSelector =
   'span.favorite-_FRQhM5Y[aria-label="Add to favorites"], span.favorite-_FRQhM5Y[aria-label="Remove from favorites"]';
+const createDialogSelector = '.wrap-B02UUUN3[data-name="create-dialog"]';
+const renameDialogSelector = '[data-name="rename-dialog"]';
+const saveIndicatorTemplateDialogSelector =
+  '[data-dialog-name="Save indicator template"][data-name="save-rename-dialog"]';
+const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
+const dialogSelectButtonSelector =
+  ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
+const dialogSuggestionsSelector = ".suggestions-uszkUMOz";
+const dialogSaveButtonSelector =
+  'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
+const indicatorTemplatesDialogRootSelector =
+  '[role="dialog"], .wrapper-b8SxMnzX, .dialog-b8SxMnzX';
+const indicatorTemplatesDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="Indicator templates"]';
+const indicatorTemplatesMyTemplatesDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="My templates"]';
+const indicatorTemplatesTabSelector =
+  'button[role="tab"][id="my templates"], button[role="tab"][id="technicals"], button[role="tab"][id="financials"]';
+const indicatorTemplatesMyTemplatesTabSelector = 'button[role="tab"][id="my templates"]';
+const indicatorTemplatesRestrictedTabSelector =
+  'button[role="tab"][id="technicals"], button[role="tab"][id="financials"]';
+const indicatorTemplatesSearchInputSelector = 'input[role="searchbox"]';
+const indicatorTemplatesRowSelector = 'div[data-role="list-item"][data-title]';
+const restrictedIndicatorTemplatesTabOverlaySelector =
+  '[data-asset-manager-restricted-tab-overlay="true"]';
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
@@ -47,6 +72,8 @@ const restrictedMenuPrefixes = ["Support request", "Language"] as const;
 
 const googleHomeUrl = "https://google.com";
 const logoutRedirectDelayMs = 250;
+const restrictedIndicatorTemplatesAccessDeniedMessage =
+  "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
 const relevantTradingViewSelectors = [
   mainMenuButtonSelector,
   mainAvatarImageSelector,
@@ -70,6 +97,21 @@ const relevantTradingViewSelectors = [
   sidebarHelpSelector,
   presetMenuFavoriteButtonSelector,
   presetMenuFavoriteIconSelector,
+  createDialogSelector,
+  renameDialogSelector,
+  saveIndicatorTemplateDialogSelector,
+  dialogInputSelector,
+  dialogSelectButtonSelector,
+  dialogSuggestionsSelector,
+  dialogSaveButtonSelector,
+  indicatorTemplatesDialogRootSelector,
+  indicatorTemplatesDialogSelector,
+  indicatorTemplatesMyTemplatesDialogSelector,
+  indicatorTemplatesTabSelector,
+  indicatorTemplatesMyTemplatesTabSelector,
+  indicatorTemplatesRestrictedTabSelector,
+  indicatorTemplatesSearchInputSelector,
+  indicatorTemplatesRowSelector,
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
@@ -88,6 +130,7 @@ type TradingViewOverrideState = {
   avatarAlt: string | null;
   avatarSrc: string | null;
   menuMode: TradingViewMenuMode;
+  publicId: string | null;
 };
 
 type TradingViewLogoutStatus = "idle" | "loading" | "success" | "error";
@@ -290,6 +333,8 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   disableRestrictedRightSidebarActions();
   disableRestrictedFavoriteButtons();
   removeRestrictedRecentSections();
+  syncRestrictedTradingViewDialogs(overrideState.publicId);
+  syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
 }
 
 function removeRestrictedHeaderActions() {
@@ -366,6 +411,349 @@ function removeRestrictedRecentWatchlistsSection() {
     }
 
     sectionRoot.remove();
+  }
+}
+
+function syncRestrictedTradingViewDialogs(publicId: string | null) {
+  const dialogRoots = findRestrictedDialogRoots();
+
+  for (const dialogRoot of dialogRoots) {
+    syncRestrictedTradingViewDialog(dialogRoot, publicId);
+  }
+}
+
+function findRestrictedDialogRoots() {
+  const dialogRoots = new Set<HTMLElement>();
+
+  for (const selector of [
+    createDialogSelector,
+    renameDialogSelector,
+    saveIndicatorTemplateDialogSelector,
+  ]) {
+    const matchedRoots = document.querySelectorAll(selector);
+
+    for (const matchedRoot of matchedRoots) {
+      if (matchedRoot instanceof HTMLElement) {
+        dialogRoots.add(matchedRoot);
+      }
+    }
+  }
+
+  return [...dialogRoots];
+}
+
+function syncRestrictedIndicatorTemplatesDialogs(publicId: string | null) {
+  const dialogRoots = findRestrictedIndicatorTemplatesDialogRoots();
+
+  for (const dialogRoot of dialogRoots) {
+    syncRestrictedIndicatorTemplatesDialog(dialogRoot, publicId);
+  }
+}
+
+function findRestrictedIndicatorTemplatesDialogRoots() {
+  const dialogRoots = new Set<HTMLElement>();
+
+  for (const selector of [
+    indicatorTemplatesDialogSelector,
+    indicatorTemplatesMyTemplatesDialogSelector,
+  ]) {
+    const matchedRoots = document.querySelectorAll(selector);
+
+    for (const matchedRoot of matchedRoots) {
+      if (matchedRoot instanceof HTMLElement) {
+        dialogRoots.add(matchedRoot);
+      }
+    }
+  }
+
+  return [...dialogRoots];
+}
+
+function isDesktopIndicatorTemplatesDialogRoot(dialogRoot: HTMLElement) {
+  return (
+    dialogRoot.querySelector(indicatorTemplatesSearchInputSelector) instanceof
+      HTMLInputElement &&
+    dialogRoot.querySelector(indicatorTemplatesMyTemplatesTabSelector) instanceof
+      HTMLButtonElement
+  );
+}
+
+function syncRestrictedIndicatorTemplatesDialog(
+  dialogRoot: HTMLElement,
+  publicId: string | null,
+) {
+  const requiredPublicId = publicId?.trim() ?? "";
+  const dialogName = dialogRoot.dataset.dialogName ?? "";
+
+  if (isDesktopIndicatorTemplatesDialogRoot(dialogRoot)) {
+    disableRestrictedIndicatorTemplatesButtons(
+      getRestrictedDesktopIndicatorTemplatesButtons(dialogRoot),
+    );
+    syncRestrictedIndicatorTemplatesRows(dialogRoot, requiredPublicId);
+    return;
+  }
+
+  if (dialogName === "Indicator templates") {
+    disableRestrictedIndicatorTemplatesButtons(
+      getRestrictedMobileIndicatorTemplatesButtons(dialogRoot),
+    );
+    return;
+  }
+
+  if (dialogName === "My templates") {
+    syncRestrictedIndicatorTemplatesRows(dialogRoot, requiredPublicId);
+  }
+}
+
+function getRestrictedDesktopIndicatorTemplatesButtons(dialogRoot: HTMLElement) {
+  return [...dialogRoot.querySelectorAll(indicatorTemplatesRestrictedTabSelector)].filter(
+    (button): button is HTMLButtonElement => button instanceof HTMLButtonElement,
+  );
+}
+
+function getRestrictedMobileIndicatorTemplatesButtons(dialogRoot: HTMLElement) {
+  const restrictedButtons: HTMLButtonElement[] = [];
+
+  for (const label of ["Technicals", "Financials"]) {
+    const restrictedButton = findIndicatorTemplatesButtonByText(dialogRoot, label);
+
+    if (restrictedButton) {
+      restrictedButtons.push(restrictedButton);
+    }
+  }
+
+  return restrictedButtons;
+}
+
+function findIndicatorTemplatesButtonByText(dialogRoot: HTMLElement, label: string) {
+  return (
+    [...dialogRoot.querySelectorAll("button")].find((button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        return false;
+      }
+
+      return normalizeText(button.textContent) === label;
+    }) ?? null
+  );
+}
+
+function syncRestrictedIndicatorTemplatesRows(
+  dialogRoot: HTMLElement,
+  requiredPublicId: string,
+) {
+  const templateRows = dialogRoot.querySelectorAll(indicatorTemplatesRowSelector);
+
+  for (const templateRow of templateRows) {
+    if (!(templateRow instanceof HTMLElement)) {
+      continue;
+    }
+
+    const templateTitle = templateRow.dataset.title?.trim() ?? "";
+    const shouldShowRow =
+      requiredPublicId.length > 0 && templateTitle.includes(requiredPublicId);
+
+    syncRestrictedIndicatorTemplatesRowVisibility(templateRow, shouldShowRow);
+  }
+}
+
+function disableRestrictedIndicatorTemplatesButtons(restrictedButtons: HTMLButtonElement[]) {
+  for (const restrictedButton of restrictedButtons) {
+    restrictedButton.setAttribute("aria-disabled", "true");
+    restrictedButton.style.opacity = "0.5";
+    restrictedButton.tabIndex = -1;
+
+    if (!restrictedButton.style.position) {
+      restrictedButton.style.position = "relative";
+    }
+
+    ensureRestrictedIndicatorTemplatesTabOverlay(restrictedButton);
+
+    if (restrictedButton.dataset.assetManagerRestrictedBound === "true") {
+      continue;
+    }
+
+    restrictedButton.dataset.assetManagerRestrictedBound = "true";
+    restrictedButton.addEventListener(
+      "keydown",
+      handleRestrictedIndicatorTemplatesTabKeyDown,
+      true,
+    );
+    restrictedButton.addEventListener(
+      "focus",
+      handleRestrictedIndicatorTemplatesTabFocus,
+      true,
+    );
+  }
+}
+
+function ensureRestrictedIndicatorTemplatesTabOverlay(restrictedTab: HTMLButtonElement) {
+  let overlay = restrictedTab.querySelector(
+    restrictedIndicatorTemplatesTabOverlaySelector,
+  ) as HTMLSpanElement | null;
+
+  if (!(overlay instanceof HTMLSpanElement)) {
+    overlay = document.createElement("span");
+    overlay.dataset.assetManagerRestrictedTabOverlay = "true";
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.style.position = "absolute";
+    overlay.style.inset = "0";
+    overlay.style.zIndex = "1";
+    overlay.style.cursor = "not-allowed";
+    overlay.style.background = "transparent";
+    restrictedTab.append(overlay);
+  }
+
+  if (overlay.dataset.assetManagerRestrictedBound === "true") {
+    return;
+  }
+
+  overlay.dataset.assetManagerRestrictedBound = "true";
+
+  for (const eventName of [
+    "pointerdown",
+    "mousedown",
+    "pointerup",
+    "mouseup",
+    "touchstart",
+    "touchend",
+  ]) {
+    overlay.addEventListener(
+      eventName,
+      handleRestrictedIndicatorTemplatesBlockedPointerEvent,
+      true,
+    );
+  }
+
+  overlay.addEventListener("click", handleRestrictedIndicatorTemplatesBlockedClick, true);
+}
+
+function handleRestrictedIndicatorTemplatesBlockedPointerEvent(event: Event) {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+function handleRestrictedIndicatorTemplatesBlockedClick(event: Event) {
+  handleRestrictedIndicatorTemplatesBlockedPointerEvent(event);
+  window.alert(restrictedIndicatorTemplatesAccessDeniedMessage);
+}
+
+function handleRestrictedIndicatorTemplatesTabKeyDown(event: KeyboardEvent) {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  window.alert(restrictedIndicatorTemplatesAccessDeniedMessage);
+}
+
+function handleRestrictedIndicatorTemplatesTabFocus(event: FocusEvent) {
+  const restrictedTab = event.currentTarget;
+
+  if (!(restrictedTab instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  restrictedTab.blur();
+}
+
+function syncRestrictedIndicatorTemplatesRowVisibility(
+  templateRow: HTMLElement,
+  shouldShowRow: boolean,
+) {
+  templateRow.hidden = !shouldShowRow;
+  templateRow.setAttribute("aria-hidden", shouldShowRow ? "false" : "true");
+  templateRow.style.display = shouldShowRow ? "" : "none";
+}
+
+function syncRestrictedTradingViewDialog(dialogRoot: HTMLElement, publicId: string | null) {
+  const dialogInput = dialogRoot.querySelector(dialogInputSelector);
+
+  if (dialogInput instanceof HTMLInputElement) {
+    autofillRestrictedDialogInput(dialogInput, publicId);
+    bindRestrictedDialogInput(dialogRoot, dialogInput, publicId);
+  }
+
+  disableRestrictedDialogSelectButton(dialogRoot);
+  suppressRestrictedDialogSuggestions(dialogRoot);
+  syncRestrictedDialogSaveButtons(dialogRoot, publicId);
+}
+
+function autofillRestrictedDialogInput(
+  dialogInput: HTMLInputElement,
+  publicId: string | null,
+) {
+  if (!publicId || dialogInput.dataset.assetManagerPublicIdAutofilled === "true") {
+    return;
+  }
+
+  setInputValue(dialogInput, `${publicId} `);
+  dialogInput.dataset.assetManagerPublicIdAutofilled = "true";
+}
+
+function bindRestrictedDialogInput(
+  dialogRoot: HTMLElement,
+  dialogInput: HTMLInputElement,
+  publicId: string | null,
+) {
+  if (dialogInput.dataset.assetManagerPublicIdBound === "true") {
+    return;
+  }
+
+  const syncDialogState = () => {
+    suppressRestrictedDialogSuggestions(dialogRoot);
+    syncRestrictedDialogSaveButtons(dialogRoot, publicId);
+  };
+
+  dialogInput.dataset.assetManagerPublicIdBound = "true";
+  dialogInput.addEventListener("input", syncDialogState);
+  dialogInput.addEventListener("change", syncDialogState);
+}
+
+function disableRestrictedDialogSelectButton(dialogRoot: HTMLElement) {
+  const dialogSelectButton = dialogRoot.querySelector(dialogSelectButtonSelector);
+
+  if (!(dialogSelectButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  disableButton(dialogSelectButton);
+  dialogSelectButton.removeAttribute("title");
+  dialogSelectButton.removeAttribute("data-tooltip");
+  dialogSelectButton.classList.remove("apply-common-tooltip");
+}
+
+function suppressRestrictedDialogSuggestions(dialogRoot: HTMLElement) {
+  const suggestions = dialogRoot.querySelectorAll(dialogSuggestionsSelector);
+
+  for (const suggestion of suggestions) {
+    if (suggestion instanceof HTMLElement) {
+      suggestion.hidden = true;
+      suggestion.setAttribute("aria-hidden", "true");
+      suggestion.style.display = "none";
+      suggestion.style.pointerEvents = "none";
+    }
+  }
+}
+
+function syncRestrictedDialogSaveButtons(dialogRoot: HTMLElement, publicId: string | null) {
+  const dialogInput = dialogRoot.querySelector(dialogInputSelector);
+  const saveButtons = dialogRoot.querySelectorAll(dialogSaveButtonSelector);
+  const requiredPublicId = publicId?.trim() ?? "";
+  const hasRequiredPublicId =
+    dialogInput instanceof HTMLInputElement &&
+    requiredPublicId.length > 0 &&
+    dialogInput.value.includes(requiredPublicId);
+
+  for (const saveButton of saveButtons) {
+    if (!(saveButton instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    saveButton.disabled = !hasRequiredPublicId;
+    saveButton.setAttribute("aria-disabled", hasRequiredPublicId ? "false" : "true");
   }
 }
 
@@ -523,6 +911,22 @@ function removeElement(element: Element | null) {
   }
 
   element.remove();
+}
+
+function setInputValue(dialogInput: HTMLInputElement, nextValue: string) {
+  const inputValueSetter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "value",
+  )?.set;
+
+  if (inputValueSetter) {
+    inputValueSetter.call(dialogInput, nextValue);
+  } else {
+    dialogInput.value = nextValue;
+  }
+
+  dialogInput.dispatchEvent(new Event("input", { bubbles: true }));
+  dialogInput.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function disableButton(button: Element | null) {
@@ -736,6 +1140,7 @@ function createTradingViewOverrideState(
       ? getAvatarSource(user.avatarUrl, user.publicId, user.username, user.email)
       : null,
     menuMode: tradingViewAsset?.hasPrivateAccess === true ? "default" : "restricted",
+    publicId: user?.publicId?.trim() || null,
   };
 }
 

@@ -43,6 +43,28 @@ const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
 const watchlistsRecentTitleSelector = ".columnsTitle-mQBvegEO.title-GlrQ9d9L";
 const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
 const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
+const createDialogSelector = '.wrap-B02UUUN3[data-name="create-dialog"]';
+const renameDialogSelector = '[data-name="rename-dialog"]';
+const saveIndicatorTemplateDialogSelector =
+  '[data-dialog-name="Save indicator template"][data-name="save-rename-dialog"]';
+const indicatorTemplatesDialogSelector =
+  '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
+const mobileIndicatorTemplatesCategoryDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="Indicator templates"]';
+const mobileIndicatorTemplatesMyTemplatesDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="My templates"]';
+const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
+const dialogSelectButtonSelector =
+  ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
+const dialogSuggestionsSelector = ".suggestions-uszkUMOz";
+const dialogSaveButtonSelector =
+  'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
+const indicatorTemplatesTabSelector = 'button[role="tab"]';
+const indicatorTemplatesRowSelector = 'div[data-role="list-item"][data-title]';
+const restrictedIndicatorTemplatesTabOverlaySelector =
+  '[data-asset-manager-restricted-tab-overlay="true"]';
+const restrictedIndicatorTemplatesAccessDeniedMessage =
+  "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
 
 const originalChrome = globalThis.chrome;
 const originalDocumentClassName = document.documentElement.className;
@@ -495,6 +517,295 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("autofills restricted dialog inputs with publicId and enables save only when value contains it", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-dialog-restricted.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getDialogInput(createDialogSelector).value).toBe("50975 ");
+    expect(getDialogInput(renameDialogSelector).value).toBe("50975 ");
+    expect(getDialogInput(saveIndicatorTemplateDialogSelector).value).toBe("50975 ");
+    expect(getDialogSaveButton(createDialogSelector).disabled).toBe(false);
+    expect(getDialogSaveButton(renameDialogSelector).disabled).toBe(false);
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(false);
+    expect(
+      getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled"),
+    ).toBe("false");
+    expect(getDialogSelectButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
+    expect(getDialogSelectButton(renameDialogSelector).disabled).toBe(true);
+    expect(getDialogSuggestions(saveIndicatorTemplateDialogSelector).hidden).toBe(true);
+    expect(
+      getDialogSuggestions(saveIndicatorTemplateDialogSelector).getAttribute("aria-hidden"),
+    ).toBe("true");
+
+    updateDialogInputValue(createDialogSelector, "50975 custom text");
+    expect(getDialogSaveButton(createDialogSelector).disabled).toBe(false);
+
+    updateDialogInputValue(renameDialogSelector, "custom text save 50975");
+    expect(getDialogSaveButton(renameDialogSelector).disabled).toBe(false);
+
+    updateDialogInputValue(saveIndicatorTemplateDialogSelector, "custom text aja");
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
+    expect(
+      getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled"),
+    ).toBe("true");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps restricted dialog save buttons disabled when publicId is unavailable", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-dialog-no-public-id.png",
+        hasPrivateAccess: false,
+        publicId: "",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getDialogInput(createDialogSelector).value).toBe("");
+    expect(getDialogInput(renameDialogSelector).value).toBe("");
+    expect(getDialogInput(saveIndicatorTemplateDialogSelector).value).toBe("");
+    expect(getDialogSaveButton(createDialogSelector).disabled).toBe(true);
+    expect(getDialogSaveButton(renameDialogSelector).disabled).toBe(true);
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
+    expect(getVisibleIndicatorTemplateTitles()).toEqual([]);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters indicator template rows by publicId and disables non-My templates tabs", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-template-filter.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleIndicatorTemplateTitles()).toEqual([
+      "50975 alpha",
+      "50975 beta",
+      "50975 gamma",
+    ]);
+
+    const technicalsTab = getIndicatorTemplatesTab("technicals");
+    const financialsTab = getIndicatorTemplatesTab("financials");
+
+    expect(technicalsTab.getAttribute("aria-disabled")).toBe("true");
+    expect(financialsTab.getAttribute("aria-disabled")).toBe("true");
+    expect(technicalsTab.style.opacity).toBe("0.5");
+    expect(financialsTab.style.opacity).toBe("0.5");
+    expect(technicalsTab.tabIndex).toBe(-1);
+    expect(getRestrictedIndicatorTemplatesTabOverlay("technicals")).toBeInstanceOf(
+      HTMLSpanElement,
+    );
+
+    let bubbledClickHandled = false;
+    technicalsTab.addEventListener("click", () => {
+      bubbledClickHandled = true;
+      technicalsTab.setAttribute("aria-selected", "true");
+    });
+
+    getRestrictedIndicatorTemplatesTabOverlay("technicals").dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+
+    expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
+    expect(bubbledClickHandled).toBe(false);
+    expect(technicalsTab.getAttribute("aria-selected")).toBe("false");
+    expect(getVisibleIndicatorTemplateTitles()).toEqual([
+      "50975 alpha",
+      "50975 beta",
+      "50975 gamma",
+    ]);
+
+    renderIndicatorTemplatesTab("my templates", [
+      { title: "template orang lain", description: "EMA 20/50" },
+      { title: "50975 delta", description: "Vol · Ticks" },
+      { title: "random template", description: "RSI" },
+      { title: "50975 epsilon", description: "MA, RSI" },
+    ]);
+    await flushAsyncWork();
+
+    expect(getVisibleIndicatorTemplateTitles()).toEqual(["50975 delta", "50975 epsilon"]);
+    expect(getIndicatorTemplatesTab("technicals").style.opacity).toBe("0.5");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("disables Technicals and Financials on the mobile Indicator templates screen", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-indicator-templates.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesCategoryDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    const technicalsButton = getIndicatorTemplatesButtonByText(
+      mobileIndicatorTemplatesCategoryDialogSelector,
+      "Technicals",
+    );
+    const financialsButton = getIndicatorTemplatesButtonByText(
+      mobileIndicatorTemplatesCategoryDialogSelector,
+      "Financials",
+    );
+
+    expect(technicalsButton.getAttribute("aria-disabled")).toBe("true");
+    expect(financialsButton.getAttribute("aria-disabled")).toBe("true");
+    expect(technicalsButton.style.opacity).toBe("0.5");
+    expect(financialsButton.style.opacity).toBe("0.5");
+    expect(technicalsButton.tabIndex).toBe(-1);
+    expect(financialsButton.tabIndex).toBe(-1);
+
+    let bubbledClickHandled = false;
+    technicalsButton.addEventListener("click", () => {
+      bubbledClickHandled = true;
+    });
+
+    getRestrictedIndicatorTemplatesButtonOverlay(technicalsButton).dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+
+    expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
+    expect(bubbledClickHandled).toBe(false);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters rows on the mobile My templates screen by publicId", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-my-templates.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesMyTemplatesDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(
+      getVisibleIndicatorTemplateTitlesWithin(
+        mobileIndicatorTemplatesMyTemplatesDialogSelector,
+      ),
+    ).toEqual(["50975 alpha", "50975 beta", "50975 gamma"]);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps the mobile Indicator templates flow unchanged when private access is available", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-my-templates-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesCategoryDialogMarkup()}${createMobileIndicatorTemplatesMyTemplatesDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(
+      getIndicatorTemplatesButtonByText(
+        mobileIndicatorTemplatesCategoryDialogSelector,
+        "Technicals",
+      ).getAttribute("aria-disabled"),
+    ).toBeNull();
+    expect(
+      getIndicatorTemplatesButtonByText(
+        mobileIndicatorTemplatesCategoryDialogSelector,
+        "Technicals",
+      ).style.opacity,
+    ).toBe("");
+    expect(
+      getVisibleIndicatorTemplateTitlesWithin(
+        mobileIndicatorTemplatesMyTemplatesDialogSelector,
+      ),
+    ).toEqual([
+      "50975 alpha",
+      "template orang lain",
+      "50975 beta",
+      "template publik",
+      "50975 gamma",
+    ]);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("does not modify dialog inputs when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-dialog-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getDialogInput(createDialogSelector).value).toBe("");
+    expect(getDialogInput(renameDialogSelector).value).toBe("");
+    expect(getDialogInput(saveIndicatorTemplateDialogSelector).value).toBe("");
+    expect(getDialogSaveButton(createDialogSelector).disabled).toBe(false);
+    expect(getDialogSaveButton(renameDialogSelector).disabled).toBe(false);
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(false);
+    expect(getDialogSelectButton(saveIndicatorTemplateDialogSelector).disabled).toBe(false);
+    expect(getDialogSelectButton(renameDialogSelector).disabled).toBe(false);
+    expect(getDialogSuggestions(saveIndicatorTemplateDialogSelector).hidden).toBe(false);
+    expect(getVisibleIndicatorTemplateTitles()).toEqual([
+      "50975 alpha",
+      "template orang lain",
+      "50975 beta",
+      "template publik",
+      "50975 gamma",
+    ]);
+    expect(getIndicatorTemplatesTab("technicals").getAttribute("aria-disabled")).toBeNull();
+    expect(getIndicatorTemplatesTab("technicals").style.opacity).toBe("");
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("uses a generated fallback avatar when the user has no avatar URL", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -637,6 +948,138 @@ function getFavoriteIcons() {
   );
 }
 
+function getDialogInput(rootSelector: string) {
+  const dialogInput = document.querySelector(`${rootSelector} ${dialogInputSelector}`);
+
+  expect(dialogInput).toBeInstanceOf(HTMLInputElement);
+
+  return dialogInput as HTMLInputElement;
+}
+
+function getDialogSaveButton(rootSelector: string) {
+  const dialogSaveButton = document.querySelector(
+    `${rootSelector} ${dialogSaveButtonSelector}`,
+  );
+
+  expect(dialogSaveButton).toBeInstanceOf(HTMLButtonElement);
+
+  return dialogSaveButton as HTMLButtonElement;
+}
+
+function getDialogSelectButton(rootSelector: string) {
+  const dialogSelectButton = document.querySelector(
+    `${rootSelector} ${dialogSelectButtonSelector}`,
+  );
+
+  expect(dialogSelectButton).toBeInstanceOf(HTMLButtonElement);
+
+  return dialogSelectButton as HTMLButtonElement;
+}
+
+function getDialogSuggestions(rootSelector: string) {
+  const dialogSuggestions = document.querySelector(
+    `${rootSelector} ${dialogSuggestionsSelector}`,
+  );
+
+  expect(dialogSuggestions).toBeInstanceOf(HTMLElement);
+
+  return dialogSuggestions as HTMLElement;
+}
+
+function getIndicatorTemplatesDialogRoot() {
+  const dialogRoot = document.querySelector(indicatorTemplatesDialogSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  return dialogRoot as HTMLElement;
+}
+
+function getVisibleIndicatorTemplateTitles() {
+  return getVisibleIndicatorTemplateTitlesWithin(indicatorTemplatesDialogSelector);
+}
+
+function getVisibleIndicatorTemplateTitlesWithin(rootSelector: string) {
+  const dialogRoot = document.querySelector(rootSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(dialogRoot as HTMLElement).querySelectorAll(indicatorTemplatesRowSelector)]
+    .filter(
+      (row): row is HTMLDivElement =>
+        row instanceof HTMLDivElement && !row.hidden && row.style.display !== "none",
+    )
+    .map((row) => row.dataset.title ?? "");
+}
+
+function getIndicatorTemplatesTab(tabId: "my templates" | "technicals" | "financials") {
+  const tabButton = getIndicatorTemplatesDialogRoot().querySelector(
+    `button[role="tab"][id="${tabId}"]`,
+  );
+
+  expect(tabButton).toBeInstanceOf(HTMLButtonElement);
+
+  return tabButton as HTMLButtonElement;
+}
+
+function getIndicatorTemplatesButtonByText(rootSelector: string, buttonText: string) {
+  const dialogRoot = document.querySelector(rootSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  const button = [...(dialogRoot as HTMLElement).querySelectorAll("button")].find(
+    (candidate) => {
+      if (!(candidate instanceof HTMLButtonElement)) {
+        return false;
+      }
+
+      return normalizeText(candidate.textContent) === buttonText;
+    },
+  );
+
+  expect(button).toBeInstanceOf(HTMLButtonElement);
+
+  return button as HTMLButtonElement;
+}
+
+function getRestrictedIndicatorTemplatesTabOverlay(
+  tabId: "my templates" | "technicals" | "financials",
+) {
+  return getRestrictedIndicatorTemplatesButtonOverlay(getIndicatorTemplatesTab(tabId));
+}
+
+function getRestrictedIndicatorTemplatesButtonOverlay(button: HTMLButtonElement) {
+  const overlay = button.querySelector(restrictedIndicatorTemplatesTabOverlaySelector);
+
+  expect(overlay).toBeInstanceOf(HTMLSpanElement);
+
+  return overlay as HTMLSpanElement;
+}
+
+function renderIndicatorTemplatesTab(
+  selectedTabId: "my templates" | "technicals" | "financials",
+  rows: Array<{ description: string; title: string }>,
+) {
+  const dialogRoot = getIndicatorTemplatesDialogRoot();
+  const tabButtons = dialogRoot.querySelectorAll(indicatorTemplatesTabSelector);
+  const itemsRoot = dialogRoot.querySelector(".items-L80m51KC");
+
+  expect(itemsRoot).toBeInstanceOf(HTMLElement);
+
+  for (const tabButton of tabButtons) {
+    if (!(tabButton instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    tabButton.setAttribute("aria-selected", tabButton.id === selectedTabId ? "true" : "false");
+  }
+
+  (itemsRoot as HTMLElement).innerHTML = rows
+    .map((row, index) =>
+      createIndicatorTemplatesRowMarkup(index + 1, row.title, row.description),
+    )
+    .join("");
+}
+
 function getMenuItemBySelector(selector: string) {
   return document.querySelector(selector);
 }
@@ -667,6 +1110,14 @@ function getRootText(rootSelector: string) {
   expect(root).toBeInstanceOf(HTMLElement);
 
   return normalizeText(root?.textContent);
+}
+
+function updateDialogInputValue(rootSelector: string, value: string) {
+  const dialogInput = getDialogInput(rootSelector);
+
+  dialogInput.value = value;
+  dialogInput.dispatchEvent(new Event("input", { bubbles: true }));
+  dialogInput.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function createBootstrapCacheRecordWithUser(
@@ -877,6 +1328,153 @@ function createFavoriteButtonsMarkup() {
         aria-hidden="false"
         data-tooltip="Add to favorites"
       ></span>
+    </div>
+  `;
+}
+
+function createRestrictedDialogsMarkup() {
+  return `
+    <div class="wrap-B02UUUN3" data-name="create-dialog">
+      <div class="main-B02UUUN3">
+        <div class="content-B02UUUN3">
+          <div class="autocomplete-uszkUMOz js-dialog-skip-escape">
+            <span class="container-WDZ0PRNh" data-qa-id="ui-lib-Input">
+              <span class="inner-slot-W53jtLjw inner-middle-slot-W53jtLjw">
+                <input data-qa-id="ui-lib-Input-input" value="" />
+              </span>
+            </span>
+          </div>
+        </div>
+        <div class="footer-B02UUUN3">
+          <button name="save" data-qa-id="save-btn">Create</button>
+        </div>
+      </div>
+    </div>
+    <div class="wrap-B02UUUN3" data-name="rename-dialog">
+      <div class="main-B02UUUN3">
+        <div class="content-B02UUUN3">
+          <div class="autocomplete-uszkUMOz js-dialog-skip-escape">
+            <span class="container-WDZ0PRNh" data-qa-id="ui-lib-Input">
+              <span class="inner-slot-W53jtLjw inner-middle-slot-W53jtLjw">
+                <input data-qa-id="ui-lib-Input-input" value="" />
+              </span>
+              <span class="inner-slot-W53jtLjw interactive-W53jtLjw">
+                <button type="button" tabindex="-1" class="button-PYEOTd6i"></button>
+              </span>
+              <span class="highlight-WDZ0PRNh"></span>
+            </span>
+          </div>
+        </div>
+        <div class="footer-B02UUUN3">
+          <button name="save" data-qa-id="save-btn">Save</button>
+        </div>
+      </div>
+    </div>
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="save-rename-dialog" data-dialog-name="Save indicator template">
+      <div class="container-CD9TBN7D">
+        <div class="autocomplete-CD9TBN7D">
+          <div class="autocomplete-uszkUMOz js-dialog-skip-escape">
+            <span class="container-WDZ0PRNh" data-qa-id="ui-lib-Input">
+              <span class="inner-slot-W53jtLjw inner-middle-slot-W53jtLjw">
+                <input data-qa-id="ui-lib-Input-input" value="" />
+              </span>
+              <span class="inner-slot-W53jtLjw interactive-W53jtLjw">
+                <button type="button" tabindex="-1" class="button-PYEOTd6i"></button>
+              </span>
+              <span class="highlight-WDZ0PRNh"></span>
+            </span>
+            <ul class="suggestions-uszkUMOz"><li>template lama</li></ul>
+          </div>
+        </div>
+        <button name="submit" data-name="submit-button" data-qa-id="submit-button">Save</button>
+      </div>
+    </div>
+  `;
+}
+
+function createIndicatorTemplatesDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX dialog-b8SxMnzX" data-name="indicator-templates-dialog" data-dialog-name="Indicator templates">
+      <div class="bodyWrapper-B3wirqjZ">
+        <div class="search-lANubSc2-wrapper">
+          <input role="searchbox" type="text" placeholder="Search" value="" />
+        </div>
+        <div class="tabs-nqU_VJml">
+          <button role="tab" id="my templates" aria-selected="true">My templates</button>
+          <button role="tab" id="technicals" aria-selected="false">Technicals</button>
+          <button role="tab" id="financials" aria-selected="false">Financials</button>
+        </div>
+        <div class="contentArea-B3wirqjZ">
+          <div class="items-L80m51KC">
+            ${createIndicatorTemplatesRowMarkup(1, "50975 alpha", "Vol · Ticks")}
+            ${createIndicatorTemplatesRowMarkup(2, "template orang lain", "EMA 20/50")}
+            ${createIndicatorTemplatesRowMarkup(3, "50975 beta", "10 in 1 MAs, RSI")}
+            ${createIndicatorTemplatesRowMarkup(4, "template publik", "Order Block")}
+            ${createIndicatorTemplatesRowMarkup(5, "50975 gamma", "WAE [SHK]")}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileIndicatorTemplatesCategoryDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="indicator-templates-dialog" data-dialog-name="Indicator templates">
+      <div class="container-BZKENkhT">
+        <div class="title-BZKENkhT">Indicator templates</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="" />
+      </div>
+      <div class="bodyWrapper-B3wirqjZ">
+        <div class="sidebarArea-B3wirqjZ">
+          <div class="container-nGEmjtaX isMobile-nGEmjtaX mobileTabs-qbOBDZgr" data-role="dialog-sidebar" role="toolbar" aria-orientation="vertical">
+            <button tabindex="-1" class="tab-nGEmjtaX isMobile-nGEmjtaX accessible-nGEmjtaX mobileTabItem-qbOBDZgr please-qbOBDZgr">My templates</button>
+            <button tabindex="-1" class="tab-nGEmjtaX isMobile-nGEmjtaX accessible-nGEmjtaX mobileTabItem-qbOBDZgr please-qbOBDZgr">Technicals</button>
+            <button tabindex="-1" class="tab-nGEmjtaX isMobile-nGEmjtaX accessible-nGEmjtaX mobileTabItem-qbOBDZgr please-qbOBDZgr">Financials</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileIndicatorTemplatesMyTemplatesDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="indicator-templates-dialog" data-dialog-name="My templates">
+      <div class="container-BZKENkhT">
+        <button type="button">Back</button>
+        <div class="title-BZKENkhT">My templates</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="" />
+      </div>
+      <div class="contentArea-B3wirqjZ">
+        <div class="items-L80m51KC">
+          ${createIndicatorTemplatesRowMarkup(1, "50975 alpha", "Vol · Ticks")}
+          ${createIndicatorTemplatesRowMarkup(2, "template orang lain", "EMA 20/50")}
+          ${createIndicatorTemplatesRowMarkup(3, "50975 beta", "10 in 1 MAs, RSI")}
+          ${createIndicatorTemplatesRowMarkup(4, "template publik", "Order Block")}
+          ${createIndicatorTemplatesRowMarkup(5, "50975 gamma", "WAE [SHK]")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createIndicatorTemplatesRowMarkup(index: number, title: string, description: string) {
+  return `
+    <div id="list-item-${index}" data-id="template-${index}" data-role="list-item" data-title="${title}" class="item-J4S_Zh_W">
+      <div class="body-J4S_Zh_W">
+        <div class="name-J4S_Zh_W">${title}</div>
+        <div class="description-J4S_Zh_W">${description}</div>
+      </div>
+      <div class="actions-J4S_Zh_W">
+        <span role="img" id="list-item-${index}-action-1" data-role="list-item-action" data-name="remove-button" class="button-iLKiGOdQ" aria-label="Remove"></span>
+      </div>
     </div>
   `;
 }
