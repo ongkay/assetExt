@@ -49,6 +49,8 @@ const saveIndicatorTemplateDialogSelector =
   '[data-dialog-name="Save indicator template"][data-name="save-rename-dialog"]';
 const indicatorTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
+const layoutsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const mobileIndicatorTemplatesCategoryDialogSelector =
   '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="Indicator templates"]';
 const mobileIndicatorTemplatesMyTemplatesDialogSelector =
@@ -829,6 +831,55 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("autofills and locks the desktop Layouts searchbox to publicId in restricted mode", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-layouts-desktop.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createLayoutsDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getLayoutsSearchInput().value).toBe("50975");
+    expect(getLayoutsSearchInput().readOnly).toBe(true);
+    expect(getLayoutsSearchInput().getAttribute("aria-readonly")).toBe("true");
+    expect(getLayoutsClearButton().hidden).toBe(true);
+    expect(getLayoutsClearButton().getAttribute("aria-hidden")).toBe("true");
+    expect(getLayoutsClearButton().style.display).toBe("none");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("autofills and locks the mobile Layouts searchbox to publicId in restricted mode", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-layouts-mobile.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createLayoutsDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getLayoutsSearchInput().value).toBe("50975");
+    expect(getLayoutsSearchInput().readOnly).toBe(true);
+    expect(getLayoutsSearchInput().getAttribute("aria-readonly")).toBe("true");
+    expect(getLayoutsClearButton().hidden).toBe(true);
+    expect(getLayoutsClearButton().style.pointerEvents).toBe("none");
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("disables Hotlists on the mobile Watchlists category screen", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
@@ -1163,6 +1214,30 @@ function getIndicatorTemplatesDialogRoot() {
   expect(dialogRoot).toBeInstanceOf(HTMLElement);
 
   return dialogRoot as HTMLElement;
+}
+
+function getLayoutsDialogRoot() {
+  const dialogRoot = document.querySelector(layoutsDialogSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  return dialogRoot as HTMLElement;
+}
+
+function getLayoutsSearchInput() {
+  const searchInput = getLayoutsDialogRoot().querySelector('input[role="searchbox"]');
+
+  expect(searchInput).toBeInstanceOf(HTMLInputElement);
+
+  return searchInput as HTMLInputElement;
+}
+
+function getLayoutsClearButton() {
+  const clearButton = getLayoutsDialogRoot().querySelector('button[aria-label="Clear"]');
+
+  expect(clearButton).toBeInstanceOf(HTMLButtonElement);
+
+  return clearButton as HTMLButtonElement;
 }
 
 function getVisibleIndicatorTemplateTitles() {
@@ -1659,6 +1734,37 @@ function createIndicatorTemplatesDialogMarkup() {
             ${createIndicatorTemplatesRowMarkup(5, "50975 gamma", "WAE [SHK]")}
           </div>
         </div>
+      </div>
+    </div>
+  `;
+}
+
+function createLayoutsDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="load-layout-dialog" data-dialog-name="Layouts">
+      <div class="searchContainer-B3wirqjZ">
+        <div class="inputContainer-lANubSc2">
+          <input
+            placeholder="Search"
+            aria-controls=":layouts:"
+            aria-owns=":layouts:"
+            aria-haspopup="listbox"
+            class="search-lANubSc2"
+            role="searchbox"
+            type="text"
+            autocomplete="off"
+            value=""
+          />
+          <div class="actions-lANubSc2">
+            <button title="Clear" type="button" aria-label="Clear" class="iconButton-RAiBjVep primary-RAiBjVep square-RAiBjVep apply-common-tooltip"></button>
+          </div>
+        </div>
+      </div>
+      <div style="height: 192px; width: 100%; position: relative;">
+        <a role="row" id="list-item-0" selected="true" style="position: absolute; left: 0px; top: 0px; height: 48px; width: 100%;">50975 ddXAUUSD, 1D</a>
+        <a role="row" id="list-item-1" selected="false" style="position: absolute; left: 0px; top: 48px; height: 48px; width: 100%;">50975 lamaXAUUSD, 1D</a>
+        <a role="row" id="list-item-2" selected="false" style="position: absolute; left: 0px; top: 96px; height: 48px; width: 100%;">layout orang lainXAUUSD, 1D</a>
+        <a role="row" id="list-item-3" selected="false" style="position: absolute; left: 0px; top: 144px; height: 48px; width: 100%;">layout publikXAUUSD, 4H</a>
       </div>
     </div>
   `;

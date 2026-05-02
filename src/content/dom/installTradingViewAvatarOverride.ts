@@ -55,6 +55,10 @@ const restrictedIndicatorTemplatesTabOverlaySelector =
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
+const layoutsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
+const layoutsSearchInputSelector = 'input[role="searchbox"]';
+const layoutsSearchClearButtonSelector = 'button[aria-label="Clear"]';
 const watchlistsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Watchlists"]';
 const myWatchlistsDialogSelector =
@@ -127,6 +131,9 @@ const relevantTradingViewSelectors = [
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
+  layoutsDialogSelector,
+  layoutsSearchInputSelector,
+  layoutsSearchClearButtonSelector,
   watchlistsDialogSelector,
   myWatchlistsDialogSelector,
   searchWatchlistsDialogSelector,
@@ -356,6 +363,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   removeRestrictedRecentSections();
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
+  syncRestrictedLayoutsDialogs(overrideState.publicId);
   syncRestrictedWatchlistsDialogs(overrideState.publicId);
 }
 
@@ -489,6 +497,56 @@ function findRestrictedIndicatorTemplatesDialogRoots() {
   }
 
   return [...dialogRoots];
+}
+
+function syncRestrictedLayoutsDialogs(publicId: string | null) {
+  const dialogRoots = document.querySelectorAll(layoutsDialogSelector);
+
+  for (const dialogRoot of dialogRoots) {
+    if (!(dialogRoot instanceof HTMLElement)) {
+      continue;
+    }
+
+    syncRestrictedLayoutsDialog(dialogRoot, publicId);
+  }
+}
+
+function syncRestrictedLayoutsDialog(dialogRoot: HTMLElement, publicId: string | null) {
+  const requiredPublicId = publicId?.trim() ?? "";
+  const searchInput = dialogRoot.querySelector(layoutsSearchInputSelector);
+
+  if (searchInput instanceof HTMLInputElement) {
+    syncRestrictedLayoutsSearchInput(searchInput, requiredPublicId);
+  }
+
+  hideRestrictedLayoutsClearButtons(dialogRoot);
+}
+
+function syncRestrictedLayoutsSearchInput(
+  searchInput: HTMLInputElement,
+  requiredPublicId: string,
+) {
+  if (searchInput.value !== requiredPublicId) {
+    setInputValue(searchInput, requiredPublicId);
+  }
+
+  searchInput.readOnly = true;
+  searchInput.setAttribute("aria-readonly", "true");
+}
+
+function hideRestrictedLayoutsClearButtons(dialogRoot: HTMLElement) {
+  const clearButtons = dialogRoot.querySelectorAll(layoutsSearchClearButtonSelector);
+
+  for (const clearButton of clearButtons) {
+    if (!(clearButton instanceof HTMLElement)) {
+      continue;
+    }
+
+    clearButton.hidden = true;
+    clearButton.setAttribute("aria-hidden", "true");
+    clearButton.style.display = "none";
+    clearButton.style.pointerEvents = "none";
+  }
 }
 
 function isDesktopIndicatorTemplatesDialogRoot(dialogRoot: HTMLElement) {
