@@ -64,6 +64,14 @@ const mobileMyWatchlistsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="My watchlists"]';
 const mobileSearchWatchlistsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Search"]';
+const desktopWatchlistActiveTitleSelector = '.headerMenuContent-mQBvegEO .titleRow-mQBvegEO';
+const desktopWatchlistSymbolRowSelector = '.watchlist-__KRxuOy .tree-MgF6KBas .wrap-IEe5qpW4';
+const desktopWatchlistRemoveButtonSelector = '.watchlist-__KRxuOy .removeButton-RsFlttSS';
+const desktopActiveWatchlistMenuSelector = 'div.menuBox-XktvVkFF[data-qa-id="menu-inner"]';
+const mobileActiveWatchlistMenuSelector = '[data-name="active-watchlist-menu"]';
+const watchlistAddSymbolButtonSelector = 'button[data-name="add-symbol-button"]';
+const watchlistAdvancedViewButtonSelector = 'button[data-name="advanced-view-button"]';
+const mobileWatchlistSymbolDrawerSelector = '.drawer-GQU5HVYO.positionBottom-GQU5HVYO';
 const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
 const dialogSelectButtonSelector =
   ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
@@ -78,6 +86,7 @@ const restrictedIndicatorTemplatesTabOverlaySelector =
   '[data-asset-manager-restricted-tab-overlay="true"]';
 const restrictedIndicatorTemplatesAccessDeniedMessage =
   "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
+const restrictedActiveWatchlistMenuMessage = "watchlist bukan milik anda";
 
 const originalChrome = globalThis.chrome;
 const originalDocumentClassName = document.documentElement.className;
@@ -911,6 +920,388 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("restricts desktop watchlist symbol drag, remove, and context menu for foreign watchlists only", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-symbols.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    const firstSymbolRow = getDesktopWatchlistSymbolRow(0);
+    const firstRemoveButton = getDesktopWatchlistRemoveButton(0);
+    const addSymbolButton = getWatchlistAddSymbolButton();
+    const advancedViewButton = getWatchlistAdvancedViewButton();
+    let clickHandled = false;
+    let contextMenuHandled = false;
+    let removeClickHandled = false;
+
+    firstSymbolRow.addEventListener("click", () => {
+      clickHandled = true;
+    });
+    firstSymbolRow.addEventListener("contextmenu", () => {
+      contextMenuHandled = true;
+    });
+    firstRemoveButton.addEventListener("click", () => {
+      removeClickHandled = true;
+    });
+
+    expect(firstSymbolRow.getAttribute("draggable")).toBe("false");
+    expect(firstRemoveButton.style.opacity).toBe("0.5");
+    expect(firstRemoveButton.style.cursor).toBe("not-allowed");
+    expect(firstRemoveButton.getAttribute("aria-disabled")).toBe("true");
+    expect(addSymbolButton.disabled).toBe(true);
+    expect(addSymbolButton.style.opacity).toBe("0.5");
+    expect(addSymbolButton.style.cursor).toBe("not-allowed");
+    expect(advancedViewButton.disabled).toBe(true);
+    expect(advancedViewButton.style.opacity).toBe("0.5");
+    expect(advancedViewButton.style.cursor).toBe("not-allowed");
+    expect(firstSymbolRow.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      true,
+    );
+    expect(clickHandled).toBe(true);
+    expect(
+      firstSymbolRow.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+    ).toBe(false);
+    expect(contextMenuHandled).toBe(false);
+    expect(firstSymbolRow.dispatchEvent(new Event("dragstart", { bubbles: true, cancelable: true }))).toBe(
+      false,
+    );
+    expect(firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      false,
+    );
+    expect(removeClickHandled).toBe(false);
+
+    setDesktopWatchlistActiveTitle("50975 dua");
+    await flushAsyncWork();
+
+    expect(firstSymbolRow.getAttribute("draggable")).toBe("true");
+    expect(firstRemoveButton.style.opacity).toBe("");
+    expect(firstRemoveButton.style.cursor).toBe("");
+    expect(firstRemoveButton.getAttribute("aria-disabled")).toBe("false");
+    expect(addSymbolButton.disabled).toBe(false);
+    expect(addSymbolButton.style.opacity).toBe("");
+    expect(addSymbolButton.style.cursor).toBe("");
+    expect(advancedViewButton.disabled).toBe(true);
+    expect(advancedViewButton.style.opacity).toBe("0.5");
+    expect(advancedViewButton.style.cursor).toBe("not-allowed");
+    expect(
+      firstSymbolRow.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })),
+    ).toBe(false);
+    expect(firstSymbolRow.dispatchEvent(new Event("dragstart", { bubbles: true, cancelable: true }))).toBe(
+      true,
+    );
+    expect(firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      true,
+    );
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps desktop watchlist symbol actions unchanged when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-symbols-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    let contextMenuHandled = false;
+
+    getDesktopWatchlistSymbolRow(0).addEventListener("contextmenu", () => {
+      contextMenuHandled = true;
+    });
+
+    expect(getDesktopWatchlistSymbolRow(0).getAttribute("draggable")).toBe("true");
+    expect(getDesktopWatchlistRemoveButton(0).style.opacity).toBe("");
+    expect(getDesktopWatchlistRemoveButton(0).style.cursor).toBe("");
+    expect(getDesktopWatchlistRemoveButton(0).getAttribute("aria-disabled")).toBeNull();
+    expect(getWatchlistAddSymbolButton().disabled).toBe(false);
+    expect(getWatchlistAdvancedViewButton().disabled).toBe(false);
+    expect(
+      getDesktopWatchlistSymbolRow(0).dispatchEvent(
+        new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),
+      ),
+    ).toBe(true);
+    expect(contextMenuHandled).toBe(true);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("disables foreign desktop active watchlist menu items and always removes add-alert", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-desktop.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeInstanceOf(HTMLElement);
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename")).toBeInstanceOf(HTMLElement);
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add section")).toBeInstanceOf(HTMLElement);
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Clear list")).toBeInstanceOf(HTMLElement);
+
+    const shareListItem = getRequiredActiveWatchlistMenuItem(
+      desktopActiveWatchlistMenuSelector,
+      "Share list",
+    );
+    const renameItem = getRequiredActiveWatchlistMenuItem(
+      desktopActiveWatchlistMenuSelector,
+      "Rename",
+    );
+
+    expect(shareListItem.style.opacity).toBe("0.5");
+    expect(shareListItem.style.cursor).toBe("not-allowed");
+    expect(shareListItem.getAttribute("aria-disabled")).toBe("true");
+    expect(getActiveWatchlistMenuSwitch(desktopActiveWatchlistMenuSelector).disabled).toBe(true);
+    expect(renameItem.style.opacity).toBe("0.5");
+    expect(renameItem.style.cursor).toBe("not-allowed");
+    expect(renameItem.getAttribute("aria-disabled")).toBe("true");
+
+    expect(
+      renameItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    ).toBe(false);
+    expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps owned desktop active watchlist menu items enabled but still removes add-alert", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-desktop-owned.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+
+    const shareListItem = getRequiredActiveWatchlistMenuItem(
+      desktopActiveWatchlistMenuSelector,
+      "Share list",
+    );
+    const renameItem = getRequiredActiveWatchlistMenuItem(
+      desktopActiveWatchlistMenuSelector,
+      "Rename",
+    );
+
+    expect(shareListItem.style.opacity).toBe("");
+    expect(shareListItem.style.cursor).toBe("");
+    expect(shareListItem.getAttribute("aria-disabled")).toBeNull();
+    expect(getActiveWatchlistMenuSwitch(desktopActiveWatchlistMenuSelector).disabled).toBe(false);
+    expect(renameItem.style.opacity).toBe("");
+    expect(renameItem.style.cursor).toBe("");
+    expect(renameItem.getAttribute("aria-disabled")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("disables foreign mobile active watchlist menu items and always removes add-alert", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-mobile.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("dua")}${createMobileActiveWatchlistMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+
+    const shareListItem = getRequiredActiveWatchlistMenuItem(
+      mobileActiveWatchlistMenuSelector,
+      "Share list",
+    );
+    const clearListItem = getRequiredActiveWatchlistMenuItem(
+      mobileActiveWatchlistMenuSelector,
+      "Clear list",
+    );
+
+    expect(shareListItem.style.opacity).toBe("0.5");
+    expect(shareListItem.style.cursor).toBe("not-allowed");
+    expect(getActiveWatchlistMenuSwitch(mobileActiveWatchlistMenuSelector).disabled).toBe(true);
+    expect(clearListItem.style.opacity).toBe("0.5");
+    expect(clearListItem.style.cursor).toBe("not-allowed");
+    expect(
+      clearListItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    ).toBe(false);
+    expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps owned mobile active watchlist menu items enabled but still removes add-alert", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-mobile-owned.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("50975 dua")}${createMobileActiveWatchlistMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+
+    const shareListItem = getRequiredActiveWatchlistMenuItem(
+      mobileActiveWatchlistMenuSelector,
+      "Share list",
+    );
+    const clearListItem = getRequiredActiveWatchlistMenuItem(
+      mobileActiveWatchlistMenuSelector,
+      "Clear list",
+    );
+
+    expect(shareListItem.style.opacity).toBe("");
+    expect(shareListItem.style.cursor).toBe("");
+    expect(shareListItem.getAttribute("aria-disabled")).toBeNull();
+    expect(getActiveWatchlistMenuSwitch(mobileActiveWatchlistMenuSelector).disabled).toBe(false);
+    expect(clearListItem.style.opacity).toBe("");
+    expect(clearListItem.style.cursor).toBe("");
+    expect(clearListItem.getAttribute("aria-disabled")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("removes restricted rows from the mobile symbol drawer and disables foreign watchlist actions", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-watchlist-drawer.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("dua")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getWatchlistAddSymbolButton().disabled).toBe(true);
+    expect(getWatchlistAddSymbolButton().style.opacity).toBe("0.5");
+    expect(getWatchlistAdvancedViewButton().disabled).toBe(true);
+    expect(getWatchlistAdvancedViewButton().style.opacity).toBe("0.5");
+    expect(getWatchlistAdvancedViewButton().style.cursor).toBe("not-allowed");
+    expect(getMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Flag/Unflag "))).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => text === "Unflag all symbols")).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => /to watchlist$/.test(text))).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => /to compare$/.test(text))).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => / Supercharts$/.test(text))).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Add note for "))).toBeNull();
+
+    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) =>
+      text.startsWith("Remove "),
+    );
+    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem(
+      (text) => text === "Add section",
+    );
+
+    expect(removeItem.style.opacity).toBe("0.5");
+    expect(removeItem.style.cursor).toBe("not-allowed");
+    expect(removeItem.getAttribute("aria-disabled")).toBe("true");
+    expect(addSectionItem.style.opacity).toBe("0.5");
+    expect(addSectionItem.style.cursor).toBe("not-allowed");
+    expect(addSectionItem.getAttribute("aria-disabled")).toBe("true");
+    expect(
+      removeItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    ).toBe(false);
+    expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps remaining mobile symbol drawer actions enabled for owned watchlists", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-watchlist-drawer-owned.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("50975 data")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getWatchlistAddSymbolButton().disabled).toBe(false);
+    expect(getWatchlistAdvancedViewButton().disabled).toBe(true);
+    expect(getWatchlistAdvancedViewButton().style.opacity).toBe("0.5");
+    expect(getWatchlistAdvancedViewButton().style.cursor).toBe("not-allowed");
+    expect(getMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Flag/Unflag "))).toBeNull();
+    expect(getMobileWatchlistSymbolDrawerItem((text) => text === "Unflag all symbols")).toBeNull();
+
+    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) =>
+      text.startsWith("Remove "),
+    );
+    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem(
+      (text) => text === "Add section",
+    );
+
+    expect(removeItem.style.opacity).toBe("");
+    expect(removeItem.style.cursor).toBe("");
+    expect(removeItem.getAttribute("aria-disabled")).toBeNull();
+    expect(addSectionItem.style.opacity).toBe("");
+    expect(addSectionItem.style.cursor).toBe("");
+    expect(addSectionItem.getAttribute("aria-disabled")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("disables Hotlists on the mobile Watchlists category screen", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
@@ -1269,6 +1660,90 @@ function getLayoutsClearButton() {
   expect(clearButton).toBeInstanceOf(HTMLButtonElement);
 
   return clearButton as HTMLButtonElement;
+}
+
+function getDesktopWatchlistSymbolRow(index: number) {
+  const symbolRow = document.querySelectorAll(desktopWatchlistSymbolRowSelector)[index];
+
+  expect(symbolRow).toBeInstanceOf(HTMLDivElement);
+
+  return symbolRow as HTMLDivElement;
+}
+
+function getDesktopWatchlistRemoveButton(index: number) {
+  const removeButton = document.querySelectorAll(desktopWatchlistRemoveButtonSelector)[index];
+
+  expect(removeButton).toBeInstanceOf(HTMLSpanElement);
+
+  return removeButton as HTMLSpanElement;
+}
+
+function setDesktopWatchlistActiveTitle(title: string) {
+  const activeTitle = document.querySelector(desktopWatchlistActiveTitleSelector);
+
+  expect(activeTitle).toBeInstanceOf(HTMLElement);
+
+  (activeTitle as HTMLElement).outerHTML = `<span class="titleRow-mQBvegEO">${title}</span>`;
+}
+
+function getActiveWatchlistMenuItem(rootSelector: string, label: string) {
+  return (
+    [...document.querySelectorAll(`${rootSelector} [data-role="menuitem"]`)].find((menuItem) => {
+      if (!(menuItem instanceof HTMLElement)) {
+        return false;
+      }
+
+      return normalizeText(menuItem.textContent) === label;
+    }) ?? null
+  );
+}
+
+function getRequiredActiveWatchlistMenuItem(rootSelector: string, label: string) {
+  const menuItem = getActiveWatchlistMenuItem(rootSelector, label);
+
+  expect(menuItem).toBeInstanceOf(HTMLElement);
+
+  return menuItem as HTMLElement;
+}
+
+function getActiveWatchlistMenuSwitch(rootSelector: string) {
+  const switchInput = document.querySelector(`${rootSelector} input[role="switch"]`);
+
+  expect(switchInput).toBeInstanceOf(HTMLInputElement);
+
+  return switchInput as HTMLInputElement;
+}
+
+function getWatchlistAddSymbolButton() {
+  const addSymbolButton = document.querySelector(watchlistAddSymbolButtonSelector);
+
+  expect(addSymbolButton).toBeInstanceOf(HTMLButtonElement);
+
+  return addSymbolButton as HTMLButtonElement;
+}
+
+function getWatchlistAdvancedViewButton() {
+  const advancedViewButton = document.querySelector(watchlistAdvancedViewButtonSelector);
+
+  expect(advancedViewButton).toBeInstanceOf(HTMLButtonElement);
+
+  return advancedViewButton as HTMLButtonElement;
+}
+
+function getMobileWatchlistSymbolDrawerItem(predicate: (text: string) => boolean) {
+  return (
+    [...document.querySelectorAll(`${mobileWatchlistSymbolDrawerSelector} li.item-WJDah4zD`)].find(
+      (item) => item instanceof HTMLLIElement && predicate(normalizeText(item.textContent)),
+    ) ?? null
+  );
+}
+
+function getRequiredMobileWatchlistSymbolDrawerItem(predicate: (text: string) => boolean) {
+  const menuItem = getMobileWatchlistSymbolDrawerItem(predicate);
+
+  expect(menuItem).toBeInstanceOf(HTMLLIElement);
+
+  return menuItem as HTMLLIElement;
 }
 
 function getVisibleDrawingTemplateTitles() {
@@ -1864,6 +2339,191 @@ function createDrawingTemplatesMenuMarkup() {
           ${createDrawingTemplateMenuRowMarkup("panjangggggggggggggggggggg sekaliiiiiiiiiiiiiiiiiiiiiiii 50975")}
         </tbody>
       </table>
+    </div>
+  `;
+}
+
+function createDesktopWatchlistActiveTitleMarkup(title: string) {
+  return `
+    <div class="container-u7Ufi_N7">
+      <div class="leftSlot-u7Ufi_N7 widgetbarWidgetHeaderLeftSlot-mQBvegEO">
+        <button class="button-merBkM5y button-g115eYH4 apply-common-tooltip accessible-merBkM5y" type="button">
+          <span class="inner-g115eYH4">
+            <div class="headerMenuContent-mQBvegEO">
+              <span class="titleRow-mQBvegEO">${title}</span>
+            </div>
+          </span>
+        </button>
+        <button type="button" aria-label="Add symbol" data-name="add-symbol-button" class="headerButton-mQBvegEO"></button>
+        <button type="button" aria-label="Advanced view" data-name="advanced-view-button" class="headerButton-mQBvegEO"></button>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileWatchlistActiveTitleMarkup(title: string) {
+  return `
+    <button type="button" class="mobileBtn-mQBvegEO button-merBkM5y button-g115eYH4 apply-common-tooltip accessible-merBkM5y" data-name="watchlists-button">
+      <span class="inner-g115eYH4">
+        <div class="headerMenuContent-mQBvegEO">
+          <span></span>
+          <span class="titleRow-mQBvegEO">${title}</span>
+        </div>
+      </span>
+    </button>
+    <button type="button" aria-label="Add symbol" data-name="add-symbol-button" class="headerButton-mQBvegEO"></button>
+    <button type="button" aria-label="Advanced view" data-name="advanced-view-button" class="headerButton-mQBvegEO"></button>
+  `;
+}
+
+function createDesktopWatchlistSymbolsMarkup() {
+  return `
+    <div class="watchlist-__KRxuOy">
+      <div class="content-g71rrBCn">
+        <div class="scrollable-g71rrBCn" data-name="symbol-list-wrap">
+          <div class="tree-MgF6KBas" data-name="tree" tabindex="0">
+            <div class="listContainer-MgF6KBas">
+              <div>
+                ${createDesktopWatchlistSymbolRowMarkup(0, "CME_MINI:ES1!", "ES1!")}
+                ${createDesktopWatchlistSymbolRowMarkup(1, "CME_MINI:NQ1!", "NQ1!")}
+                ${createDesktopWatchlistSymbolRowMarkup(2, "AMEX:SPY", "SPY")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createDesktopActiveWatchlistMenuMarkup() {
+  return `
+    <div class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+      ${createActiveWatchlistShareListMarkup()}
+      ${createActiveWatchlistMenuRowMarkup("Add alert on the list…")}
+      ${createActiveWatchlistMenuRowMarkup("Make a copy…")}
+      ${createActiveWatchlistMenuRowMarkup("Rename")}
+      ${createActiveWatchlistMenuRowMarkup("Add section")}
+      ${createActiveWatchlistMenuRowMarkup("Clear list")}
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      ${createActiveWatchlistMenuRowMarkup("Create new list…")}
+      ${createActiveWatchlistMenuRowMarkup("Upload list…")}
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      <div data-role="menuitem" class="accessible-NQERJsv9 item-BOZdoKo9 item-E2qCgOMz withIcon-BOZdoKo9 withIcon-E2qCgOMz" tabindex="-1">
+        <span class="icon-BOZdoKo9"></span>
+        <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Open list…</span><span class="shortcut-BOZdoKo9">Shift + W</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileActiveWatchlistMenuMarkup() {
+  return `
+    <div class="drawer-GQU5HVYO drawer-GQU5HVYO positionBottom-GQU5HVYO" tabindex="-1" data-name="active-watchlist-menu">
+      ${createActiveWatchlistShareListMarkup()}
+      ${createMobileActiveWatchlistMenuRowMarkup("Add alert on the list…")}
+      ${createMobileActiveWatchlistMenuRowMarkup("Make a copy…")}
+      ${createMobileActiveWatchlistMenuRowMarkup("Rename")}
+      ${createMobileActiveWatchlistMenuRowMarkup("Add section")}
+      ${createMobileActiveWatchlistMenuRowMarkup("Clear list")}
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      ${createMobileActiveWatchlistMenuRowMarkup("Create new list…")}
+      ${createMobileActiveWatchlistMenuRowMarkup("Upload list…")}
+      <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+      <div data-role="menuitem" class="accessible-NQERJsv9 item-BOZdoKo9 item-mcATxxXd withIcon-BOZdoKo9" tabindex="-1">
+        <span class="icon-BOZdoKo9"></span>
+        <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Open list…</span><span class="shortcut-BOZdoKo9">Shift + W</span></span>
+      </div>
+    </div>
+  `;
+}
+
+function createActiveWatchlistShareListMarkup() {
+  return `
+    <label class="wrapper-bl9AR3Gv accessible-bl9AR3Gv" tabindex="-1" data-role="menuitem" aria-selected="false">
+      <div class="labelRow-bl9AR3Gv">
+        <div class="label-bl9AR3Gv switcherMobileLabel-mQBvegEO">Share list</div>
+      </div>
+      <div class="switchWrap-bl9AR3Gv">
+        <span class="switcher-fwE97QDf">
+          <input type="checkbox" class="input-fwE97QDf" role="switch" aria-checked="false" tabindex="-1" value="share-switcher" />
+          <span class="thumbWrapper-fwE97QDf"></span>
+        </span>
+      </div>
+    </label>
+  `;
+}
+
+function createActiveWatchlistMenuRowMarkup(label: string) {
+  return `
+    <div data-role="menuitem" class="accessible-NQERJsv9 item-BOZdoKo9 item-E2qCgOMz withIcon-BOZdoKo9 withIcon-E2qCgOMz" tabindex="-1">
+      <span class="icon-BOZdoKo9"></span>
+      <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">${label}</span></span>
+    </div>
+  `;
+}
+
+function createMobileActiveWatchlistMenuRowMarkup(label: string) {
+  return `
+    <div data-role="menuitem" class="accessible-NQERJsv9 item-BOZdoKo9 item-mcATxxXd withIcon-BOZdoKo9" tabindex="-1">
+      <span class="icon-BOZdoKo9"></span>
+      <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">${label}</span></span>
+    </div>
+  `;
+}
+
+function createMobileWatchlistDialogMarkup(title: string) {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="watchlist-dialog">
+      <div class="container-u7Ufi_N7">
+        ${createMobileWatchlistActiveTitleMarkup(title)}
+      </div>
+    </div>
+  `;
+}
+
+function createMobileWatchlistSymbolDrawerMarkup(symbolShort: string) {
+  return `
+    <div class="drawer-GQU5HVYO drawer-GQU5HVYO positionBottom-GQU5HVYO" tabindex="-1">
+      <ul>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Flag/Unflag ${symbolShort}</span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD"><span class="wrapper-BZLCGWlx"><span class="buttons-BZLCGWlx"><menu><label tabindex="-1" class="colorSelectButton-BZLCGWlx" role="menuitem" aria-label="Set red flag"></label></menu></span></span></span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Unflag all symbols</span></li>
+        <li class="separator-Ymxd0dt_"></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Add ${symbolShort} to watchlist</span><span role="img" class="nested-WJDah4zD" aria-hidden="true"></span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Add ${symbolShort} to compare</span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Open ${symbolShort} Supercharts</span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Add note for ${symbolShort}</span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Remove ${symbolShort} from watchlist</span></li>
+        <li class="separator-Ymxd0dt_"></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Symbol details…</span></li>
+        <li class="separator-Ymxd0dt_"></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD"><div class="wrapper-loaskYzU"><span>Add section</span></div></span></li>
+        <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD"><span role="img" class="icon-WJDah4zD" aria-hidden="true"></span><span class="label-WJDah4zD">Add symbol</span></li>
+      </ul>
+    </div>
+  `;
+}
+
+function createDesktopWatchlistSymbolRowMarkup(index: number, symbolFull: string, symbolShort: string) {
+  return `
+    <div style="position: absolute; left: 0px; top: ${index * 30}px; height: 30px; width: 100%;">
+      <div class="wrap-IEe5qpW4" draggable="true">
+        <div class="symbol-RsFlttSS" data-symbol-full="${symbolFull}" data-symbol-short="${symbolShort}" data-active="false" data-selected="false" data-status="resolved">
+          <div class="firstItem-RsFlttSS symbolName-RsFlttSS">
+            <span class="cell-RsFlttSS flexCell-RsFlttSS">
+              <div class="displayContents-RsFlttSS">
+                <div class="flexCell-RsFlttSS">
+                  <span class="inner-RsFlttSS symbolNameText-RsFlttSS">${symbolShort}</span>
+                </div>
+              </div>
+            </span>
+          </div>
+          <div class="overlayEnd-RsFlttSS">
+            <span role="img" class="button-w6lVe_oI removeButton-RsFlttSS removeButton-Tf8QRdrk" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }

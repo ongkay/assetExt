@@ -77,6 +77,21 @@ const desktopHotlistsTabSelector = 'button[role="tab"]#hot-lists';
 const watchlistsRowSelector = 'div[data-role="list-item"][data-title]';
 const watchlistsSectionContainerSelector = ".container-UmsFKpIc";
 const watchlistsSectionTitleSelector = ".title-RvmSCAQq";
+const desktopWatchlistActiveTitleSelector = '.headerMenuContent-mQBvegEO .titleRow-mQBvegEO';
+const desktopWatchlistSymbolTreeSelector = '.watchlist-__KRxuOy .tree-MgF6KBas';
+const desktopWatchlistSymbolRowSelector =
+  '.watchlist-__KRxuOy .tree-MgF6KBas .wrap-IEe5qpW4';
+const desktopWatchlistRemoveButtonSelector = '.removeButton-RsFlttSS';
+const desktopActiveWatchlistMenuSelector = 'div.menuBox-XktvVkFF[data-qa-id="menu-inner"]';
+const mobileActiveWatchlistMenuSelector = '[data-name="active-watchlist-menu"]';
+const activeWatchlistMenuItemSelector = '[data-role="menuitem"]';
+const watchlistAddSymbolButtonSelector = 'button[data-name="add-symbol-button"]';
+const watchlistAdvancedViewButtonSelector = 'button[data-name="advanced-view-button"]';
+const mobileWatchlistDialogSelector = '[data-name="watchlist-dialog"]';
+const mobileWatchlistSymbolDrawerSelector = '.drawer-GQU5HVYO.positionBottom-GQU5HVYO';
+const mobileWatchlistSymbolDrawerItemSelector = 'li.item-WJDah4zD';
+const mobileWatchlistSymbolDrawerSeparatorSelector = 'li.separator-Ymxd0dt_';
+const mobileWatchlistSymbolDrawerColorMenuItemSelector = 'label[role="menuitem"][aria-label^="Set "]';
 const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
 const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
 const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
@@ -96,6 +111,7 @@ const googleHomeUrl = "https://google.com";
 const logoutRedirectDelayMs = 250;
 const restrictedIndicatorTemplatesAccessDeniedMessage =
   "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
+const restrictedActiveWatchlistMenuMessage = "watchlist bukan milik anda";
 const relevantTradingViewSelectors = [
   mainMenuButtonSelector,
   mainAvatarImageSelector,
@@ -155,6 +171,20 @@ const relevantTradingViewSelectors = [
   watchlistsRowSelector,
   watchlistsSectionContainerSelector,
   watchlistsSectionTitleSelector,
+  desktopWatchlistActiveTitleSelector,
+  desktopWatchlistSymbolTreeSelector,
+  desktopWatchlistSymbolRowSelector,
+  desktopWatchlistRemoveButtonSelector,
+  desktopActiveWatchlistMenuSelector,
+  mobileActiveWatchlistMenuSelector,
+  activeWatchlistMenuItemSelector,
+  watchlistAddSymbolButtonSelector,
+  watchlistAdvancedViewButtonSelector,
+  mobileWatchlistDialogSelector,
+  mobileWatchlistSymbolDrawerSelector,
+  mobileWatchlistSymbolDrawerItemSelector,
+  mobileWatchlistSymbolDrawerSeparatorSelector,
+  mobileWatchlistSymbolDrawerColorMenuItemSelector,
   recentTitleListItemSelector,
   recentLayoutMenuItemSelector,
   recentIndicatorMenuItemSelector,
@@ -373,6 +403,11 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   disableRestrictedRightSidebarActions();
   disableRestrictedFavoriteButtons();
   removeRestrictedRecentSections();
+  syncRestrictedDesktopWatchlistSymbols(overrideState.publicId);
+  syncRestrictedWatchlistAddSymbolButtons(overrideState.publicId);
+  syncRestrictedWatchlistAdvancedViewButtons();
+  syncRestrictedMobileWatchlistSymbolDrawers(overrideState.publicId);
+  syncRestrictedActiveWatchlistMenus(overrideState.publicId);
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
   syncRestrictedDrawingTemplatesMenu(overrideState.publicId);
@@ -416,6 +451,737 @@ function removeRestrictedRecentSections() {
   removeRestrictedRecentLayoutSection();
   removeRestrictedRecentIndicatorSection();
   removeRestrictedRecentWatchlistsSection();
+}
+
+function getRestrictedActiveWatchlistState(publicId: string | null) {
+  const activeWatchlistTitle = normalizeText(
+    document.querySelector(desktopWatchlistActiveTitleSelector)?.textContent,
+  );
+  const requiredPublicId = publicId?.trim() ?? "";
+  const isOwnedWatchlist =
+    activeWatchlistTitle.length > 0 &&
+    requiredPublicId.length > 0 &&
+    activeWatchlistTitle.includes(requiredPublicId);
+
+  return {
+    activeWatchlistTitle,
+    isOwnedWatchlist,
+    requiredPublicId,
+    shouldRestrictForeignWatchlist:
+      activeWatchlistTitle.length > 0 &&
+      (requiredPublicId.length === 0 || !activeWatchlistTitle.includes(requiredPublicId)),
+  };
+}
+
+function syncRestrictedDesktopWatchlistSymbols(publicId: string | null) {
+  if (isTradingViewMobileLayout()) {
+    return;
+  }
+
+  const symbolTree = document.querySelector(desktopWatchlistSymbolTreeSelector);
+
+  if (!(symbolTree instanceof HTMLElement)) {
+    return;
+  }
+
+  const { shouldRestrictForeignWatchlist } = getRestrictedActiveWatchlistState(publicId);
+  const symbolRows = symbolTree.querySelectorAll(desktopWatchlistSymbolRowSelector);
+
+  for (const symbolRow of symbolRows) {
+    if (!(symbolRow instanceof HTMLDivElement)) {
+      continue;
+    }
+
+    syncRestrictedDesktopWatchlistSymbolRow(symbolRow, shouldRestrictForeignWatchlist);
+  }
+}
+
+function syncRestrictedDesktopWatchlistSymbolRow(
+  symbolRow: HTMLDivElement,
+  shouldRestrictSymbolRow: boolean,
+) {
+  preserveDesktopWatchlistRowState(symbolRow);
+  bindRestrictedDesktopWatchlistRow(symbolRow);
+
+  symbolRow.dataset.assetManagerWatchlistRestricted = shouldRestrictSymbolRow ? "true" : "false";
+  symbolRow.dataset.assetManagerWatchlistContextMenuRestricted = "true";
+  symbolRow.setAttribute(
+    "draggable",
+    shouldRestrictSymbolRow ? "false" : symbolRow.dataset.assetManagerOriginalDraggable || "true",
+  );
+
+  const removeButton = symbolRow.querySelector(desktopWatchlistRemoveButtonSelector);
+
+  if (removeButton instanceof HTMLSpanElement) {
+    syncRestrictedDesktopWatchlistRemoveButton(removeButton, shouldRestrictSymbolRow);
+  }
+}
+
+function preserveDesktopWatchlistRowState(symbolRow: HTMLDivElement) {
+  if (symbolRow.dataset.assetManagerOriginalDraggable === undefined) {
+    symbolRow.dataset.assetManagerOriginalDraggable = symbolRow.getAttribute("draggable") || "";
+  }
+}
+
+function bindRestrictedDesktopWatchlistRow(symbolRow: HTMLDivElement) {
+  if (symbolRow.dataset.assetManagerWatchlistBound === "true") {
+    return;
+  }
+
+  symbolRow.dataset.assetManagerWatchlistBound = "true";
+  symbolRow.addEventListener("dragstart", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("dragover", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("drop", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("contextmenu", handleRestrictedDesktopWatchlistContextMenu, true);
+}
+
+function handleRestrictedDesktopWatchlistDragEvent(event: Event) {
+  const symbolRow = event.currentTarget;
+
+  if (!(symbolRow instanceof HTMLDivElement)) {
+    return;
+  }
+
+  if (symbolRow.dataset.assetManagerWatchlistRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+function handleRestrictedDesktopWatchlistContextMenu(event: MouseEvent) {
+  const symbolRow = event.currentTarget;
+
+  if (!(symbolRow instanceof HTMLDivElement)) {
+    return;
+  }
+
+  if (symbolRow.dataset.assetManagerWatchlistContextMenuRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+function syncRestrictedDesktopWatchlistRemoveButton(
+  removeButton: HTMLSpanElement,
+  shouldRestrictRemoveButton: boolean,
+) {
+  bindRestrictedDesktopWatchlistRemoveButton(removeButton);
+  removeButton.dataset.assetManagerWatchlistRestricted = shouldRestrictRemoveButton ? "true" : "false";
+  removeButton.setAttribute("aria-disabled", shouldRestrictRemoveButton ? "true" : "false");
+  removeButton.style.opacity = shouldRestrictRemoveButton ? "0.5" : "";
+  removeButton.style.cursor = shouldRestrictRemoveButton ? "not-allowed" : "";
+}
+
+function bindRestrictedDesktopWatchlistRemoveButton(removeButton: HTMLSpanElement) {
+  if (removeButton.dataset.assetManagerWatchlistBound === "true") {
+    return;
+  }
+
+  removeButton.dataset.assetManagerWatchlistBound = "true";
+  removeButton.addEventListener("click", handleRestrictedDesktopWatchlistRemoveButtonEvent, true);
+  removeButton.addEventListener(
+    "mousedown",
+    handleRestrictedDesktopWatchlistRemoveButtonEvent,
+    true,
+  );
+  removeButton.addEventListener(
+    "pointerdown",
+    handleRestrictedDesktopWatchlistRemoveButtonEvent,
+    true,
+  );
+}
+
+function handleRestrictedDesktopWatchlistRemoveButtonEvent(event: Event) {
+  const removeButton = event.currentTarget;
+
+  if (!(removeButton instanceof HTMLSpanElement)) {
+    return;
+  }
+
+  if (removeButton.dataset.assetManagerWatchlistRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+function syncRestrictedWatchlistAddSymbolButtons(publicId: string | null) {
+  const { shouldRestrictForeignWatchlist } = getRestrictedActiveWatchlistState(publicId);
+  const addSymbolButtons = document.querySelectorAll(watchlistAddSymbolButtonSelector);
+
+  for (const addSymbolButton of addSymbolButtons) {
+    if (!(addSymbolButton instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    syncRestrictedWatchlistAddSymbolButton(addSymbolButton, shouldRestrictForeignWatchlist);
+  }
+}
+
+function syncRestrictedWatchlistAdvancedViewButtons() {
+  const advancedViewButtons = document.querySelectorAll(watchlistAdvancedViewButtonSelector);
+
+  for (const advancedViewButton of advancedViewButtons) {
+    if (!(advancedViewButton instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    syncRestrictedWatchlistActionButton(advancedViewButton, true);
+  }
+}
+
+function syncRestrictedWatchlistAddSymbolButton(
+  addSymbolButton: HTMLButtonElement,
+  shouldDisableButton: boolean,
+) {
+  syncRestrictedWatchlistActionButton(addSymbolButton, shouldDisableButton);
+}
+
+function syncRestrictedWatchlistActionButton(
+  actionButton: HTMLButtonElement,
+  shouldDisableButton: boolean,
+) {
+  if (actionButton.dataset.assetManagerOriginalDisabled === undefined) {
+    actionButton.dataset.assetManagerOriginalDisabled = actionButton.disabled ? "true" : "false";
+  }
+
+  if (actionButton.dataset.assetManagerOriginalAriaDisabled === undefined) {
+    actionButton.dataset.assetManagerOriginalAriaDisabled =
+      actionButton.getAttribute("aria-disabled") || "";
+  }
+
+  if (actionButton.dataset.assetManagerOriginalOpacity === undefined) {
+    actionButton.dataset.assetManagerOriginalOpacity = actionButton.style.opacity || "";
+  }
+
+  if (actionButton.dataset.assetManagerOriginalCursor === undefined) {
+    actionButton.dataset.assetManagerOriginalCursor = actionButton.style.cursor || "";
+  }
+
+  const originalDisabled = actionButton.dataset.assetManagerOriginalDisabled === "true";
+
+  actionButton.disabled = shouldDisableButton || originalDisabled;
+
+  if (shouldDisableButton) {
+    actionButton.setAttribute("aria-disabled", "true");
+    actionButton.style.opacity = "0.5";
+    actionButton.style.cursor = "not-allowed";
+    return;
+  }
+
+  if (actionButton.dataset.assetManagerOriginalAriaDisabled === "") {
+    actionButton.removeAttribute("aria-disabled");
+  } else if (actionButton.dataset.assetManagerOriginalAriaDisabled) {
+    actionButton.setAttribute(
+      "aria-disabled",
+      actionButton.dataset.assetManagerOriginalAriaDisabled,
+    );
+  }
+
+  actionButton.style.opacity = actionButton.dataset.assetManagerOriginalOpacity || "";
+  actionButton.style.cursor = actionButton.dataset.assetManagerOriginalCursor || "";
+}
+
+function syncRestrictedMobileWatchlistSymbolDrawers(publicId: string | null) {
+  if (!isTradingViewMobileLayout()) {
+    return;
+  }
+
+  const { isOwnedWatchlist, shouldRestrictForeignWatchlist } =
+    getRestrictedActiveWatchlistState(publicId);
+  const drawerRoots = findRestrictedMobileWatchlistSymbolDrawerRoots();
+
+  for (const drawerRoot of drawerRoots) {
+    syncRestrictedMobileWatchlistSymbolDrawer(
+      drawerRoot,
+      isOwnedWatchlist,
+      shouldRestrictForeignWatchlist,
+    );
+  }
+}
+
+function findRestrictedMobileWatchlistSymbolDrawerRoots() {
+  return [...document.querySelectorAll(mobileWatchlistSymbolDrawerSelector)].filter(
+    (drawerRoot): drawerRoot is HTMLElement =>
+      drawerRoot instanceof HTMLElement && isMobileWatchlistSymbolDrawerRoot(drawerRoot),
+  );
+}
+
+function isMobileWatchlistSymbolDrawerRoot(drawerRoot: HTMLElement) {
+  if (drawerRoot.matches(mobileActiveWatchlistMenuSelector)) {
+    return false;
+  }
+
+  return ["Symbol details…", "Add section", "Add symbol"].every((label) =>
+    Boolean(findMobileWatchlistSymbolDrawerItemByText(drawerRoot, label)),
+  );
+}
+
+function syncRestrictedMobileWatchlistSymbolDrawer(
+  drawerRoot: HTMLElement,
+  isOwnedWatchlist: boolean,
+  shouldRestrictForeignWatchlist: boolean,
+) {
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => getIsMobileWatchlistSymbolFlagTitleItem(item),
+  );
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => getIsMobileWatchlistSymbolColorMenuItem(item),
+  );
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => normalizeText(item.textContent) === "Unflag all symbols",
+  );
+  removeFirstMobileWatchlistSymbolDrawerSeparator(drawerRoot);
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => /^Add .+ to watchlist$/.test(normalizeText(item.textContent)),
+  );
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => /^Add .+ to compare$/.test(normalizeText(item.textContent)),
+  );
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => /^Open .+ Supercharts$/.test(normalizeText(item.textContent)),
+  );
+  removeMobileWatchlistSymbolDrawerItemByPredicate(
+    drawerRoot,
+    (item) => /^Add note for /.test(normalizeText(item.textContent)),
+  );
+
+  if (isOwnedWatchlist) {
+    restoreMobileWatchlistSymbolDrawerItem(drawerRoot, (item) =>
+      /^Remove .+ from watchlist$/.test(normalizeText(item.textContent)),
+    );
+    restoreMobileWatchlistSymbolDrawerItem(
+      drawerRoot,
+      (item) => normalizeText(item.textContent) === "Add section",
+    );
+    return;
+  }
+
+  if (!shouldRestrictForeignWatchlist) {
+    return;
+  }
+
+  disableMobileWatchlistSymbolDrawerItem(drawerRoot, (item) =>
+    /^Remove .+ from watchlist$/.test(normalizeText(item.textContent)),
+  );
+  disableMobileWatchlistSymbolDrawerItem(
+    drawerRoot,
+    (item) => normalizeText(item.textContent) === "Add section",
+  );
+}
+
+function getMobileWatchlistSymbolDrawerItems(drawerRoot: HTMLElement) {
+  return [...drawerRoot.querySelectorAll(mobileWatchlistSymbolDrawerItemSelector)].filter(
+    (item): item is HTMLLIElement => item instanceof HTMLLIElement,
+  );
+}
+
+function findMobileWatchlistSymbolDrawerItemByText(drawerRoot: HTMLElement, label: string) {
+  return (
+    getMobileWatchlistSymbolDrawerItems(drawerRoot).find(
+      (item) => normalizeText(item.textContent) === label,
+    ) ?? null
+  );
+}
+
+function removeMobileWatchlistSymbolDrawerItemByPredicate(
+  drawerRoot: HTMLElement,
+  predicate: (item: HTMLLIElement) => boolean,
+) {
+  const menuItem = getMobileWatchlistSymbolDrawerItems(drawerRoot).find((item) => predicate(item));
+
+  if (menuItem instanceof HTMLLIElement) {
+    menuItem.remove();
+  }
+}
+
+function removeFirstMobileWatchlistSymbolDrawerSeparator(drawerRoot: HTMLElement) {
+  const separators = drawerRoot.querySelectorAll(mobileWatchlistSymbolDrawerSeparatorSelector);
+
+  for (const separator of separators) {
+    if (!(separator instanceof HTMLLIElement)) {
+      continue;
+    }
+
+    const previousItem = separator.previousElementSibling;
+    const nextItem = separator.nextElementSibling;
+    const previousText = normalizeText(previousItem?.textContent);
+    const nextText = normalizeText(nextItem?.textContent);
+
+    if (
+      previousText === "Unflag all symbols" ||
+      /^Add .+ to watchlist$/.test(nextText)
+    ) {
+      separator.remove();
+      return;
+    }
+  }
+}
+
+function getIsMobileWatchlistSymbolFlagTitleItem(menuItem: HTMLLIElement) {
+  return normalizeText(menuItem.textContent).startsWith("Flag/Unflag ");
+}
+
+function getIsMobileWatchlistSymbolColorMenuItem(menuItem: HTMLLIElement) {
+  return menuItem.querySelector(mobileWatchlistSymbolDrawerColorMenuItemSelector) instanceof HTMLElement;
+}
+
+function disableMobileWatchlistSymbolDrawerItem(
+  drawerRoot: HTMLElement,
+  predicate: (item: HTMLLIElement) => boolean,
+) {
+  const menuItem = getMobileWatchlistSymbolDrawerItems(drawerRoot).find((item) => predicate(item));
+
+  if (!(menuItem instanceof HTMLLIElement)) {
+    return;
+  }
+
+  disableRestrictedWatchlistOwnedElement(menuItem);
+}
+
+function restoreMobileWatchlistSymbolDrawerItem(
+  drawerRoot: HTMLElement,
+  predicate: (item: HTMLLIElement) => boolean,
+) {
+  const menuItem = getMobileWatchlistSymbolDrawerItems(drawerRoot).find((item) => predicate(item));
+
+  if (!(menuItem instanceof HTMLLIElement)) {
+    return;
+  }
+
+  restoreRestrictedWatchlistOwnedElement(menuItem);
+}
+
+function disableRestrictedWatchlistOwnedElement(element: HTMLElement) {
+  preserveRestrictedWatchlistOwnedElementState(element);
+  bindRestrictedWatchlistOwnedElement(element);
+
+  element.dataset.assetManagerWatchlistMenuRestricted = "true";
+  element.setAttribute("aria-disabled", "true");
+  element.style.opacity = "0.5";
+  element.style.cursor = "not-allowed";
+}
+
+function restoreRestrictedWatchlistOwnedElement(element: HTMLElement) {
+  element.dataset.assetManagerWatchlistMenuRestricted = "false";
+
+  if (element.dataset.assetManagerOriginalAriaDisabled === "") {
+    element.removeAttribute("aria-disabled");
+  } else if (element.dataset.assetManagerOriginalAriaDisabled) {
+    element.setAttribute("aria-disabled", element.dataset.assetManagerOriginalAriaDisabled);
+  }
+
+  element.style.opacity = element.dataset.assetManagerOriginalOpacity || "";
+  element.style.cursor = element.dataset.assetManagerOriginalCursor || "";
+}
+
+function preserveRestrictedWatchlistOwnedElementState(element: HTMLElement) {
+  if (element.dataset.assetManagerOriginalAriaDisabled === undefined) {
+    element.dataset.assetManagerOriginalAriaDisabled = element.getAttribute("aria-disabled") || "";
+  }
+
+  if (element.dataset.assetManagerOriginalOpacity === undefined) {
+    element.dataset.assetManagerOriginalOpacity = element.style.opacity || "";
+  }
+
+  if (element.dataset.assetManagerOriginalCursor === undefined) {
+    element.dataset.assetManagerOriginalCursor = element.style.cursor || "";
+  }
+}
+
+function bindRestrictedWatchlistOwnedElement(element: HTMLElement) {
+  if (element.dataset.assetManagerWatchlistMenuBound === "true") {
+    return;
+  }
+
+  element.dataset.assetManagerWatchlistMenuBound = "true";
+
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
+    element.addEventListener(eventName, handleRestrictedWatchlistOwnedElementPointerEvent, true);
+  }
+
+  element.addEventListener("keydown", handleRestrictedWatchlistOwnedElementKeyDown, true);
+}
+
+function handleRestrictedWatchlistOwnedElementPointerEvent(event: Event) {
+  const element = event.currentTarget;
+
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  if (element.dataset.assetManagerWatchlistMenuRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  if (event.type === "click") {
+    window.alert(restrictedActiveWatchlistMenuMessage);
+  }
+}
+
+function handleRestrictedWatchlistOwnedElementKeyDown(event: KeyboardEvent) {
+  const element = event.currentTarget;
+
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  if (element.dataset.assetManagerWatchlistMenuRestricted !== "true") {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  window.alert(restrictedActiveWatchlistMenuMessage);
+}
+
+function syncRestrictedActiveWatchlistMenus(publicId: string | null) {
+  const { isOwnedWatchlist } = getRestrictedActiveWatchlistState(publicId);
+  const activeWatchlistMenuRoots = findRestrictedActiveWatchlistMenuRoots();
+
+  for (const menuRoot of activeWatchlistMenuRoots) {
+    syncRestrictedActiveWatchlistMenu(menuRoot, isOwnedWatchlist);
+  }
+}
+
+function findRestrictedActiveWatchlistMenuRoots() {
+  const menuRoots = new Set<HTMLElement>();
+
+  const desktopMenuRoots = document.querySelectorAll(desktopActiveWatchlistMenuSelector);
+
+  for (const desktopMenuRoot of desktopMenuRoots) {
+    if (
+      desktopMenuRoot instanceof HTMLElement &&
+      isDesktopActiveWatchlistMenuRoot(desktopMenuRoot)
+    ) {
+      menuRoots.add(desktopMenuRoot);
+    }
+  }
+
+  const mobileMenuRoots = document.querySelectorAll(mobileActiveWatchlistMenuSelector);
+
+  for (const mobileMenuRoot of mobileMenuRoots) {
+    if (mobileMenuRoot instanceof HTMLElement) {
+      menuRoots.add(mobileMenuRoot);
+    }
+  }
+
+  return [...menuRoots];
+}
+
+function isDesktopActiveWatchlistMenuRoot(menuRoot: HTMLElement) {
+  return ["Share list", "Rename", "Clear list", "Upload list…"].every((label) =>
+    Boolean(findActiveWatchlistMenuItemByText(menuRoot, label)),
+  );
+}
+
+function syncRestrictedActiveWatchlistMenu(menuRoot: HTMLElement, isOwnedWatchlist: boolean) {
+  removeActiveWatchlistMenuItem(menuRoot, "Add alert on the list…");
+
+  if (isOwnedWatchlist) {
+    restoreActiveWatchlistMenuItem(menuRoot, "Share list");
+    restoreActiveWatchlistMenuItem(menuRoot, "Rename");
+    restoreActiveWatchlistMenuItem(menuRoot, "Add section");
+    restoreActiveWatchlistMenuItem(menuRoot, "Clear list");
+    return;
+  }
+
+  disableActiveWatchlistMenuItem(menuRoot, "Share list");
+  disableActiveWatchlistMenuItem(menuRoot, "Rename");
+  disableActiveWatchlistMenuItem(menuRoot, "Add section");
+  disableActiveWatchlistMenuItem(menuRoot, "Clear list");
+}
+
+function removeActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
+  const menuItem = findActiveWatchlistMenuItemByText(menuRoot, label);
+
+  if (menuItem instanceof HTMLElement) {
+    menuItem.remove();
+  }
+}
+
+function disableActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
+  const menuItem = findActiveWatchlistMenuItemByText(menuRoot, label);
+
+  if (!(menuItem instanceof HTMLElement)) {
+    return;
+  }
+
+  preserveActiveWatchlistMenuItemState(menuItem);
+  bindRestrictedActiveWatchlistMenuItem(menuItem);
+
+  menuItem.dataset.assetManagerWatchlistMenuRestricted = "true";
+  menuItem.setAttribute("aria-disabled", "true");
+  menuItem.style.opacity = "0.5";
+  menuItem.style.cursor = "not-allowed";
+
+  if (menuItem instanceof HTMLLabelElement) {
+    syncRestrictedActiveWatchlistMenuSwitch(menuItem, true);
+  }
+}
+
+function restoreActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
+  const menuItem = findActiveWatchlistMenuItemByText(menuRoot, label);
+
+  if (!(menuItem instanceof HTMLElement)) {
+    return;
+  }
+
+  menuItem.dataset.assetManagerWatchlistMenuRestricted = "false";
+
+  if (menuItem.dataset.assetManagerOriginalAriaDisabled === "") {
+    menuItem.removeAttribute("aria-disabled");
+  } else if (menuItem.dataset.assetManagerOriginalAriaDisabled) {
+    menuItem.setAttribute("aria-disabled", menuItem.dataset.assetManagerOriginalAriaDisabled);
+  }
+
+  menuItem.style.opacity = menuItem.dataset.assetManagerOriginalOpacity || "";
+  menuItem.style.cursor = menuItem.dataset.assetManagerOriginalCursor || "";
+
+  if (menuItem instanceof HTMLLabelElement) {
+    syncRestrictedActiveWatchlistMenuSwitch(menuItem, false);
+  }
+}
+
+function preserveActiveWatchlistMenuItemState(menuItem: HTMLElement) {
+  if (menuItem.dataset.assetManagerOriginalAriaDisabled === undefined) {
+    menuItem.dataset.assetManagerOriginalAriaDisabled = menuItem.getAttribute("aria-disabled") || "";
+  }
+
+  if (menuItem.dataset.assetManagerOriginalOpacity === undefined) {
+    menuItem.dataset.assetManagerOriginalOpacity = menuItem.style.opacity || "";
+  }
+
+  if (menuItem.dataset.assetManagerOriginalCursor === undefined) {
+    menuItem.dataset.assetManagerOriginalCursor = menuItem.style.cursor || "";
+  }
+}
+
+function syncRestrictedActiveWatchlistMenuSwitch(
+  menuItem: HTMLLabelElement,
+  shouldDisableSwitch: boolean,
+) {
+  const switchInput = menuItem.querySelector('input[role="switch"]');
+
+  if (!(switchInput instanceof HTMLInputElement)) {
+    return;
+  }
+
+  if (switchInput.dataset.assetManagerOriginalDisabled === undefined) {
+    switchInput.dataset.assetManagerOriginalDisabled = switchInput.disabled ? "true" : "false";
+  }
+
+  if (switchInput.dataset.assetManagerOriginalAriaDisabled === undefined) {
+    switchInput.dataset.assetManagerOriginalAriaDisabled =
+      switchInput.getAttribute("aria-disabled") || "";
+  }
+
+  switchInput.disabled = shouldDisableSwitch || switchInput.dataset.assetManagerOriginalDisabled === "true";
+
+  if (shouldDisableSwitch) {
+    switchInput.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  if (switchInput.dataset.assetManagerOriginalAriaDisabled === "") {
+    switchInput.removeAttribute("aria-disabled");
+    return;
+  }
+
+  switchInput.setAttribute(
+    "aria-disabled",
+    switchInput.dataset.assetManagerOriginalAriaDisabled,
+  );
+}
+
+function bindRestrictedActiveWatchlistMenuItem(menuItem: HTMLElement) {
+  if (menuItem.dataset.assetManagerWatchlistMenuBound === "true") {
+    return;
+  }
+
+  menuItem.dataset.assetManagerWatchlistMenuBound = "true";
+
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
+    menuItem.addEventListener(eventName, handleRestrictedActiveWatchlistMenuPointerEvent, true);
+  }
+
+  menuItem.addEventListener("keydown", handleRestrictedActiveWatchlistMenuKeyDown, true);
+}
+
+function handleRestrictedActiveWatchlistMenuPointerEvent(event: Event) {
+  const menuItem = event.currentTarget;
+
+  if (!(menuItem instanceof HTMLElement)) {
+    return;
+  }
+
+  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  if (event.type === "click") {
+    window.alert(restrictedActiveWatchlistMenuMessage);
+  }
+}
+
+function handleRestrictedActiveWatchlistMenuKeyDown(event: KeyboardEvent) {
+  const menuItem = event.currentTarget;
+
+  if (!(menuItem instanceof HTMLElement)) {
+    return;
+  }
+
+  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== "true") {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  window.alert(restrictedActiveWatchlistMenuMessage);
+}
+
+function findActiveWatchlistMenuItemByText(menuRoot: HTMLElement, label: string) {
+  return (
+    [...menuRoot.querySelectorAll(activeWatchlistMenuItemSelector)].find((menuItem) => {
+      if (!(menuItem instanceof HTMLElement)) {
+        return false;
+      }
+
+      return normalizeText(menuItem.textContent) === label;
+    }) ?? null
+  );
 }
 
 function removeRestrictedRecentLayoutSection() {
