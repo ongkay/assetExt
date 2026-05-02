@@ -49,6 +49,7 @@ const saveIndicatorTemplateDialogSelector =
   '[data-dialog-name="Save indicator template"][data-name="save-rename-dialog"]';
 const indicatorTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
+const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
 const layoutsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const mobileIndicatorTemplatesCategoryDialogSelector =
@@ -880,6 +881,36 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("filters drawing template rows by publicId and keeps action rows intact", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-drawing-templates.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingTemplatesMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleDrawingTemplateTitles()).toEqual([
+      "50975 bbbbb",
+      "50975 biro",
+      "panjangggggggggggggggggggg sekaliiiiiiiiiiiiiiiiiiiiiiii 50975",
+    ]);
+    expect(getVisibleDrawingTemplateActionLabels()).toEqual([
+      "Save Drawing Template As…",
+      "Apply Default Drawing Template",
+    ]);
+    expect(getDrawingTemplateTitle("Abu")).toBeNull();
+    expect(getDrawingTemplateTitle("Biru")).toBeNull();
+    expect(countDrawingTemplateSpacerRows()).toBe(5);
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("disables Hotlists on the mobile Watchlists category screen", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
@@ -1238,6 +1269,46 @@ function getLayoutsClearButton() {
   expect(clearButton).toBeInstanceOf(HTMLButtonElement);
 
   return clearButton as HTMLButtonElement;
+}
+
+function getVisibleDrawingTemplateTitles() {
+  const menuRoot = document.querySelector(drawingTemplatesMenuSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"]')]
+    .filter(
+      (row): row is HTMLTableRowElement =>
+        row instanceof HTMLTableRowElement &&
+        row.querySelector('span[aria-label="Remove"]') instanceof HTMLElement,
+    )
+    .map((row) => normalizeText(row.querySelector('span[data-label="true"]')?.textContent));
+}
+
+function getVisibleDrawingTemplateActionLabels() {
+  const menuRoot = document.querySelector(drawingTemplatesMenuSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"]')]
+    .filter(
+      (row): row is HTMLTableRowElement =>
+        row instanceof HTMLTableRowElement &&
+        !(row.querySelector('span[aria-label="Remove"]') instanceof HTMLElement),
+    )
+    .map((row) => normalizeText(row.querySelector('span[data-label="true"]')?.textContent));
+}
+
+function getDrawingTemplateTitle(templateTitle: string) {
+  return (
+    [...document.querySelectorAll(`${drawingTemplatesMenuSelector} span[data-label="true"]`)].find(
+      (label) => label instanceof HTMLSpanElement && normalizeText(label.textContent) === templateTitle,
+    ) ?? null
+  );
+}
+
+function countDrawingTemplateSpacerRows() {
+  return document.querySelectorAll(`${drawingTemplatesMenuSelector} tr.subMenu-GJX1EXhk`).length;
 }
 
 function getVisibleIndicatorTemplateTitles() {
@@ -1767,6 +1838,50 @@ function createLayoutsDialogMarkup() {
         <a role="row" id="list-item-3" selected="false" style="position: absolute; left: 0px; top: 144px; height: 48px; width: 100%;">layout publikXAUUSD, 4H</a>
       </div>
     </div>
+  `;
+}
+
+function createDrawingTemplatesMenuMarkup() {
+  return `
+    <div data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+      <table>
+        <tbody>
+          <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+            <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+            <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Save Drawing Template As…</span></div></td>
+          </tr>
+          <tr class="subMenu-GJX1EXhk"><td></td></tr>
+          <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+            <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+            <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Apply Default Drawing Template</span></div></td>
+          </tr>
+          <tr class="subMenu-GJX1EXhk"><td></td></tr>
+          <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+          ${createDrawingTemplateMenuRowMarkup("50975 bbbbb")}
+          ${createDrawingTemplateMenuRowMarkup("Abu")}
+          ${createDrawingTemplateMenuRowMarkup("50975 biro")}
+          ${createDrawingTemplateMenuRowMarkup("Biru")}
+          ${createDrawingTemplateMenuRowMarkup("panjangggggggggggggggggggg sekaliiiiiiiiiiiiiiiiiiiiiiii 50975")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function createDrawingTemplateMenuRowMarkup(title: string) {
+  return `
+    <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+      <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+      <td>
+        <div class="content-GJX1EXhk">
+          <span class="label-GJX1EXhk" data-label="true">${title}</span>
+          <span class="toolbox-GJX1EXhk showToolboxOnHover-GJX1EXhk" data-toolbox="true">
+            <span role="img" data-name="remove-button" class="button-iLKiGOdQ apply-common-tooltip" aria-label="Remove" aria-hidden="false" title="Remove"></span>
+          </span>
+        </div>
+      </td>
+    </tr>
+    <tr class="subMenu-GJX1EXhk"><td></td></tr>
   `;
 }
 

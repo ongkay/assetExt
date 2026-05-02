@@ -55,6 +55,12 @@ const restrictedIndicatorTemplatesTabOverlaySelector =
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
+const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
+const drawingTemplatesMenuRowSelector = 'tbody > tr';
+const drawingTemplateMenuItemSelector = 'tr[data-role="menuitem"]';
+const drawingTemplateLabelSelector = 'span[data-label="true"]';
+const drawingTemplateRemoveButtonSelector = 'span[aria-label="Remove"]';
+const drawingTemplateSpacerRowSelector = 'tr.subMenu-GJX1EXhk';
 const layoutsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const layoutsSearchInputSelector = 'input[role="searchbox"]';
@@ -131,6 +137,12 @@ const relevantTradingViewSelectors = [
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
+  drawingTemplatesMenuSelector,
+  drawingTemplatesMenuRowSelector,
+  drawingTemplateMenuItemSelector,
+  drawingTemplateLabelSelector,
+  drawingTemplateRemoveButtonSelector,
+  drawingTemplateSpacerRowSelector,
   layoutsDialogSelector,
   layoutsSearchInputSelector,
   layoutsSearchClearButtonSelector,
@@ -363,6 +375,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   removeRestrictedRecentSections();
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
+  syncRestrictedDrawingTemplatesMenu(overrideState.publicId);
   syncRestrictedLayoutsDialogs(overrideState.publicId);
   syncRestrictedWatchlistsDialogs(overrideState.publicId);
 }
@@ -547,6 +560,81 @@ function hideRestrictedLayoutsClearButtons(dialogRoot: HTMLElement) {
     clearButton.style.display = "none";
     clearButton.style.pointerEvents = "none";
   }
+}
+
+function syncRestrictedDrawingTemplatesMenu(publicId: string | null) {
+  const requiredPublicId = publicId?.trim() ?? "";
+  const menuRoots = document.querySelectorAll(drawingTemplatesMenuSelector);
+
+  for (const menuRoot of menuRoots) {
+    if (!(menuRoot instanceof HTMLElement) || !isDrawingTemplatesMenuRoot(menuRoot)) {
+      continue;
+    }
+
+    filterRestrictedDrawingTemplateRows(menuRoot, requiredPublicId);
+  }
+}
+
+function isDrawingTemplatesMenuRoot(menuRoot: HTMLElement) {
+  return (
+    menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
+    findMenuItemByNormalizedText(menuRoot, "Save Drawing Template As…") instanceof
+      HTMLTableRowElement &&
+    findMenuItemByNormalizedText(menuRoot, "Apply Default Drawing Template") instanceof
+      HTMLTableRowElement
+  );
+}
+
+function findMenuItemByNormalizedText(menuRoot: HTMLElement, label: string) {
+  return (
+    [...menuRoot.querySelectorAll(drawingTemplateMenuItemSelector)].find((row) => {
+      if (!(row instanceof HTMLTableRowElement)) {
+        return false;
+      }
+
+      return normalizeText(row.textContent) === label;
+    }) ?? null
+  );
+}
+
+function filterRestrictedDrawingTemplateRows(menuRoot: HTMLElement, requiredPublicId: string) {
+  const menuRows = menuRoot.querySelectorAll(drawingTemplatesMenuRowSelector);
+
+  for (const menuRow of menuRows) {
+    if (!(menuRow instanceof HTMLTableRowElement) || !isRestrictedDrawingTemplateRow(menuRow)) {
+      continue;
+    }
+
+    const templateTitle = getRestrictedDrawingTemplateTitle(menuRow);
+
+    if (requiredPublicId.length > 0 && templateTitle.includes(requiredPublicId)) {
+      continue;
+    }
+
+    const spacerRow = menuRow.nextElementSibling;
+
+    menuRow.remove();
+
+    if (
+      spacerRow instanceof HTMLTableRowElement &&
+      spacerRow.matches(drawingTemplateSpacerRowSelector)
+    ) {
+      spacerRow.remove();
+    }
+  }
+}
+
+function isRestrictedDrawingTemplateRow(menuRow: HTMLTableRowElement) {
+  return (
+    menuRow.matches(drawingTemplateMenuItemSelector) &&
+    menuRow.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement
+  );
+}
+
+function getRestrictedDrawingTemplateTitle(menuRow: HTMLTableRowElement) {
+  const titleLabel = menuRow.querySelector(drawingTemplateLabelSelector);
+
+  return normalizeText(titleLabel?.textContent);
 }
 
 function isDesktopIndicatorTemplatesDialogRoot(dialogRoot: HTMLElement) {
