@@ -53,6 +53,14 @@ const mobileIndicatorTemplatesCategoryDialogSelector =
   '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="Indicator templates"]';
 const mobileIndicatorTemplatesMyTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="My templates"]';
+const desktopWatchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Watchlists"]';
+const mobileWatchlistsCategoryDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Watchlists"]';
+const mobileMyWatchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="My watchlists"]';
+const mobileSearchWatchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Search"]';
 const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
 const dialogSelectButtonSelector =
   ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
@@ -61,6 +69,8 @@ const dialogSaveButtonSelector =
   'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
 const indicatorTemplatesTabSelector = 'button[role="tab"]';
 const indicatorTemplatesRowSelector = 'div[data-role="list-item"][data-title]';
+const watchlistsRowSelector = 'div[data-role="list-item"][data-title]';
+const watchlistsSectionTitleSelector = ".title-RvmSCAQq";
 const restrictedIndicatorTemplatesTabOverlaySelector =
   '[data-asset-manager-restricted-tab-overlay="true"]';
 const restrictedIndicatorTemplatesAccessDeniedMessage =
@@ -770,6 +780,167 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("filters desktop My watchlists rows, hides empty sections, and disables Hotlists", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlists-desktop.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistsDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleWatchlistTitlesWithin(desktopWatchlistsDialogSelector)).toEqual([
+      "50975 cccd",
+      "50975 fgfg",
+      "50975 siap",
+    ]);
+    expect(getVisibleWatchlistSectionTitlesWithin(desktopWatchlistsDialogSelector)).toEqual([
+      "Created lists",
+    ]);
+
+    const hotlistsTab = getWatchlistsTab("hot-lists");
+
+    expect(hotlistsTab.getAttribute("aria-disabled")).toBe("true");
+    expect(hotlistsTab.style.opacity).toBe("0.5");
+    expect(hotlistsTab.style.cursor).toBe("not-allowed");
+    expect(hotlistsTab.tabIndex).toBe(-1);
+
+    let bubbledClickHandled = false;
+    hotlistsTab.addEventListener("click", () => {
+      bubbledClickHandled = true;
+      hotlistsTab.setAttribute("aria-selected", "true");
+    });
+
+    getRestrictedIndicatorTemplatesButtonOverlay(hotlistsTab).dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+
+    expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
+    expect(bubbledClickHandled).toBe(false);
+    expect(hotlistsTab.getAttribute("aria-selected")).toBe("false");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("disables Hotlists on the mobile Watchlists category screen", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlists-mobile-category.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistsCategoryDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    const hotlistsButton = getButtonByTextWithin(
+      mobileWatchlistsCategoryDialogSelector,
+      "Hotlists",
+    );
+
+    expect(hotlistsButton.getAttribute("aria-disabled")).toBe("true");
+    expect(hotlistsButton.style.opacity).toBe("0.5");
+    expect(hotlistsButton.style.cursor).toBe("not-allowed");
+    expect(hotlistsButton.tabIndex).toBe(-1);
+
+    let bubbledClickHandled = false;
+    hotlistsButton.addEventListener("click", () => {
+      bubbledClickHandled = true;
+    });
+
+    getRestrictedIndicatorTemplatesButtonOverlay(hotlistsButton).dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true }),
+    );
+
+    expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
+    expect(bubbledClickHandled).toBe(false);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters mobile My watchlists rows and hides empty sections", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlists-mobile-list.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileMyWatchlistsDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleWatchlistTitlesWithin(mobileMyWatchlistsDialogSelector)).toEqual([
+      "50975 cccd",
+      "50975 fgfg",
+      "50975 siap",
+    ]);
+    expect(getVisibleWatchlistSectionTitlesWithin(mobileMyWatchlistsDialogSelector)).toEqual([
+      "Created lists",
+    ]);
+    expect(
+      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "Created lists"),
+    ).toBe("0px");
+    expect(
+      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 cccd"),
+    ).toBe("41px");
+    expect(
+      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 fgfg"),
+    ).toBe("73px");
+    expect(
+      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 siap"),
+    ).toBe("105px");
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters only My watchlists rows on the mobile Watchlists Search screen and keeps Hotlists visible", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlists-mobile-search.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileSearchWatchlistsDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleWatchlistTitlesWithin(mobileSearchWatchlistsDialogSelector)).toEqual([
+      "50975 siap",
+      "50975 cccd",
+      "Volume Gainers",
+      "Gap Gainers",
+    ]);
+    expect(
+      getVisibleWatchlistSectionTitlesWithin(mobileSearchWatchlistsDialogSelector),
+    ).toEqual(["My watchlists", "Hotlists"]);
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("does not modify dialog inputs when private access is available", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -1011,6 +1182,67 @@ function getVisibleIndicatorTemplateTitlesWithin(rootSelector: string) {
     .map((row) => row.dataset.title ?? "");
 }
 
+function getVisibleWatchlistTitlesWithin(rootSelector: string) {
+  const dialogRoot = document.querySelector(rootSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(dialogRoot as HTMLElement).querySelectorAll(watchlistsRowSelector)]
+    .filter(
+      (row): row is HTMLDivElement =>
+        row instanceof HTMLDivElement && !row.hidden && row.style.display !== "none",
+    )
+    .map((row) => row.dataset.title ?? "");
+}
+
+function getVisibleWatchlistSectionTitlesWithin(rootSelector: string) {
+  const dialogRoot = document.querySelector(rootSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(dialogRoot as HTMLElement).querySelectorAll(watchlistsSectionTitleSelector)]
+    .filter(
+      (title): title is HTMLDivElement =>
+        title instanceof HTMLDivElement &&
+        !title.hidden &&
+        title.style.display !== "none" &&
+        title.parentElement instanceof HTMLElement &&
+        !title.parentElement.hidden &&
+        title.parentElement.style.display !== "none",
+    )
+    .map((title) => normalizeText(title.textContent));
+}
+
+function getWatchlistsLayoutItemTopWithin(rootSelector: string, itemText: string) {
+  const dialogRoot = document.querySelector(rootSelector);
+
+  expect(dialogRoot).toBeInstanceOf(HTMLElement);
+
+  const layoutItem = [
+    ...(dialogRoot as HTMLElement).querySelectorAll(
+      `${watchlistsSectionTitleSelector}, ${watchlistsRowSelector}`,
+    ),
+  ].find((item) => {
+    if (!(item instanceof HTMLElement)) {
+      return false;
+    }
+
+    return item.matches(watchlistsRowSelector)
+      ? item.dataset.title === itemText
+      : normalizeText(item.textContent) === itemText;
+  });
+
+  expect(layoutItem).toBeInstanceOf(HTMLElement);
+
+  const element = layoutItem as HTMLElement;
+
+  if (element.matches(watchlistsRowSelector)) {
+    return element.style.top;
+  }
+
+  return element.parentElement?.style.top ?? element.style.top;
+}
+
 function getIndicatorTemplatesTab(tabId: "my templates" | "technicals" | "financials") {
   const tabButton = getIndicatorTemplatesDialogRoot().querySelector(
     `button[role="tab"][id="${tabId}"]`,
@@ -1021,7 +1253,17 @@ function getIndicatorTemplatesTab(tabId: "my templates" | "technicals" | "financ
   return tabButton as HTMLButtonElement;
 }
 
-function getIndicatorTemplatesButtonByText(rootSelector: string, buttonText: string) {
+function getWatchlistsTab(tabId: "my-watch-lists" | "hot-lists") {
+  const tabButton = document.querySelector(
+    `${desktopWatchlistsDialogSelector} button[role="tab"]#${tabId}`,
+  );
+
+  expect(tabButton).toBeInstanceOf(HTMLButtonElement);
+
+  return tabButton as HTMLButtonElement;
+}
+
+function getButtonByTextWithin(rootSelector: string, buttonText: string) {
   const dialogRoot = document.querySelector(rootSelector);
 
   expect(dialogRoot).toBeInstanceOf(HTMLElement);
@@ -1039,6 +1281,10 @@ function getIndicatorTemplatesButtonByText(rootSelector: string, buttonText: str
   expect(button).toBeInstanceOf(HTMLButtonElement);
 
   return button as HTMLButtonElement;
+}
+
+function getIndicatorTemplatesButtonByText(rootSelector: string, buttonText: string) {
+  return getButtonByTextWithin(rootSelector, buttonText);
 }
 
 function getRestrictedIndicatorTemplatesTabOverlay(
@@ -1460,6 +1706,144 @@ function createMobileIndicatorTemplatesMyTemplatesDialogMarkup() {
           ${createIndicatorTemplatesRowMarkup(4, "template publik", "Order Block")}
           ${createIndicatorTemplatesRowMarkup(5, "50975 gamma", "WAE [SHK]")}
         </div>
+      </div>
+    </div>
+  `;
+}
+
+function createDesktopWatchlistsDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="watchlists-dialog" data-dialog-name="Watchlists">
+      <div class="container-BZKENkhT">
+        <div class="title-BZKENkhT">Watchlists</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search lists" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="" />
+      </div>
+      <div class="bodyWrapper-B3wirqjZ">
+        <div class="sidebarArea-B3wirqjZ">
+          <div id="watchlists-tabs" role="tablist" aria-orientation="vertical">
+            <button role="tab" id="my-watch-lists" aria-selected="true">My watchlists</button>
+            <button role="tab" id="hot-lists" aria-selected="false">Hotlists</button>
+          </div>
+        </div>
+        <div class="contentArea-B3wirqjZ">
+          <div class="listContainer-XuENC387">
+            <div style="height: 251px; width: 100%; position: relative;">
+              ${createWatchlistsSectionMarkup("Flagged lists", 0)}
+              ${createWatchlistsRowMarkup(1, "Red listfff", 41)}
+              ${createWatchlistsSectionMarkup("Created lists", 73)}
+              ${createWatchlistsRowMarkup(2, "50975 cccd", 114)}
+              ${createWatchlistsRowMarkup(3, "template orang lain", 146)}
+              ${createWatchlistsRowMarkup(4, "50975 fgfg", 178)}
+              ${createWatchlistsRowMarkup(5, "50975 siap", 210)}
+              ${createWatchlistsSectionMarkup("Other", 242)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileWatchlistsCategoryDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="watchlists-dialog" data-dialog-name="Watchlists">
+      <div class="container-BZKENkhT">
+        <div class="title-BZKENkhT">Watchlists</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search lists" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="" />
+      </div>
+      <div class="bodyWrapper-B3wirqjZ">
+        <div class="sidebarArea-B3wirqjZ">
+          <div class="container-nGEmjtaX isMobile-nGEmjtaX mobileTabs-qbOBDZgr" data-role="dialog-sidebar" role="toolbar" aria-orientation="vertical">
+            <button tabindex="-1" class="tab-nGEmjtaX isMobile-nGEmjtaX accessible-nGEmjtaX mobileTabItem-qbOBDZgr please-qbOBDZgr">My watchlists</button>
+            <button tabindex="-1" class="tab-nGEmjtaX isMobile-nGEmjtaX accessible-nGEmjtaX mobileTabItem-qbOBDZgr please-qbOBDZgr">Hotlists</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileMyWatchlistsDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="watchlists-dialog" data-dialog-name="My watchlists">
+      <div class="container-BZKENkhT">
+        <button type="button">Back</button>
+        <div class="title-BZKENkhT">My watchlists</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search lists" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="" />
+      </div>
+      <div class="contentArea-B3wirqjZ">
+        <div class="listContainer-XuENC387">
+          <div style="height: 251px; width: 100%; position: relative;">
+            ${createWatchlistsSectionMarkup("Flagged lists", 0)}
+            ${createWatchlistsRowMarkup(1, "Red listfff", 41)}
+            ${createWatchlistsSectionMarkup("Created lists", 73)}
+            ${createWatchlistsRowMarkup(2, "50975 cccd", 114)}
+            ${createWatchlistsRowMarkup(3, "template orang lain", 146)}
+            ${createWatchlistsRowMarkup(4, "50975 fgfg", 178)}
+            ${createWatchlistsRowMarkup(5, "50975 siap", 210)}
+            ${createWatchlistsSectionMarkup("Other", 242)}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createMobileSearchWatchlistsDialogMarkup() {
+  return `
+    <div role="dialog" class="wrapper-b8SxMnzX" data-name="watchlists-dialog" data-dialog-name="Search">
+      <div class="container-BZKENkhT">
+        <button type="button">Back</button>
+        <div class="title-BZKENkhT">Search</div>
+        <button data-qa-id="close" type="button">Close menu</button>
+      </div>
+      <div class="searchContainer-B3wirqjZ">
+        <input placeholder="Search lists" class="search-lANubSc2" role="searchbox" type="text" autocomplete="off" value="a" />
+      </div>
+      <div class="contentArea-B3wirqjZ">
+        <div class="listContainer-XuENC387">
+          <div style="height: 251px; width: 100%; position: relative;">
+            ${createWatchlistsSectionMarkup("My watchlists", 0)}
+            ${createWatchlistsRowMarkup(1, "50975 siap", 41)}
+            ${createWatchlistsRowMarkup(2, "apa iya siapa saya saja oke", 73)}
+            ${createWatchlistsRowMarkup(3, "Daftar Pantau", 105)}
+            ${createWatchlistsRowMarkup(4, "50975 cccd", 137)}
+            ${createWatchlistsSectionMarkup("Hotlists", 169)}
+            ${createWatchlistsRowMarkup(5, "Volume Gainers", 210)}
+            ${createWatchlistsRowMarkup(6, "Gap Gainers", 242)}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createWatchlistsSectionMarkup(title: string, top: number) {
+  return `
+    <div class="container-UmsFKpIc" style="position: absolute; left: 0px; top: ${top}px; height: 41px; width: 100%;">
+      <div class="title-RvmSCAQq">${title}</div>
+    </div>
+  `;
+}
+
+function createWatchlistsRowMarkup(index: number, title: string, top: number) {
+  return `
+    <div id="list-item-${index}" class="container-ODL8WA9K" data-role="list-item" data-title="${title}" data-id="watchlist-${index}" style="position: absolute; left: 0px; top: ${top}px; height: 32px; width: 100%;">
+      <span role="img" id="list-item-${index}-action-0" data-role="list-item-action" class="favorite-_FRQhM5Y favoriteButton-ODL8WA9K" aria-label="Add to favorites"></span>
+      <div class="title-ODL8WA9K">${title}</div>
+      <div class="controls-ODL8WA9K">
+        <button type="button" id="list-item-${index}-action-2" data-role="list-item-action" aria-label="Share"></button>
+        <span role="img" id="list-item-${index}-action-3" data-role="list-item-action" title="Make a copy"></span>
+        <span role="img" id="list-item-${index}-action-4" data-role="list-item-action" data-name="remove-button" aria-label="Remove" title="Remove"></span>
       </div>
     </div>
   `;

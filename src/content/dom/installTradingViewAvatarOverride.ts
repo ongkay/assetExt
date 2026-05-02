@@ -55,6 +55,18 @@ const restrictedIndicatorTemplatesTabOverlaySelector =
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
+const watchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Watchlists"]';
+const myWatchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="My watchlists"]';
+const searchWatchlistsDialogSelector =
+  '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Search"]';
+const watchlistsSearchInputSelector = 'input[role="searchbox"][placeholder="Search lists"]';
+const desktopMyWatchlistsTabSelector = 'button[role="tab"]#my-watch-lists';
+const desktopHotlistsTabSelector = 'button[role="tab"]#hot-lists';
+const watchlistsRowSelector = 'div[data-role="list-item"][data-title]';
+const watchlistsSectionContainerSelector = ".container-UmsFKpIc";
+const watchlistsSectionTitleSelector = ".title-RvmSCAQq";
 const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
 const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
 const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
@@ -115,6 +127,15 @@ const relevantTradingViewSelectors = [
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
+  watchlistsDialogSelector,
+  myWatchlistsDialogSelector,
+  searchWatchlistsDialogSelector,
+  watchlistsSearchInputSelector,
+  desktopMyWatchlistsTabSelector,
+  desktopHotlistsTabSelector,
+  watchlistsRowSelector,
+  watchlistsSectionContainerSelector,
+  watchlistsSectionTitleSelector,
   recentTitleListItemSelector,
   recentLayoutMenuItemSelector,
   recentIndicatorMenuItemSelector,
@@ -335,6 +356,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   removeRestrictedRecentSections();
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
+  syncRestrictedWatchlistsDialogs(overrideState.publicId);
 }
 
 function removeRestrictedHeaderActions() {
@@ -486,7 +508,7 @@ function syncRestrictedIndicatorTemplatesDialog(
   const dialogName = dialogRoot.dataset.dialogName ?? "";
 
   if (isDesktopIndicatorTemplatesDialogRoot(dialogRoot)) {
-    disableRestrictedIndicatorTemplatesButtons(
+    disableRestrictedNavigationButtons(
       getRestrictedDesktopIndicatorTemplatesButtons(dialogRoot),
     );
     syncRestrictedIndicatorTemplatesRows(dialogRoot, requiredPublicId);
@@ -494,7 +516,7 @@ function syncRestrictedIndicatorTemplatesDialog(
   }
 
   if (dialogName === "Indicator templates") {
-    disableRestrictedIndicatorTemplatesButtons(
+    disableRestrictedNavigationButtons(
       getRestrictedMobileIndicatorTemplatesButtons(dialogRoot),
     );
     return;
@@ -515,7 +537,7 @@ function getRestrictedMobileIndicatorTemplatesButtons(dialogRoot: HTMLElement) {
   const restrictedButtons: HTMLButtonElement[] = [];
 
   for (const label of ["Technicals", "Financials"]) {
-    const restrictedButton = findIndicatorTemplatesButtonByText(dialogRoot, label);
+    const restrictedButton = findButtonByNormalizedText(dialogRoot, label);
 
     if (restrictedButton) {
       restrictedButtons.push(restrictedButton);
@@ -525,7 +547,7 @@ function getRestrictedMobileIndicatorTemplatesButtons(dialogRoot: HTMLElement) {
   return restrictedButtons;
 }
 
-function findIndicatorTemplatesButtonByText(dialogRoot: HTMLElement, label: string) {
+function findButtonByNormalizedText(dialogRoot: HTMLElement, label: string) {
   return (
     [...dialogRoot.querySelectorAll("button")].find((button) => {
       if (!(button instanceof HTMLButtonElement)) {
@@ -552,21 +574,22 @@ function syncRestrictedIndicatorTemplatesRows(
     const shouldShowRow =
       requiredPublicId.length > 0 && templateTitle.includes(requiredPublicId);
 
-    syncRestrictedIndicatorTemplatesRowVisibility(templateRow, shouldShowRow);
+    syncRestrictedListRowVisibility(templateRow, shouldShowRow);
   }
 }
 
-function disableRestrictedIndicatorTemplatesButtons(restrictedButtons: HTMLButtonElement[]) {
+function disableRestrictedNavigationButtons(restrictedButtons: HTMLButtonElement[]) {
   for (const restrictedButton of restrictedButtons) {
     restrictedButton.setAttribute("aria-disabled", "true");
     restrictedButton.style.opacity = "0.5";
+    restrictedButton.style.cursor = "not-allowed";
     restrictedButton.tabIndex = -1;
 
     if (!restrictedButton.style.position) {
       restrictedButton.style.position = "relative";
     }
 
-    ensureRestrictedIndicatorTemplatesTabOverlay(restrictedButton);
+    ensureRestrictedNavigationButtonOverlay(restrictedButton);
 
     if (restrictedButton.dataset.assetManagerRestrictedBound === "true") {
       continue;
@@ -575,19 +598,15 @@ function disableRestrictedIndicatorTemplatesButtons(restrictedButtons: HTMLButto
     restrictedButton.dataset.assetManagerRestrictedBound = "true";
     restrictedButton.addEventListener(
       "keydown",
-      handleRestrictedIndicatorTemplatesTabKeyDown,
+      handleRestrictedNavigationButtonKeyDown,
       true,
     );
-    restrictedButton.addEventListener(
-      "focus",
-      handleRestrictedIndicatorTemplatesTabFocus,
-      true,
-    );
+    restrictedButton.addEventListener("focus", handleRestrictedNavigationButtonFocus, true);
   }
 }
 
-function ensureRestrictedIndicatorTemplatesTabOverlay(restrictedTab: HTMLButtonElement) {
-  let overlay = restrictedTab.querySelector(
+function ensureRestrictedNavigationButtonOverlay(restrictedButton: HTMLButtonElement) {
+  let overlay = restrictedButton.querySelector(
     restrictedIndicatorTemplatesTabOverlaySelector,
   ) as HTMLSpanElement | null;
 
@@ -600,7 +619,7 @@ function ensureRestrictedIndicatorTemplatesTabOverlay(restrictedTab: HTMLButtonE
     overlay.style.zIndex = "1";
     overlay.style.cursor = "not-allowed";
     overlay.style.background = "transparent";
-    restrictedTab.append(overlay);
+    restrictedButton.append(overlay);
   }
 
   if (overlay.dataset.assetManagerRestrictedBound === "true") {
@@ -617,28 +636,24 @@ function ensureRestrictedIndicatorTemplatesTabOverlay(restrictedTab: HTMLButtonE
     "touchstart",
     "touchend",
   ]) {
-    overlay.addEventListener(
-      eventName,
-      handleRestrictedIndicatorTemplatesBlockedPointerEvent,
-      true,
-    );
+    overlay.addEventListener(eventName, handleRestrictedNavigationBlockedPointerEvent, true);
   }
 
-  overlay.addEventListener("click", handleRestrictedIndicatorTemplatesBlockedClick, true);
+  overlay.addEventListener("click", handleRestrictedNavigationBlockedClick, true);
 }
 
-function handleRestrictedIndicatorTemplatesBlockedPointerEvent(event: Event) {
+function handleRestrictedNavigationBlockedPointerEvent(event: Event) {
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
 }
 
-function handleRestrictedIndicatorTemplatesBlockedClick(event: Event) {
-  handleRestrictedIndicatorTemplatesBlockedPointerEvent(event);
+function handleRestrictedNavigationBlockedClick(event: Event) {
+  handleRestrictedNavigationBlockedPointerEvent(event);
   window.alert(restrictedIndicatorTemplatesAccessDeniedMessage);
 }
 
-function handleRestrictedIndicatorTemplatesTabKeyDown(event: KeyboardEvent) {
+function handleRestrictedNavigationButtonKeyDown(event: KeyboardEvent) {
   if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
@@ -649,7 +664,7 @@ function handleRestrictedIndicatorTemplatesTabKeyDown(event: KeyboardEvent) {
   window.alert(restrictedIndicatorTemplatesAccessDeniedMessage);
 }
 
-function handleRestrictedIndicatorTemplatesTabFocus(event: FocusEvent) {
+function handleRestrictedNavigationButtonFocus(event: FocusEvent) {
   const restrictedTab = event.currentTarget;
 
   if (!(restrictedTab instanceof HTMLButtonElement)) {
@@ -659,13 +674,238 @@ function handleRestrictedIndicatorTemplatesTabFocus(event: FocusEvent) {
   restrictedTab.blur();
 }
 
-function syncRestrictedIndicatorTemplatesRowVisibility(
-  templateRow: HTMLElement,
-  shouldShowRow: boolean,
-) {
+function syncRestrictedListRowVisibility(templateRow: HTMLElement, shouldShowRow: boolean) {
   templateRow.hidden = !shouldShowRow;
   templateRow.setAttribute("aria-hidden", shouldShowRow ? "false" : "true");
   templateRow.style.display = shouldShowRow ? "" : "none";
+}
+
+function syncRestrictedWatchlistsDialogs(publicId: string | null) {
+  const dialogRoots = findRestrictedWatchlistsDialogRoots();
+
+  for (const dialogRoot of dialogRoots) {
+    syncRestrictedWatchlistsDialog(dialogRoot, publicId);
+  }
+}
+
+function findRestrictedWatchlistsDialogRoots() {
+  const dialogRoots = new Set<HTMLElement>();
+
+  for (const selector of [
+    watchlistsDialogSelector,
+    myWatchlistsDialogSelector,
+    searchWatchlistsDialogSelector,
+  ]) {
+    const matchedRoots = document.querySelectorAll(selector);
+
+    for (const matchedRoot of matchedRoots) {
+      if (matchedRoot instanceof HTMLElement) {
+        dialogRoots.add(matchedRoot);
+      }
+    }
+  }
+
+  return [...dialogRoots];
+}
+
+function isDesktopWatchlistsDialogRoot(dialogRoot: HTMLElement) {
+  return (
+    dialogRoot.querySelector(watchlistsSearchInputSelector) instanceof HTMLInputElement &&
+    dialogRoot.querySelector(desktopMyWatchlistsTabSelector) instanceof HTMLButtonElement &&
+    dialogRoot.querySelector(desktopHotlistsTabSelector) instanceof HTMLButtonElement
+  );
+}
+
+function syncRestrictedWatchlistsDialog(dialogRoot: HTMLElement, publicId: string | null) {
+  const dialogName = dialogRoot.dataset.dialogName ?? "";
+  const requiredPublicId = publicId?.trim() ?? "";
+
+  if (isDesktopWatchlistsDialogRoot(dialogRoot)) {
+    disableRestrictedNavigationButtons(getRestrictedDesktopHotlistsButtons(dialogRoot));
+    syncRestrictedWatchlistsRows(dialogRoot, requiredPublicId);
+    return;
+  }
+
+  if (dialogName === "Watchlists") {
+    disableRestrictedNavigationButtons(getRestrictedMobileHotlistsButtons(dialogRoot));
+    return;
+  }
+
+  if (dialogName === "My watchlists") {
+    syncRestrictedWatchlistsRows(dialogRoot, requiredPublicId);
+    return;
+  }
+
+  if (dialogName === "Search") {
+    syncRestrictedWatchlistsRows(dialogRoot, requiredPublicId);
+  }
+}
+
+function getRestrictedDesktopHotlistsButtons(dialogRoot: HTMLElement) {
+  return [...dialogRoot.querySelectorAll(desktopHotlistsTabSelector)].filter(
+    (button): button is HTMLButtonElement => button instanceof HTMLButtonElement,
+  );
+}
+
+function getRestrictedMobileHotlistsButtons(dialogRoot: HTMLElement) {
+  const hotlistsButton = findButtonByNormalizedText(dialogRoot, "Hotlists");
+
+  return hotlistsButton ? [hotlistsButton] : [];
+}
+
+function syncRestrictedWatchlistsRows(dialogRoot: HTMLElement, requiredPublicId: string) {
+  const layoutItems = getOrderedWatchlistsLayoutItems(dialogRoot);
+  let currentSectionTitle = "";
+
+  for (const layoutItem of layoutItems) {
+    if (layoutItem.matches(watchlistsSectionContainerSelector)) {
+      currentSectionTitle = getWatchlistsSectionTitle(layoutItem);
+      continue;
+    }
+
+    const watchlistTitle = layoutItem.dataset.title?.trim() ?? "";
+    const shouldShowRow = shouldShowRestrictedWatchlistsRow({
+      currentSectionTitle,
+      dialogName: dialogRoot.dataset.dialogName ?? "",
+      requiredPublicId,
+      watchlistTitle,
+    });
+
+    syncRestrictedListRowVisibility(layoutItem, shouldShowRow);
+  }
+
+  syncRestrictedWatchlistsSectionVisibility(dialogRoot);
+  syncRestrictedWatchlistsLayout(dialogRoot);
+}
+
+function syncRestrictedWatchlistsSectionVisibility(dialogRoot: HTMLElement) {
+  const layoutItems = getOrderedWatchlistsLayoutItems(dialogRoot);
+  let currentSectionContainer: HTMLElement | null = null;
+  let hasVisibleRowsInSection = false;
+
+  const flushCurrentSection = () => {
+    if (!currentSectionContainer) {
+      return;
+    }
+
+    syncRestrictedListRowVisibility(currentSectionContainer, hasVisibleRowsInSection);
+  };
+
+  for (const layoutItem of layoutItems) {
+    if (layoutItem.matches(watchlistsSectionContainerSelector)) {
+      flushCurrentSection();
+      currentSectionContainer = layoutItem;
+      hasVisibleRowsInSection = false;
+      continue;
+    }
+
+    if (!layoutItem.matches(watchlistsRowSelector)) {
+      continue;
+    }
+
+    if (!layoutItem.hidden && layoutItem.style.display !== "none") {
+      hasVisibleRowsInSection = true;
+    }
+  }
+
+  flushCurrentSection();
+}
+
+function shouldShowRestrictedWatchlistsRow(options: {
+  currentSectionTitle: string;
+  dialogName: string;
+  requiredPublicId: string;
+  watchlistTitle: string;
+}) {
+  if (options.dialogName === "Search" && options.currentSectionTitle === "Hotlists") {
+    return true;
+  }
+
+  return (
+    options.requiredPublicId.length > 0 &&
+    options.watchlistTitle.includes(options.requiredPublicId)
+  );
+}
+
+function getOrderedWatchlistsLayoutItems(dialogRoot: HTMLElement) {
+  const layoutParent = getWatchlistsLayoutParent(dialogRoot);
+
+  if (!layoutParent) {
+    return [];
+  }
+
+  return [...layoutParent.children].filter(
+    (child): child is HTMLElement =>
+      child instanceof HTMLElement &&
+      (child.matches(watchlistsSectionContainerSelector) ||
+        child.matches(watchlistsRowSelector)),
+  );
+}
+
+function getWatchlistsLayoutParent(dialogRoot: HTMLElement) {
+  const firstLayoutItem = dialogRoot.querySelector(
+    `${watchlistsSectionContainerSelector}, ${watchlistsRowSelector}`,
+  );
+
+  return firstLayoutItem instanceof HTMLElement ? firstLayoutItem.parentElement : null;
+}
+
+function getWatchlistsSectionTitle(sectionContainer: HTMLElement) {
+  const sectionTitle = sectionContainer.querySelector(watchlistsSectionTitleSelector);
+
+  return normalizeText(sectionTitle?.textContent);
+}
+
+function syncRestrictedWatchlistsLayout(dialogRoot: HTMLElement) {
+  const layoutItems = getOrderedWatchlistsLayoutItems(dialogRoot);
+
+  if (
+    layoutItems.length === 0 ||
+    !layoutItems.some((item) => item.style.position === "absolute" || item.style.top)
+  ) {
+    return;
+  }
+
+  let nextTop = 0;
+
+  for (const layoutItem of layoutItems) {
+    preserveWatchlistsLayoutMetrics(layoutItem);
+
+    if (layoutItem.hidden || layoutItem.style.display === "none") {
+      continue;
+    }
+
+    layoutItem.style.top = `${nextTop}px`;
+    nextTop += getWatchlistsLayoutHeight(layoutItem);
+  }
+
+  const layoutParent = getWatchlistsLayoutParent(dialogRoot);
+
+  if (layoutParent instanceof HTMLElement) {
+    layoutParent.style.height = `${nextTop}px`;
+  }
+}
+
+function preserveWatchlistsLayoutMetrics(layoutItem: HTMLElement) {
+  if (layoutItem.dataset.assetManagerOriginalTop === undefined) {
+    layoutItem.dataset.assetManagerOriginalTop = layoutItem.style.top || "";
+  }
+
+  if (layoutItem.dataset.assetManagerOriginalHeight === undefined) {
+    layoutItem.dataset.assetManagerOriginalHeight = layoutItem.style.height || "";
+  }
+}
+
+function getWatchlistsLayoutHeight(layoutItem: HTMLElement) {
+  const originalHeight =
+    layoutItem.dataset.assetManagerOriginalHeight ?? layoutItem.style.height;
+  const numericHeight = Number.parseFloat(originalHeight);
+
+  if (Number.isFinite(numericHeight)) {
+    return numericHeight;
+  }
+
+  return layoutItem.getBoundingClientRect().height;
 }
 
 function syncRestrictedTradingViewDialog(dialogRoot: HTMLElement, publicId: string | null) {
