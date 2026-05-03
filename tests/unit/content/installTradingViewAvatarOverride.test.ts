@@ -47,6 +47,10 @@ const createDialogSelector = '.wrap-B02UUUN3[data-name="create-dialog"]';
 const renameDialogSelector = '[data-name="rename-dialog"]';
 const saveIndicatorTemplateDialogSelector =
   '[data-dialog-name="Save indicator template"][data-name="save-rename-dialog"]';
+const alertsCreateEditDialogSelector = '[data-qa-id="alerts-create-edit-dialog"]';
+const alertPresetsButtonSelector = 'button[data-qa-id="header-alert-presets-menu-button"]';
+const alertNotificationsButtonSelector = 'button[data-qa-id="alert-notifications-button"]';
+const alertSubmitButtonSelector = 'button[data-qa-id="submit"]';
 const indicatorTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
@@ -613,6 +617,62 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("disables alert action buttons for non-private users", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-alert-dialog-restricted.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createAlertDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    for (const button of [
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertPresetsButtonSelector}`),
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertNotificationsButtonSelector}`),
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertSubmitButtonSelector}`),
+    ]) {
+      expect(button.disabled).toBe(true);
+      expect(button.getAttribute("aria-disabled")).toBe("true");
+      expect(button.style.opacity).toBe("0.5");
+      expect(button.style.cursor).toBe("not-allowed");
+    }
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps alert action buttons enabled when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-alert-dialog-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createAlertDialogMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    for (const button of [
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertPresetsButtonSelector}`),
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertNotificationsButtonSelector}`),
+      getButtonBySelector(`${alertsCreateEditDialogSelector} ${alertSubmitButtonSelector}`),
+    ]) {
+      expect(button.disabled).toBe(false);
+      expect(button.getAttribute("aria-disabled")).toBeNull();
+      expect(button.style.opacity).toBe("");
+      expect(button.style.cursor).toBe("");
+    }
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("filters indicator template rows by publicId and disables non-My templates tabs", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
     installChromeExtensionMocks(
@@ -920,6 +980,29 @@ describe("TradingView avatar override", () => {
     expect(getDrawingTemplateTitle("Abu")).toBeNull();
     expect(getDrawingTemplateTitle("Biru")).toBeNull();
     expect(countDrawingTemplateSpacerRows()).toBe(5);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters compact drawing template menus by publicId when save-as row is absent", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-drawing-templates-compact.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleDrawingTemplateTitles()).toEqual(["50975 jjg"]);
+    expect(getVisibleDrawingTemplateActionLabels()).toEqual(["Apply Default Drawing Template"]);
+    expect(getDrawingTemplateTitle("PDA")).toBeNull();
+    expect(countDrawingTemplateSpacerRows()).toBe(2);
 
     disposeTradingViewAvatarOverride();
   });
@@ -2413,6 +2496,50 @@ function createRestrictedDialogsMarkup() {
   `;
 }
 
+function createAlertDialogMarkup() {
+  return `
+    <div data-qa-id="alerts-create-edit-dialog" class="dialog-qyCw0PaN dialog-YKU5b5xj popup-LEkd5gPO dialog-aRAWUDhF" tabindex="-1">
+      <div class="headerWrapper-L1hbvk7h withDivider-L1hbvk7h">
+        <div data-qa-id="dialog-header" class="container-BZKENkhT header-AxRz6hfm">
+          <div class="title-BZKENkhT" data-dragg-area="true">
+            <div class="ellipsis-BZKENkhT title-AxRz6hfm">
+              <div class="titleText-AxRz6hfm screenTitleText-AxRz6hfm" data-qa-id="alerts-editor-header-title">
+                <span class="textPrefix-AxRz6hfm">Create alert on</span>
+              </div>
+              <div class="headerActions-AxRz6hfm" data-disable-drag="true">
+                <div class="headerActionItem-AxRz6hfm">
+                  <button type="button" data-qa-id="header-alert-presets-menu-button">Alert presets</button>
+                </div>
+                <button data-qa-id="close" type="button">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <form class="form-h6NNXQD2" novalidate="">
+        <div class="contentWrapper-HQliu1dK permanentScroll-HQliu1dK" tabindex="-1">
+          <div class="content-HQliu1dK">
+            <fieldset class="container-sFcMHof4 textButtonSection-Q92ASNAn placementSide-sFcMHof4">
+              <div class="legendWrapper-sFcMHof4"><legend class="legend-sFcMHof4 typographyRegular-sFcMHof4">Notifications</legend></div>
+              <div class="fieldsWrapper-sFcMHof4">
+                <button data-qa-id="alert-notifications-button" type="button">Email</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+        <div class="footerWrapper-Rytf0znw">
+          <div class="buttons-m9pp3wEB">
+            <div class="endSlot-m9pp3wEB">
+              <button type="button" data-qa-id="cancel">Cancel</button>
+              <button type="submit" data-qa-id="submit"><span class="content-D4RPB3ZC">Create</span></button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
 function createIndicatorTemplatesDialogMarkup() {
   return `
     <div role="dialog" class="wrapper-b8SxMnzX dialog-b8SxMnzX" data-name="indicator-templates-dialog" data-dialog-name="Indicator templates">
@@ -2472,27 +2599,54 @@ function createLayoutsDialogMarkup() {
 
 function createDrawingTemplatesMenuMarkup() {
   return `
-    <div data-qa-id="menu-inner" class="menuBox-XktvVkFF">
-      <table>
-        <tbody>
-          <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
-            <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
-            <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Save Drawing Template As…</span></div></td>
-          </tr>
-          <tr class="subMenu-GJX1EXhk"><td></td></tr>
-          <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
-            <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
-            <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Apply Default Drawing Template</span></div></td>
-          </tr>
-          <tr class="subMenu-GJX1EXhk"><td></td></tr>
-          <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
-          ${createDrawingTemplateMenuRowMarkup("50975 bbbbb")}
-          ${createDrawingTemplateMenuRowMarkup("Abu")}
-          ${createDrawingTemplateMenuRowMarkup("50975 biro")}
-          ${createDrawingTemplateMenuRowMarkup("Biru")}
-          ${createDrawingTemplateMenuRowMarkup("panjangggggggggggggggggggg sekaliiiiiiiiiiiiiiiiiiiiiiii 50975")}
-        </tbody>
-      </table>
+    <div class="menuWrap-XktvVkFF" data-qa-id="templates-menu" data-tooltip-show-on-focus="true" tabindex="-1">
+      <div class="scrollWrap-XktvVkFF momentumBased-XktvVkFF" style="overflow-y: auto">
+        <div data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+          <table>
+            <tbody>
+              <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+                <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+                <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Save Drawing Template As…</span></div></td>
+              </tr>
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+                <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+                <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Apply Default Drawing Template</span></div></td>
+              </tr>
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createDrawingTemplateMenuRowMarkup("50975 bbbbb")}
+              ${createDrawingTemplateMenuRowMarkup("Abu")}
+              ${createDrawingTemplateMenuRowMarkup("50975 biro")}
+              ${createDrawingTemplateMenuRowMarkup("Biru")}
+              ${createDrawingTemplateMenuRowMarkup("panjangggggggggggggggggggg sekaliiiiiiiiiiiiiiiiiiiiiiii 50975")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createCompactDrawingTemplatesMenuMarkup() {
+  return `
+    <div class="menuWrap-XktvVkFF" data-qa-id="templates-menu" data-tooltip-show-on-focus="true" tabindex="-1">
+      <div class="scrollWrap-XktvVkFF momentumBased-XktvVkFF" style="overflow-y: auto">
+        <div data-qa-id="menu-inner" class="menuBox-XktvVkFF">
+          <table>
+            <tbody>
+              <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1">
+                <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+                <td><div class="content-GJX1EXhk"><span class="label-GJX1EXhk" data-label="true">Apply Default Drawing Template</span></div></td>
+              </tr>
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createDrawingTemplateMenuRowMarkup("50975 jjg")}
+              ${createDrawingTemplateMenuRowMarkup("PDA")}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   `;
 }

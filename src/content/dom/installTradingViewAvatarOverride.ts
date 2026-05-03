@@ -37,6 +37,10 @@ const dialogSelectButtonSelector =
 const dialogSuggestionsSelector = ".suggestions-uszkUMOz";
 const dialogSaveButtonSelector =
   'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
+const alertsCreateEditDialogSelector = '[data-qa-id="alerts-create-edit-dialog"]';
+const alertPresetsButtonSelector = 'button[data-qa-id="header-alert-presets-menu-button"]';
+const alertNotificationsButtonSelector = 'button[data-qa-id="alert-notifications-button"]';
+const alertSubmitButtonSelector = 'button[data-qa-id="submit"]';
 const indicatorTemplatesDialogRootSelector =
   '[role="dialog"], .wrapper-b8SxMnzX, .dialog-b8SxMnzX';
 const indicatorTemplatesDialogSelector =
@@ -56,6 +60,7 @@ const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
 const contextMenuRootSelector = '.context-menu.menuWrap-XktvVkFF';
+const templatesMenuRootSelector = '[data-qa-id="templates-menu"]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
 const drawingTemplatesMenuRowSelector = 'tbody > tr';
 const drawingTemplateMenuItemSelector = 'tr[data-role="menuitem"]';
@@ -146,6 +151,10 @@ const relevantTradingViewSelectors = [
   dialogSelectButtonSelector,
   dialogSuggestionsSelector,
   dialogSaveButtonSelector,
+  alertsCreateEditDialogSelector,
+  alertPresetsButtonSelector,
+  alertNotificationsButtonSelector,
+  alertSubmitButtonSelector,
   indicatorTemplatesDialogRootSelector,
   indicatorTemplatesDialogSelector,
   indicatorTemplatesMyTemplatesDialogSelector,
@@ -413,6 +422,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   syncRestrictedMobileHorizontalLineContextMenus();
   syncRestrictedMobileWatchlistSymbolDrawers(overrideState.publicId);
   syncRestrictedActiveWatchlistMenus(overrideState.publicId);
+  syncRestrictedAlertDialogs();
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
   syncRestrictedHorizontalLineContextMenus();
@@ -1464,12 +1474,16 @@ function filterRestrictedMobileHorizontalLineContextMenuItems(drawerRoot: HTMLEl
 }
 
 function isDrawingTemplatesMenuRoot(menuRoot: HTMLElement) {
+  if (!(menuRoot.closest(templatesMenuRootSelector) instanceof HTMLElement)) {
+    return false;
+  }
+
   return (
     menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
-    findMenuItemByNormalizedText(menuRoot, "Save Drawing Template As…") instanceof
-      HTMLTableRowElement &&
-    findMenuItemByNormalizedText(menuRoot, "Apply Default Drawing Template") instanceof
-      HTMLTableRowElement
+    (findMenuItemByNormalizedText(menuRoot, "Save Drawing Template As…") instanceof
+      HTMLTableRowElement ||
+      findMenuItemByNormalizedText(menuRoot, "Apply Default Drawing Template") instanceof
+        HTMLTableRowElement)
   );
 }
 
@@ -1971,6 +1985,34 @@ function syncRestrictedTradingViewDialog(dialogRoot: HTMLElement, publicId: stri
   syncRestrictedDialogSaveButtons(dialogRoot, publicId);
 }
 
+function syncRestrictedAlertDialogs() {
+  const dialogRoots = document.querySelectorAll(alertsCreateEditDialogSelector);
+
+  for (const dialogRoot of dialogRoots) {
+    if (!(dialogRoot instanceof HTMLElement)) {
+      continue;
+    }
+
+    disableRestrictedAlertDialogButtons(dialogRoot);
+  }
+}
+
+function disableRestrictedAlertDialogButtons(dialogRoot: HTMLElement) {
+  for (const selector of [
+    alertPresetsButtonSelector,
+    alertNotificationsButtonSelector,
+    alertSubmitButtonSelector,
+  ]) {
+    const button = dialogRoot.querySelector(selector);
+
+    if (!(button instanceof HTMLButtonElement)) {
+      continue;
+    }
+
+    disableStyledButton(button);
+  }
+}
+
 function autofillRestrictedDialogInput(
   dialogInput: HTMLInputElement,
   publicId: string | null,
@@ -2226,6 +2268,12 @@ function disableButton(button: Element | null) {
 
   button.disabled = true;
   button.setAttribute("aria-disabled", "true");
+}
+
+function disableStyledButton(button: HTMLButtonElement) {
+  disableButton(button);
+  button.style.opacity = "0.5";
+  button.style.cursor = "not-allowed";
 }
 
 function disableFavoriteButton(button: Element | null) {
