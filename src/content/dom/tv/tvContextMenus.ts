@@ -1,5 +1,6 @@
 import {
   contextMenuRootSelector,
+  drawingTemplateSpacerRowSelector,
   drawingTemplateMenuItemSelector,
   drawingTemplatesMenuRowSelector,
   drawingTemplatesMenuSelector,
@@ -11,20 +12,45 @@ import {
 } from './tvSelectors';
 import { isTvMobileLayout, normalizeText } from './tvDomUtils';
 
+const desktopContextMenuSeparatorRowSelector = 'tr.row-DFIg7eOh';
+
+const restrictedDesktopContextMenuLabelPatterns = [
+  /^Add alert on /,
+  /^Buy /,
+  /^Sell /,
+  /^Add order on /,
+  /^Chart template$/,
+  /^Add indicator\/strategy on /,
+  /^Add financial metric for /,
+  /^Add .+ to watchlist$/,
+  /^Add text note for /,
+  /^Add this indicator to favorites?$/,
+  /^Remove this indicator from favorites?$/,
+] as const;
+
 export function syncRestrictedTvContextMenus() {
-  syncRestrictedHorizontalLineContextMenus();
+  syncRestrictedDesktopContextMenus();
   syncRestrictedMobileHorizontalLineContextMenus();
 }
 
-function syncRestrictedHorizontalLineContextMenus() {
+function syncRestrictedDesktopContextMenus() {
   const menuRoots = document.querySelectorAll(drawingTemplatesMenuSelector);
 
   for (const menuRoot of menuRoots) {
-    if (!(menuRoot instanceof HTMLElement) || !isRestrictedHorizontalLineContextMenuRoot(menuRoot)) {
+    if (!(menuRoot instanceof HTMLElement)) {
       continue;
     }
 
-    filterRestrictedHorizontalLineContextMenuRows(menuRoot);
+    if (!(menuRoot.closest(contextMenuRootSelector) instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (isRestrictedHorizontalLineContextMenuRoot(menuRoot)) {
+      filterRestrictedHorizontalLineContextMenuRows(menuRoot);
+      continue;
+    }
+
+    filterRestrictedDesktopContextMenuRows(menuRoot);
   }
 }
 
@@ -102,6 +128,24 @@ function filterRestrictedHorizontalLineContextMenuRows(menuRoot: HTMLElement) {
   }
 }
 
+function filterRestrictedDesktopContextMenuRows(menuRoot: HTMLElement) {
+  const menuRows = menuRoot.querySelectorAll(drawingTemplateMenuItemSelector);
+
+  for (const menuRow of menuRows) {
+    if (!(menuRow instanceof HTMLTableRowElement)) {
+      continue;
+    }
+
+    if (!shouldRemoveRestrictedDesktopContextMenuRow(getMenuItemLabel(menuRow))) {
+      continue;
+    }
+
+    hideDesktopContextMenuRowWithSpacer(menuRow);
+  }
+
+  cleanupRestrictedDesktopContextMenuSeparators(menuRoot);
+}
+
 function filterRestrictedMobileHorizontalLineContextMenuItems(drawerRoot: HTMLElement) {
   const drawerChildren = [...drawerRoot.querySelectorAll(':scope > ul > li')];
 
@@ -132,6 +176,84 @@ function findMenuItemByNormalizedTextPrefix(menuRoot: HTMLElement, labelPrefix: 
   );
 }
 
+function shouldRemoveRestrictedDesktopContextMenuRow(label: string) {
+  return restrictedDesktopContextMenuLabelPatterns.some((pattern) => pattern.test(label));
+}
+
+function hideDesktopContextMenuRowWithSpacer(menuRow: HTMLTableRowElement) {
+  const spacerRow = menuRow.nextElementSibling;
+
+  hideDesktopContextMenuRow(menuRow);
+
+  if (
+    spacerRow instanceof HTMLTableRowElement &&
+    spacerRow.matches(drawingTemplateSpacerRowSelector)
+  ) {
+    hideDesktopContextMenuRow(spacerRow);
+  }
+}
+
+function cleanupRestrictedDesktopContextMenuSeparators(menuRoot: HTMLElement) {
+  const tbody = menuRoot.querySelector('tbody');
+
+  if (!(tbody instanceof HTMLTableSectionElement)) {
+    return;
+  }
+
+  const rows = [...tbody.children].filter(
+    (row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement,
+  );
+
+  for (const row of rows) {
+    if (!row.matches(desktopContextMenuSeparatorRowSelector)) {
+      continue;
+    }
+
+    const previousSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, 'backward');
+    const nextSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, 'forward');
+
+    if (
+      !(previousSignificantRow instanceof HTMLTableRowElement) ||
+      !isVisibleDesktopContextMenuMenuItemRow(previousSignificantRow) ||
+      !(nextSignificantRow instanceof HTMLTableRowElement) ||
+      !isVisibleDesktopContextMenuMenuItemRow(nextSignificantRow)
+    ) {
+      hideDesktopContextMenuRow(row);
+    }
+  }
+}
+
+function findAdjacentDesktopContextMenuSignificantRow(
+  row: HTMLTableRowElement,
+  direction: 'forward' | 'backward',
+) {
+  let currentElement =
+    direction === 'forward' ? row.nextElementSibling : row.previousElementSibling;
+
+  while (currentElement) {
+    if (
+      currentElement instanceof HTMLTableRowElement &&
+      (currentElement.matches(drawingTemplateMenuItemSelector) ||
+        currentElement.matches(desktopContextMenuSeparatorRowSelector))
+    ) {
+      if (isDesktopContextMenuRowHidden(currentElement)) {
+        currentElement =
+          direction === 'forward'
+            ? currentElement.nextElementSibling
+            : currentElement.previousElementSibling;
+        continue;
+      }
+
+      return currentElement;
+    }
+
+    currentElement =
+      direction === 'forward' ? currentElement.nextElementSibling : currentElement.previousElementSibling;
+  }
+
+  return null;
+}
+
 function findMobileDrawerItemByTextPrefix(drawerRoot: HTMLElement, labelPrefix: string) {
   return (
     [...drawerRoot.querySelectorAll(mobileWatchlistSymbolDrawerItemSelector)].find(
@@ -142,4 +264,18 @@ function findMobileDrawerItemByTextPrefix(drawerRoot: HTMLElement, labelPrefix: 
 
 function getMenuItemLabel(menuRow: HTMLTableRowElement) {
   return normalizeText(menuRow.textContent);
+}
+
+function hideDesktopContextMenuRow(menuRow: HTMLTableRowElement) {
+  menuRow.hidden = true;
+  menuRow.setAttribute('aria-hidden', 'true');
+  menuRow.style.display = 'none';
+}
+
+function isDesktopContextMenuRowHidden(menuRow: HTMLTableRowElement) {
+  return menuRow.hidden || menuRow.style.display === 'none';
+}
+
+function isVisibleDesktopContextMenuMenuItemRow(menuRow: HTMLTableRowElement) {
+  return menuRow.matches(drawingTemplateMenuItemSelector) && !isDesktopContextMenuRowHidden(menuRow);
 }

@@ -57,6 +57,9 @@ const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvV
 const popupTemplateMenuSelector = '#popup-template-menu';
 const seriesThemePopupTemplateMenuSelector = '#series-theme-popup-template-menu';
 const horizontalLineContextMenuRootSelector = "#horizontal-line-context-menu";
+const chartRightClickContextMenuRootSelector = "#chart-right-click-context-menu";
+const candleRightClickContextMenuRootSelector = "#candle-right-click-context-menu";
+const indicatorRightClickContextMenuRootSelector = "#indicator-right-click-context-menu";
 const genericTableMenuRootSelector = "#generic-table-menu";
 const mobileHorizontalLineContextMenuRootSelector = "#mobile-horizontal-line-context-menu";
 const genericMobileDrawerRootSelector = "#generic-mobile-drawer";
@@ -1224,6 +1227,78 @@ describe("TV DOM patches", () => {
     disposeTvDomPatches();
   });
 
+  it("removes restricted rows from the general desktop chart context menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-chart-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createChartRightClickContextMenuMarkup()}`;
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(chartRightClickContextMenuRootSelector)).toEqual([
+      "Reset chart view",
+      "Copy price 6,899.08",
+      "Paste",
+      "Table view",
+      "Settings…",
+    ]);
+
+    disposeTvDomPatches();
+  });
+
+  it("removes restricted rows from the candle desktop context menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-candle-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createCandleRightClickContextMenuMarkup()}`;
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(candleRightClickContextMenuRootSelector)).toEqual([
+      "Symbol info…",
+      "Table view",
+      "Settings…",
+    ]);
+
+    disposeTvDomPatches();
+  });
+
+  it("removes restricted rows from the indicator desktop context menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-indicator-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createIndicatorRightClickContextMenuMarkup()}`;
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(indicatorRightClickContextMenuRootSelector)).toEqual([
+      "About this script…",
+      "Copy",
+      "Hide",
+      "Settings…",
+    ]);
+
+    disposeTvDomPatches();
+  });
+
   it("restricts desktop watchlist symbol drag, remove, and context menu for foreign watchlists only", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -2174,7 +2249,14 @@ function getVisibleTableMenuLabelsWithin(rootSelector: string) {
 
   expect(menuRoot).toBeInstanceOf(HTMLElement);
 
-  return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"] span[data-label="true"]')]
+  return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"]')]
+    .filter(
+      (menuRow): menuRow is HTMLTableRowElement =>
+        menuRow instanceof HTMLTableRowElement &&
+        !menuRow.hidden &&
+        menuRow.style.display !== "none",
+    )
+    .map((menuRow) => menuRow.querySelector('span[data-label="true"]'))
     .filter((label): label is HTMLSpanElement => label instanceof HTMLSpanElement)
     .map((label) => normalizeText(label.textContent));
 }
@@ -2926,6 +3008,110 @@ function createHorizontalLineContextMenuMarkup() {
               <tr class="subMenu-GJX1EXhk"><td></td></tr>
               <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
               ${createContextTableMenuItemMarkup("Draw horizontal line at 4,767.41", "Alt + H")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createChartRightClickContextMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF">
+      <div class="scrollWrap-XktvVkFF">
+        <div id="chart-right-click-context-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Reset chart view", "Alt + R")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Copy price 6,899.08")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Paste", "Ctrl + V")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Add alert on SPX at 6,899.08…", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Buy 1 SPX @ 6,899.08 limit", undefined, "trade-buy-limit")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Sell 1 SPX @ 6,899.08 stop", undefined, "trade-sell-stop")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add order on SPX at 6,899.08…", "Shift + T", "trade-new-order")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Chart template", undefined, "apply-color-theme")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Table view")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Settings…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createCandleRightClickContextMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF">
+      <div class="scrollWrap-XktvVkFF">
+        <div id="candle-right-click-context-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Add alert on SPX at 6,969.58…", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add order on SPX at 6,969.58…", "Shift + T", "trade-new-order")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add indicator/strategy on SPX…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add financial metric for SPX…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Symbol info…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add SPX to watchlist")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add text note for SPX", "Alt + N")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Table view")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Settings…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createIndicatorRightClickContextMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF">
+      <div class="scrollWrap-XktvVkFF">
+        <div id="indicator-right-click-context-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Add alert on 10 in 1 MAs at 6,575.10…", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add indicator/strategy on 10 in 1 MAs…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add this indicator to favorites")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Remove this indicator from favorites")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("About this script…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Copy", "Ctrl + C")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Hide")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Settings…")}
               <tr class="subMenu-GJX1EXhk"><td></td></tr>
             </tbody>
           </table>
