@@ -50,6 +50,10 @@ const saveIndicatorTemplateDialogSelector =
 const indicatorTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
+const horizontalLineContextMenuRootSelector = "#horizontal-line-context-menu";
+const genericTableMenuRootSelector = "#generic-table-menu";
+const mobileHorizontalLineContextMenuRootSelector = "#mobile-horizontal-line-context-menu";
+const genericMobileDrawerRootSelector = "#generic-mobile-drawer";
 const layoutsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const mobileIndicatorTemplatesCategoryDialogSelector =
@@ -920,6 +924,61 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
+  it("keeps only the horizontal line row in the restricted chart context menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-horizontal-line-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}${createGenericTableMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(horizontalLineContextMenuRootSelector)).toEqual([
+      "Draw horizontal line at 4,767.41",
+    ]);
+    expect(countTableMenuRowsWithin(horizontalLineContextMenuRootSelector)).toBe(1);
+    expect(getVisibleTableMenuLabelsWithin(genericTableMenuRootSelector)).toEqual([
+      "Keep this menu intact",
+      "Another generic action",
+    ]);
+    expect(countTableMenuRowsWithin(genericTableMenuRootSelector)).toBe(3);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps the horizontal line chart context menu unchanged for private access", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-horizontal-line-context-menu-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(horizontalLineContextMenuRootSelector)).toEqual([
+      "Add alert on XAUUSD at 4,767.41",
+      "Add alert on 10 in 1 MAs at 4,767.41",
+      "Sell 1 XAUUSD @ 4,767.41 limit",
+      "Buy 1 XAUUSD @ 4,767.41 stop",
+      "Add order on XAUUSD at 4,767.41…",
+      "Draw horizontal line at 4,767.41",
+    ]);
+    expect(countTableMenuRowsWithin(horizontalLineContextMenuRootSelector)).toBe(14);
+
+    disposeTradingViewAvatarOverride();
+  });
+
   it("restricts desktop watchlist symbol drag, remove, and context menu for foreign watchlists only", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
@@ -1298,6 +1357,65 @@ describe("TradingView avatar override", () => {
     expect(addSectionItem.style.opacity).toBe("");
     expect(addSectionItem.style.cursor).toBe("");
     expect(addSectionItem.getAttribute("aria-disabled")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps only the horizontal line row in the restricted mobile chart context drawer", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-horizontal-line-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}${createGenericMobileDrawerMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleMobileDrawerLabelsWithin(mobileHorizontalLineContextMenuRootSelector)).toEqual([
+      "Draw horizontal line at 4,969.35",
+    ]);
+    expect(countMobileDrawerChildrenWithin(mobileHorizontalLineContextMenuRootSelector)).toBe(1);
+    expect(getVisibleMobileDrawerLabelsWithin(genericMobileDrawerRootSelector)).toEqual([
+      "Keep this mobile drawer intact",
+      "Another generic mobile action",
+    ]);
+    expect(countMobileDrawerChildrenWithin(genericMobileDrawerRootSelector)).toBe(3);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps the mobile horizontal line context drawer unchanged for private access", async () => {
+    document.documentElement.classList.add("feature-mobiletouch");
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-mobile-horizontal-line-context-menu-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleMobileDrawerLabelsWithin(mobileHorizontalLineContextMenuRootSelector)).toEqual([
+      "Add alert on XAUUSD at 4,969.35",
+      "Add alert on 10 in 1 MAs at 4,969.35",
+      "Sell 1 XAUUSD @ 4,969.35 limit",
+      "Buy 1 XAUUSD @ 4,969.35 stop",
+      "Add order on XAUUSD at 4,969.35…",
+      "Draw horizontal line at 4,969.35",
+    ]);
+    expect(countMobileDrawerChildrenWithin(mobileHorizontalLineContextMenuRootSelector)).toBe(8);
 
     disposeTradingViewAvatarOverride();
   });
@@ -1784,6 +1902,42 @@ function getDrawingTemplateTitle(templateTitle: string) {
 
 function countDrawingTemplateSpacerRows() {
   return document.querySelectorAll(`${drawingTemplatesMenuSelector} tr.subMenu-GJX1EXhk`).length;
+}
+
+function getVisibleTableMenuLabelsWithin(rootSelector: string) {
+  const menuRoot = document.querySelector(rootSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"] span[data-label="true"]')]
+    .filter((label): label is HTMLSpanElement => label instanceof HTMLSpanElement)
+    .map((label) => normalizeText(label.textContent));
+}
+
+function countTableMenuRowsWithin(rootSelector: string) {
+  const menuRoot = document.querySelector(rootSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return (menuRoot as HTMLElement).querySelectorAll("tbody > tr").length;
+}
+
+function getVisibleMobileDrawerLabelsWithin(rootSelector: string) {
+  const drawerRoot = document.querySelector(rootSelector);
+
+  expect(drawerRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(drawerRoot as HTMLElement).querySelectorAll("li.item-WJDah4zD .label-WJDah4zD")]
+    .filter((label): label is HTMLSpanElement => label instanceof HTMLSpanElement)
+    .map((label) => normalizeText(label.textContent));
+}
+
+function countMobileDrawerChildrenWithin(rootSelector: string) {
+  const drawerRoot = document.querySelector(rootSelector);
+
+  expect(drawerRoot).toBeInstanceOf(HTMLElement);
+
+  return (drawerRoot as HTMLElement).querySelectorAll(":scope > ul > li").length;
 }
 
 function getVisibleIndicatorTemplateTitles() {
@@ -2343,6 +2497,53 @@ function createDrawingTemplatesMenuMarkup() {
   `;
 }
 
+function createHorizontalLineContextMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF" style="position: fixed; left: 619.173px; top: 304.25px">
+      <div class="scrollWrap-XktvVkFF" style="overflow-y: auto">
+        <div id="horizontal-line-context-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Add alert on XAUUSD at 4,767.41", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add alert on 10 in 1 MAs at 4,767.41", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Sell 1 XAUUSD @ 4,767.41 limit", "Alt + Shift + S", "trade-sell-limit")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Buy 1 XAUUSD @ 4,767.41 stop", undefined, "trade-buy-stop")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Add order on XAUUSD at 4,767.41…", "Shift + T", "trade-new-order")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Draw horizontal line at 4,767.41", "Alt + H")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createGenericTableMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF">
+      <div class="scrollWrap-XktvVkFF">
+        <div id="generic-table-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Keep this menu intact")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Another generic action")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function createDesktopWatchlistActiveTitleMarkup(title: string) {
   return `
     <div class="container-u7Ufi_N7">
@@ -2505,6 +2706,35 @@ function createMobileWatchlistSymbolDrawerMarkup(symbolShort: string) {
   `;
 }
 
+function createMobileHorizontalLineContextMenuMarkup() {
+  return `
+    <div id="mobile-horizontal-line-context-menu" class="drawer-GQU5HVYO drawer-GQU5HVYO positionBottom-GQU5HVYO" tabindex="-1">
+      <ul>
+        ${createMobileDrawerItemMarkup("Add alert on XAUUSD at 4,969.35")}
+        ${createMobileDrawerItemMarkup("Add alert on  10 in 1 MAs at 4,969.35")}
+        <li class="separator-Ymxd0dt_"></li>
+        ${createMobileDrawerItemMarkup("Sell 1 XAUUSD @ 4,969.35 limit")}
+        ${createMobileDrawerItemMarkup("Buy 1 XAUUSD @ 4,969.35 stop")}
+        ${createMobileDrawerItemMarkup("Add order on XAUUSD at 4,969.35…")}
+        <li class="separator-Ymxd0dt_"></li>
+        ${createMobileDrawerItemMarkup("Draw horizontal line at 4,969.35")}
+      </ul>
+    </div>
+  `;
+}
+
+function createGenericMobileDrawerMarkup() {
+  return `
+    <div id="generic-mobile-drawer" class="drawer-GQU5HVYO drawer-GQU5HVYO positionBottom-GQU5HVYO" tabindex="-1">
+      <ul>
+        ${createMobileDrawerItemMarkup("Keep this mobile drawer intact")}
+        <li class="separator-Ymxd0dt_"></li>
+        ${createMobileDrawerItemMarkup("Another generic mobile action")}
+      </ul>
+    </div>
+  `;
+}
+
 function createDesktopWatchlistSymbolRowMarkup(index: number, symbolFull: string, symbolShort: string) {
   return `
     <div style="position: absolute; left: 0px; top: ${index * 30}px; height: 30px; width: 100%;">
@@ -2542,6 +2772,37 @@ function createDrawingTemplateMenuRowMarkup(title: string) {
       </td>
     </tr>
     <tr class="subMenu-GJX1EXhk"><td></td></tr>
+  `;
+}
+
+function createContextTableMenuItemMarkup(
+  label: string,
+  shortcut?: string,
+  actionName?: string,
+) {
+  const actionAttribute = actionName ? ` data-action-name="${actionName}"` : "";
+  const shortcutMarkup = shortcut
+    ? `<span class="shortcut-GJX1EXhk">${shortcut}</span>`
+    : "";
+
+  return `
+    <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1"${actionAttribute}>
+      <td class="iconCell-GJX1EXhk" data-icon-cell="true"></td>
+      <td>
+        <div class="content-GJX1EXhk">
+          <span class="label-GJX1EXhk" data-label="true">${label}</span>${shortcutMarkup}
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function createMobileDrawerItemMarkup(label: string) {
+  return `
+    <li class="item-WJDah4zD interactive-WJDah4zD normal-WJDah4zD">
+      <span role="img" class="icon-WJDah4zD" aria-hidden="true"></span>
+      <span class="label-WJDah4zD">${label}</span>
+    </li>
   `;
 }
 

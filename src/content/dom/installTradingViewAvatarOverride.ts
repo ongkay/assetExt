@@ -55,6 +55,7 @@ const restrictedIndicatorTemplatesTabOverlaySelector =
 const saveLoadMenuButtonSelector = 'button[data-name="save-load-menu"]';
 const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates"]';
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
+const contextMenuRootSelector = '.context-menu.menuWrap-XktvVkFF';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
 const drawingTemplatesMenuRowSelector = 'tbody > tr';
 const drawingTemplateMenuItemSelector = 'tr[data-role="menuitem"]';
@@ -112,6 +113,9 @@ const logoutRedirectDelayMs = 250;
 const restrictedIndicatorTemplatesAccessDeniedMessage =
   "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
 const restrictedActiveWatchlistMenuMessage = "watchlist bukan milik anda";
+const restrictedHorizontalLineContextMenuLabelPrefix = "Draw horizontal line at ";
+const restrictedHorizontalLineContextMenuAlertLabelPrefix = "Add alert on ";
+const restrictedHorizontalLineContextMenuTradeActionPrefix = "trade-";
 const relevantTradingViewSelectors = [
   mainMenuButtonSelector,
   mainAvatarImageSelector,
@@ -406,10 +410,12 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   syncRestrictedDesktopWatchlistSymbols(overrideState.publicId);
   syncRestrictedWatchlistAddSymbolButtons(overrideState.publicId);
   syncRestrictedWatchlistAdvancedViewButtons();
+  syncRestrictedMobileHorizontalLineContextMenus();
   syncRestrictedMobileWatchlistSymbolDrawers(overrideState.publicId);
   syncRestrictedActiveWatchlistMenus(overrideState.publicId);
   syncRestrictedTradingViewDialogs(overrideState.publicId);
   syncRestrictedIndicatorTemplatesDialogs(overrideState.publicId);
+  syncRestrictedHorizontalLineContextMenus();
   syncRestrictedDrawingTemplatesMenu(overrideState.publicId);
   syncRestrictedLayoutsDialogs(overrideState.publicId);
   syncRestrictedWatchlistsDialogs(overrideState.publicId);
@@ -787,6 +793,14 @@ function syncRestrictedMobileWatchlistSymbolDrawer(
 function getMobileWatchlistSymbolDrawerItems(drawerRoot: HTMLElement) {
   return [...drawerRoot.querySelectorAll(mobileWatchlistSymbolDrawerItemSelector)].filter(
     (item): item is HTMLLIElement => item instanceof HTMLLIElement,
+  );
+}
+
+function findMobileDrawerItemByTextPrefix(drawerRoot: HTMLElement, labelPrefix: string) {
+  return (
+    getMobileWatchlistSymbolDrawerItems(drawerRoot).find((item) =>
+      normalizeText(item.textContent).startsWith(labelPrefix),
+    ) ?? null
   );
 }
 
@@ -1341,6 +1355,114 @@ function syncRestrictedDrawingTemplatesMenu(publicId: string | null) {
   }
 }
 
+function syncRestrictedHorizontalLineContextMenus() {
+  const menuRoots = document.querySelectorAll(drawingTemplatesMenuSelector);
+
+  for (const menuRoot of menuRoots) {
+    if (!(menuRoot instanceof HTMLElement) || !isRestrictedHorizontalLineContextMenuRoot(menuRoot)) {
+      continue;
+    }
+
+    filterRestrictedHorizontalLineContextMenuRows(menuRoot);
+  }
+}
+
+function syncRestrictedMobileHorizontalLineContextMenus() {
+  if (!isTradingViewMobileLayout()) {
+    return;
+  }
+
+  const drawerRoots = document.querySelectorAll(mobileWatchlistSymbolDrawerSelector);
+
+  for (const drawerRoot of drawerRoots) {
+    if (
+      !(drawerRoot instanceof HTMLElement) ||
+      !isRestrictedMobileHorizontalLineContextMenuRoot(drawerRoot)
+    ) {
+      continue;
+    }
+
+    filterRestrictedMobileHorizontalLineContextMenuItems(drawerRoot);
+  }
+}
+
+function isRestrictedHorizontalLineContextMenuRoot(menuRoot: HTMLElement) {
+  if (!(menuRoot.closest(contextMenuRootSelector) instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (
+    !(findMenuItemByNormalizedTextPrefix(
+      menuRoot,
+      restrictedHorizontalLineContextMenuLabelPrefix,
+    ) instanceof HTMLTableRowElement)
+  ) {
+    return false;
+  }
+
+  return (
+    findMenuItemByNormalizedTextPrefix(
+      menuRoot,
+      restrictedHorizontalLineContextMenuAlertLabelPrefix,
+    ) instanceof HTMLTableRowElement ||
+    [...menuRoot.querySelectorAll(drawingTemplateMenuItemSelector)].some(
+      (row) =>
+        row instanceof HTMLTableRowElement &&
+        (row.dataset.actionName ?? "").startsWith(restrictedHorizontalLineContextMenuTradeActionPrefix),
+    )
+  );
+}
+
+function isRestrictedMobileHorizontalLineContextMenuRoot(drawerRoot: HTMLElement) {
+  return (
+    findMobileDrawerItemByTextPrefix(
+      drawerRoot,
+      restrictedHorizontalLineContextMenuAlertLabelPrefix,
+    ) instanceof HTMLLIElement &&
+    findMobileDrawerItemByTextPrefix(
+      drawerRoot,
+      restrictedHorizontalLineContextMenuLabelPrefix,
+    ) instanceof HTMLLIElement
+  );
+}
+
+function filterRestrictedHorizontalLineContextMenuRows(menuRoot: HTMLElement) {
+  const menuRows = menuRoot.querySelectorAll(drawingTemplatesMenuRowSelector);
+
+  for (const menuRow of menuRows) {
+    if (!(menuRow instanceof HTMLTableRowElement)) {
+      continue;
+    }
+
+    if (
+      menuRow.matches(drawingTemplateMenuItemSelector) &&
+      getMenuItemLabel(menuRow).startsWith(restrictedHorizontalLineContextMenuLabelPrefix)
+    ) {
+      continue;
+    }
+
+    menuRow.remove();
+  }
+}
+
+function filterRestrictedMobileHorizontalLineContextMenuItems(drawerRoot: HTMLElement) {
+  const drawerChildren = [...drawerRoot.querySelectorAll(":scope > ul > li")];
+
+  for (const drawerChild of drawerChildren) {
+    if (
+      drawerChild instanceof HTMLLIElement &&
+      drawerChild.matches(mobileWatchlistSymbolDrawerItemSelector) &&
+      normalizeText(drawerChild.textContent).startsWith(restrictedHorizontalLineContextMenuLabelPrefix)
+    ) {
+      continue;
+    }
+
+    if (drawerChild instanceof HTMLElement) {
+      drawerChild.remove();
+    }
+  }
+}
+
 function isDrawingTemplatesMenuRoot(menuRoot: HTMLElement) {
   return (
     menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
@@ -1359,6 +1481,18 @@ function findMenuItemByNormalizedText(menuRoot: HTMLElement, label: string) {
       }
 
       return normalizeText(row.textContent) === label;
+    }) ?? null
+  );
+}
+
+function findMenuItemByNormalizedTextPrefix(menuRoot: HTMLElement, labelPrefix: string) {
+  return (
+    [...menuRoot.querySelectorAll(drawingTemplateMenuItemSelector)].find((row) => {
+      if (!(row instanceof HTMLTableRowElement)) {
+        return false;
+      }
+
+      return getMenuItemLabel(row).startsWith(labelPrefix);
     }) ?? null
   );
 }
@@ -1398,6 +1532,10 @@ function isRestrictedDrawingTemplateRow(menuRow: HTMLTableRowElement) {
 }
 
 function getRestrictedDrawingTemplateTitle(menuRow: HTMLTableRowElement) {
+  return getMenuItemLabel(menuRow);
+}
+
+function getMenuItemLabel(menuRow: HTMLTableRowElement) {
   const titleLabel = menuRow.querySelector(drawingTemplateLabelSelector);
 
   return normalizeText(titleLabel?.textContent);
