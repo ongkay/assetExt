@@ -61,12 +61,18 @@ const indicatorTemplatesButtonSelector = 'button[aria-label="Indicator templates
 const watchlistsButtonSelector = 'button[data-name="watchlists-button"]';
 const contextMenuRootSelector = '.context-menu.menuWrap-XktvVkFF';
 const templatesMenuRootSelector = '[data-qa-id="templates-menu"]';
+const popupTemplateMenuRootSelector = '.menuWrap-XktvVkFF[data-qa-id="popup-menu-container"]';
+const seriesThemeTemplateActionSelector =
+  '[data-name="series-theme-manager-apply-defaults"], [data-name="series-theme-manager-save-as"]';
+const popupTemplateThemeItemSelector = '[data-series-theme-item-theme-name]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
 const drawingTemplatesMenuRowSelector = 'tbody > tr';
 const drawingTemplateMenuItemSelector = 'tr[data-role="menuitem"]';
 const drawingTemplateLabelSelector = 'span[data-label="true"]';
-const drawingTemplateRemoveButtonSelector = 'span[aria-label="Remove"]';
+const drawingTemplateRemoveButtonSelector = '[data-name="remove-button"], [aria-label="Remove"]';
 const drawingTemplateSpacerRowSelector = 'tr.subMenu-GJX1EXhk';
+const popupTemplateMenuItemSelector = '.item-BOZdoKo9[class*="defaultsButtonItem-"]';
+const popupTemplateMenuLabelSelector = '.label-BOZdoKo9';
 const layoutsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const layoutsSearchInputSelector = 'input[role="searchbox"]';
@@ -166,12 +172,17 @@ const relevantTradingViewSelectors = [
   saveLoadMenuButtonSelector,
   indicatorTemplatesButtonSelector,
   watchlistsButtonSelector,
+  popupTemplateMenuRootSelector,
+  seriesThemeTemplateActionSelector,
+  popupTemplateThemeItemSelector,
   drawingTemplatesMenuSelector,
   drawingTemplatesMenuRowSelector,
   drawingTemplateMenuItemSelector,
   drawingTemplateLabelSelector,
   drawingTemplateRemoveButtonSelector,
   drawingTemplateSpacerRowSelector,
+  popupTemplateMenuItemSelector,
+  popupTemplateMenuLabelSelector,
   layoutsDialogSelector,
   layoutsSearchInputSelector,
   layoutsSearchClearButtonSelector,
@@ -1357,11 +1368,18 @@ function syncRestrictedDrawingTemplatesMenu(publicId: string | null) {
   const menuRoots = document.querySelectorAll(drawingTemplatesMenuSelector);
 
   for (const menuRoot of menuRoots) {
-    if (!(menuRoot instanceof HTMLElement) || !isDrawingTemplatesMenuRoot(menuRoot)) {
+    if (!(menuRoot instanceof HTMLElement)) {
       continue;
     }
 
-    filterRestrictedDrawingTemplateRows(menuRoot, requiredPublicId);
+    if (isDrawingTemplatesMenuRoot(menuRoot)) {
+      filterRestrictedDrawingTemplateRows(menuRoot, requiredPublicId);
+      continue;
+    }
+
+    if (isPopupTemplateMenuRoot(menuRoot)) {
+      filterRestrictedPopupTemplateMenuItems(menuRoot, requiredPublicId);
+    }
   }
 }
 
@@ -1487,6 +1505,29 @@ function isDrawingTemplatesMenuRoot(menuRoot: HTMLElement) {
   );
 }
 
+function isPopupTemplateMenuRoot(menuRoot: HTMLElement) {
+  const hasKnownPopupTemplateContainer =
+    menuRoot.closest(popupTemplateMenuRootSelector) instanceof HTMLElement;
+  const hasSeriesThemeTemplateActions =
+    menuRoot.querySelector(seriesThemeTemplateActionSelector) instanceof HTMLElement;
+  const hasSeriesThemeTemplateItems =
+    menuRoot.querySelector(popupTemplateThemeItemSelector) instanceof HTMLElement;
+
+  if (
+    !hasKnownPopupTemplateContainer &&
+    !hasSeriesThemeTemplateActions &&
+    !hasSeriesThemeTemplateItems
+  ) {
+    return false;
+  }
+
+  return (
+    menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
+    (findPopupTemplateMenuItemByNormalizedText(menuRoot, "Save as…") instanceof HTMLElement ||
+      findPopupTemplateMenuItemByNormalizedText(menuRoot, "Apply defaults") instanceof HTMLElement)
+  );
+}
+
 function findMenuItemByNormalizedText(menuRoot: HTMLElement, label: string) {
   return (
     [...menuRoot.querySelectorAll(drawingTemplateMenuItemSelector)].find((row) => {
@@ -1512,13 +1553,13 @@ function findMenuItemByNormalizedTextPrefix(menuRoot: HTMLElement, labelPrefix: 
 }
 
 function filterRestrictedDrawingTemplateRows(menuRoot: HTMLElement, requiredPublicId: string) {
-  const menuRows = menuRoot.querySelectorAll(drawingTemplatesMenuRowSelector);
+  const templateRows = getRestrictedDrawingTemplateRows(menuRoot);
 
-  for (const menuRow of menuRows) {
-    if (!(menuRow instanceof HTMLTableRowElement) || !isRestrictedDrawingTemplateRow(menuRow)) {
-      continue;
-    }
+  if (!hasRestrictedTemplateItems(templateRows)) {
+    return;
+  }
 
+  for (const menuRow of templateRows) {
     const templateTitle = getRestrictedDrawingTemplateTitle(menuRow);
 
     if (requiredPublicId.length > 0 && templateTitle.includes(requiredPublicId)) {
@@ -1538,6 +1579,44 @@ function filterRestrictedDrawingTemplateRows(menuRoot: HTMLElement, requiredPubl
   }
 }
 
+function filterRestrictedPopupTemplateMenuItems(menuRoot: HTMLElement, requiredPublicId: string) {
+  const templateItems = getRestrictedPopupTemplateMenuItems(menuRoot);
+
+  if (!hasRestrictedTemplateItems(templateItems)) {
+    return;
+  }
+
+  for (const templateItem of templateItems) {
+    if (
+      requiredPublicId.length > 0 &&
+      getPopupTemplateMenuItemLabel(templateItem).includes(requiredPublicId)
+    ) {
+      continue;
+    }
+
+    removeElement(getMenuItemContainer(templateItem));
+  }
+}
+
+function getRestrictedDrawingTemplateRows(menuRoot: HTMLElement) {
+  return [...menuRoot.querySelectorAll(drawingTemplatesMenuRowSelector)].filter(
+    (menuRow): menuRow is HTMLTableRowElement =>
+      menuRow instanceof HTMLTableRowElement && isRestrictedDrawingTemplateRow(menuRow),
+  );
+}
+
+function getRestrictedPopupTemplateMenuItems(menuRoot: HTMLElement) {
+  return [...menuRoot.querySelectorAll(popupTemplateMenuItemSelector)].filter(
+    (menuItem): menuItem is HTMLDivElement =>
+      menuItem instanceof HTMLDivElement &&
+      menuItem.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement,
+  );
+}
+
+function hasRestrictedTemplateItems<TItem extends HTMLElement>(templateItems: TItem[]) {
+  return templateItems.length > 0;
+}
+
 function isRestrictedDrawingTemplateRow(menuRow: HTMLTableRowElement) {
   return (
     menuRow.matches(drawingTemplateMenuItemSelector) &&
@@ -1549,10 +1628,26 @@ function getRestrictedDrawingTemplateTitle(menuRow: HTMLTableRowElement) {
   return getMenuItemLabel(menuRow);
 }
 
+function getPopupTemplateMenuItemLabel(menuItem: HTMLDivElement) {
+  return normalizeText(menuItem.querySelector(popupTemplateMenuLabelSelector)?.textContent);
+}
+
 function getMenuItemLabel(menuRow: HTMLTableRowElement) {
   const titleLabel = menuRow.querySelector(drawingTemplateLabelSelector);
 
   return normalizeText(titleLabel?.textContent);
+}
+
+function findPopupTemplateMenuItemByNormalizedText(menuRoot: HTMLElement, label: string) {
+  return (
+    [...menuRoot.querySelectorAll(popupTemplateMenuItemSelector)].find((menuItem) => {
+      if (!(menuItem instanceof HTMLDivElement)) {
+        return false;
+      }
+
+      return getPopupTemplateMenuItemLabel(menuItem) === label;
+    }) ?? null
+  );
 }
 
 function isDesktopIndicatorTemplatesDialogRoot(dialogRoot: HTMLElement) {

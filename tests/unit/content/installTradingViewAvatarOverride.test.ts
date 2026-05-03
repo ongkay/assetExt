@@ -54,6 +54,8 @@ const alertSubmitButtonSelector = 'button[data-qa-id="submit"]';
 const indicatorTemplatesDialogSelector =
   '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
+const popupTemplateMenuSelector = '#popup-template-menu';
+const seriesThemePopupTemplateMenuSelector = '#series-theme-popup-template-menu';
 const horizontalLineContextMenuRootSelector = "#horizontal-line-context-menu";
 const genericTableMenuRootSelector = "#generic-table-menu";
 const mobileHorizontalLineContextMenuRootSelector = "#mobile-horizontal-line-context-menu";
@@ -1003,6 +1005,107 @@ describe("TradingView avatar override", () => {
     expect(getVisibleDrawingTemplateActionLabels()).toEqual(["Apply Default Drawing Template"]);
     expect(getDrawingTemplateTitle("PDA")).toBeNull();
     expect(countDrawingTemplateSpacerRows()).toBe(2);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("hides all compact drawing template rows when no template contains publicId", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-drawing-templates-compact-no-match.png",
+        hasPrivateAccess: false,
+        publicId: "88888",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisibleDrawingTemplateTitles()).toEqual([]);
+    expect(getVisibleDrawingTemplateActionLabels()).toEqual(["Apply Default Drawing Template"]);
+    expect(getDrawingTemplateTitle("50975 jjg")).toBeNull();
+    expect(getDrawingTemplateTitle("PDA")).toBeNull();
+    expect(countDrawingTemplateSpacerRows()).toBe(1);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters popup template menu rows by publicId without touching action rows", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-popup-template-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createPopupTemplateMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisiblePopupTemplateTitles()).toEqual(["50975 c", "50975 dddd"]);
+    expect(getVisiblePopupTemplateActionLabels()).toEqual(["Save as…", "Apply defaults"]);
+    expect(getPopupTemplateTitle("A")).toBeNull();
+    expect(getPopupTemplateTitle("d")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("filters series theme popup template rows by publicId without touching action rows", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-series-theme-popup-template-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createSeriesThemePopupTemplateMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisiblePopupTemplateTitlesWithin(seriesThemePopupTemplateMenuSelector)).toEqual([
+      "50975",
+    ]);
+    expect(getVisiblePopupTemplateActionLabelsWithin(seriesThemePopupTemplateMenuSelector)).toEqual([
+      "Apply defaults",
+      "Save as…",
+    ]);
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "fs")).toBeNull();
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "gg")).toBeNull();
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "old1")).toBeNull();
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("hides all series theme popup template rows when no template contains publicId", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-series-theme-popup-template-menu-no-match.png",
+        hasPrivateAccess: false,
+        publicId: "88888",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createSeriesThemePopupTemplateMenuMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    expect(getVisiblePopupTemplateTitlesWithin(seriesThemePopupTemplateMenuSelector)).toEqual([]);
+    expect(getVisiblePopupTemplateActionLabelsWithin(seriesThemePopupTemplateMenuSelector)).toEqual([
+      "Apply defaults",
+      "Save as…",
+    ]);
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "50975")).toBeNull();
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "fs")).toBeNull();
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "gg")).toBeNull();
+    expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "old1")).toBeNull();
 
     disposeTradingViewAvatarOverride();
   });
@@ -1987,6 +2090,54 @@ function countDrawingTemplateSpacerRows() {
   return document.querySelectorAll(`${drawingTemplatesMenuSelector} tr.subMenu-GJX1EXhk`).length;
 }
 
+function getVisiblePopupTemplateTitles() {
+  return getVisiblePopupTemplateTitlesWithin(popupTemplateMenuSelector);
+}
+
+function getVisiblePopupTemplateTitlesWithin(rootSelector: string) {
+  const menuRoot = document.querySelector(rootSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(menuRoot as HTMLElement).querySelectorAll('.item-BOZdoKo9[class*="defaultsButtonItem-"]')]
+    .filter(
+      (menuItem): menuItem is HTMLDivElement =>
+        menuItem instanceof HTMLDivElement &&
+        menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement,
+    )
+    .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
+}
+
+function getVisiblePopupTemplateActionLabels() {
+  return getVisiblePopupTemplateActionLabelsWithin(popupTemplateMenuSelector);
+}
+
+function getVisiblePopupTemplateActionLabelsWithin(rootSelector: string) {
+  const menuRoot = document.querySelector(rootSelector);
+
+  expect(menuRoot).toBeInstanceOf(HTMLElement);
+
+  return [...(menuRoot as HTMLElement).querySelectorAll('.item-BOZdoKo9[class*="defaultsButtonItem-"]')]
+    .filter(
+      (menuItem): menuItem is HTMLDivElement =>
+        menuItem instanceof HTMLDivElement &&
+        !(menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement),
+    )
+    .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
+}
+
+function getPopupTemplateTitle(templateTitle: string) {
+  return getPopupTemplateTitleWithin(popupTemplateMenuSelector, templateTitle);
+}
+
+function getPopupTemplateTitleWithin(rootSelector: string, templateTitle: string) {
+  return (
+    [...document.querySelectorAll(`${rootSelector} .label-BOZdoKo9`)].find(
+      (label) => label instanceof HTMLSpanElement && normalizeText(label.textContent) === templateTitle,
+    ) ?? null
+  );
+}
+
 function getVisibleTableMenuLabelsWithin(rootSelector: string) {
   const menuRoot = document.querySelector(rootSelector);
 
@@ -2651,6 +2802,42 @@ function createCompactDrawingTemplatesMenuMarkup() {
   `;
 }
 
+function createPopupTemplateMenuMarkup() {
+  return `
+    <div class="menuWrap-XktvVkFF" data-qa-id="popup-menu-container" data-tooltip-show-on-focus="true" tabindex="-1">
+      <div class="scrollWrap-XktvVkFF momentumBased-XktvVkFF" style="overflow-y: auto">
+        <div id="popup-template-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <div><div class="defaultsButtonItem-AeBgp7zz item-BOZdoKo9"><span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Save as…</span></span></div></div>
+          <div><div class="defaultsButtonItem-AeBgp7zz item-BOZdoKo9"><span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Apply defaults</span></span></div></div>
+          <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+          ${createPopupTemplateMenuItemMarkup("50975 c")}
+          ${createPopupTemplateMenuItemMarkup("50975 dddd")}
+          ${createPopupTemplateMenuItemMarkup("A")}
+          ${createPopupTemplateMenuItemMarkup("d")}
+          <span class="invisibleFocusHandler-tFul0OhX" tabindex="0" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createSeriesThemePopupTemplateMenuMarkup() {
+  return `
+    <div class="scrollWrap-XktvVkFF momentumBased-XktvVkFF" style="overflow-y: auto;">
+      <div id="series-theme-popup-template-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+        <div data-name="series-theme-manager-apply-defaults" data-role="menuitem" class="accessible-NQERJsv9 defaultsButtonItem-w7kgghoW item-BOZdoKo9" tabindex="0"><span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Apply defaults</span></span></div>
+        <div data-name="series-theme-manager-save-as" data-role="menuitem" class="accessible-NQERJsv9 defaultsButtonItem-w7kgghoW item-BOZdoKo9" tabindex="-1"><span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">Save as…</span></span></div>
+        <div class="separator-UZn6u4sU normal-UZn6u4sU" role="separator" aria-hidden="false"></div>
+        ${createSeriesThemePopupTemplateMenuItemMarkup("50975 ")}
+        ${createSeriesThemePopupTemplateMenuItemMarkup("fs")}
+        ${createSeriesThemePopupTemplateMenuItemMarkup("gg")}
+        ${createSeriesThemePopupTemplateMenuItemMarkup("old1")}
+        <span class="invisibleFocusHandler-tFul0OhX" tabindex="0" aria-hidden="true"></span>
+      </div>
+    </div>
+  `;
+}
+
 function createHorizontalLineContextMenuMarkup() {
   return `
     <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF" style="position: fixed; left: 619.173px; top: 304.25px">
@@ -2948,6 +3135,41 @@ function createContextTableMenuItemMarkup(
         </div>
       </td>
     </tr>
+  `;
+}
+
+function createPopupTemplateMenuItemMarkup(label: string) {
+  return `
+    <div>
+      <div class="defaultsButtonItem-AeBgp7zz item-BOZdoKo9">
+        <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">${label}</span></span>
+        <span class="toolbox-BOZdoKo9">
+          <span
+            role="img"
+            data-name="remove-button"
+            class="button-iLKiGOdQ apply-common-tooltip hidden-iLKiGOdQ"
+            aria-label="Remove"
+            aria-hidden="false"
+            title="Remove"
+          ></span>
+        </span>
+      </div>
+    </div>
+  `;
+}
+
+function createSeriesThemePopupTemplateMenuItemMarkup(label: string) {
+  return `
+    <div>
+      <div data-series-theme-item-theme-name="${label}" data-role="menuitem" class="accessible-NQERJsv9 defaultsButtonItem-w7kgghoW item-BOZdoKo9" tabindex="-1">
+        <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">${label}</span></span>
+        <span role="toolbar" class="toolbox-BOZdoKo9">
+          <button tabindex="-1" class="button-Y1TCZogJ apply-common-tooltip" aria-label="Remove" data-tooltip="Remove" type="button">
+            <span role="img" data-name="remove-button" class="button-iLKiGOdQ apply-common-tooltip hidden-iLKiGOdQ remove-w7kgghoW" aria-hidden="true"></span>
+          </button>
+        </span>
+      </div>
+    </div>
   `;
 }
 
