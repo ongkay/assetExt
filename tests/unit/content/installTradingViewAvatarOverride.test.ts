@@ -1287,7 +1287,7 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
-  it("disables foreign desktop active watchlist menu items and always removes add-alert", async () => {
+  it("disables foreign desktop active watchlist menu items and always removes add-alert/share-list", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
     installChromeExtensionMocks(
@@ -1305,24 +1305,16 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeInstanceOf(HTMLElement);
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename")).toBeInstanceOf(HTMLElement);
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add section")).toBeInstanceOf(HTMLElement);
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Clear list")).toBeInstanceOf(HTMLElement);
 
-    const shareListItem = getRequiredActiveWatchlistMenuItem(
-      desktopActiveWatchlistMenuSelector,
-      "Share list",
-    );
     const renameItem = getRequiredActiveWatchlistMenuItem(
       desktopActiveWatchlistMenuSelector,
       "Rename",
     );
 
-    expect(shareListItem.style.opacity).toBe("0.5");
-    expect(shareListItem.style.cursor).toBe("not-allowed");
-    expect(shareListItem.getAttribute("aria-disabled")).toBe("true");
-    expect(getActiveWatchlistMenuSwitch(desktopActiveWatchlistMenuSelector).disabled).toBe(true);
     expect(renameItem.style.opacity).toBe("0.5");
     expect(renameItem.style.cursor).toBe("not-allowed");
     expect(renameItem.getAttribute("aria-disabled")).toBe("true");
@@ -1335,7 +1327,7 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
-  it("keeps owned desktop active watchlist menu items enabled but still removes add-alert", async () => {
+  it("keeps owned desktop active watchlist menu items enabled but still removes add-alert/share-list", async () => {
     installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
         avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-desktop-owned.png",
@@ -1351,20 +1343,13 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const shareListItem = getRequiredActiveWatchlistMenuItem(
-      desktopActiveWatchlistMenuSelector,
-      "Share list",
-    );
     const renameItem = getRequiredActiveWatchlistMenuItem(
       desktopActiveWatchlistMenuSelector,
       "Rename",
     );
 
-    expect(shareListItem.style.opacity).toBe("");
-    expect(shareListItem.style.cursor).toBe("");
-    expect(shareListItem.getAttribute("aria-disabled")).toBeNull();
-    expect(getActiveWatchlistMenuSwitch(desktopActiveWatchlistMenuSelector).disabled).toBe(false);
     expect(renameItem.style.opacity).toBe("");
     expect(renameItem.style.cursor).toBe("");
     expect(renameItem.getAttribute("aria-disabled")).toBeNull();
@@ -1372,7 +1357,7 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
-  it("disables foreign mobile active watchlist menu items and always removes add-alert", async () => {
+  it("disables foreign mobile active watchlist menu items and always removes add-alert/share-list", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
@@ -1392,19 +1377,13 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const shareListItem = getRequiredActiveWatchlistMenuItem(
-      mobileActiveWatchlistMenuSelector,
-      "Share list",
-    );
     const clearListItem = getRequiredActiveWatchlistMenuItem(
       mobileActiveWatchlistMenuSelector,
       "Clear list",
     );
 
-    expect(shareListItem.style.opacity).toBe("0.5");
-    expect(shareListItem.style.cursor).toBe("not-allowed");
-    expect(getActiveWatchlistMenuSwitch(mobileActiveWatchlistMenuSelector).disabled).toBe(true);
     expect(clearListItem.style.opacity).toBe("0.5");
     expect(clearListItem.style.cursor).toBe("not-allowed");
     expect(
@@ -1415,7 +1394,7 @@ describe("TradingView avatar override", () => {
     disposeTradingViewAvatarOverride();
   });
 
-  it("keeps owned mobile active watchlist menu items enabled but still removes add-alert", async () => {
+  it("keeps owned mobile active watchlist menu items enabled but still removes add-alert/share-list", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
     installChromeExtensionMocks(
@@ -1433,20 +1412,13 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const shareListItem = getRequiredActiveWatchlistMenuItem(
-      mobileActiveWatchlistMenuSelector,
-      "Share list",
-    );
     const clearListItem = getRequiredActiveWatchlistMenuItem(
       mobileActiveWatchlistMenuSelector,
       "Clear list",
     );
 
-    expect(shareListItem.style.opacity).toBe("");
-    expect(shareListItem.style.cursor).toBe("");
-    expect(shareListItem.getAttribute("aria-disabled")).toBeNull();
-    expect(getActiveWatchlistMenuSwitch(mobileActiveWatchlistMenuSelector).disabled).toBe(false);
     expect(clearListItem.style.opacity).toBe("");
     expect(clearListItem.style.cursor).toBe("");
     expect(clearListItem.getAttribute("aria-disabled")).toBeNull();
@@ -2008,14 +1980,6 @@ function getRequiredActiveWatchlistMenuItem(rootSelector: string, label: string)
   expect(menuItem).toBeInstanceOf(HTMLElement);
 
   return menuItem as HTMLElement;
-}
-
-function getActiveWatchlistMenuSwitch(rootSelector: string) {
-  const switchInput = document.querySelector(`${rootSelector} input[role="switch"]`);
-
-  expect(switchInput).toBeInstanceOf(HTMLInputElement);
-
-  return switchInput as HTMLInputElement;
 }
 
 function getWatchlistAddSymbolButton() {

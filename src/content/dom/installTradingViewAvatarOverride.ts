@@ -1035,16 +1035,15 @@ function isDesktopActiveWatchlistMenuRoot(menuRoot: HTMLElement) {
 
 function syncRestrictedActiveWatchlistMenu(menuRoot: HTMLElement, isOwnedWatchlist: boolean) {
   removeActiveWatchlistMenuItem(menuRoot, "Add alert on the list…");
+  removeActiveWatchlistMenuItem(menuRoot, "Share list");
 
   if (isOwnedWatchlist) {
-    restoreActiveWatchlistMenuItem(menuRoot, "Share list");
     restoreActiveWatchlistMenuItem(menuRoot, "Rename");
     restoreActiveWatchlistMenuItem(menuRoot, "Add section");
     restoreActiveWatchlistMenuItem(menuRoot, "Clear list");
     return;
   }
 
-  disableActiveWatchlistMenuItem(menuRoot, "Share list");
   disableActiveWatchlistMenuItem(menuRoot, "Rename");
   disableActiveWatchlistMenuItem(menuRoot, "Add section");
   disableActiveWatchlistMenuItem(menuRoot, "Clear list");
@@ -1072,10 +1071,6 @@ function disableActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
   menuItem.setAttribute("aria-disabled", "true");
   menuItem.style.opacity = "0.5";
   menuItem.style.cursor = "not-allowed";
-
-  if (menuItem instanceof HTMLLabelElement) {
-    syncRestrictedActiveWatchlistMenuSwitch(menuItem, true);
-  }
 }
 
 function restoreActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
@@ -1095,10 +1090,6 @@ function restoreActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
 
   menuItem.style.opacity = menuItem.dataset.assetManagerOriginalOpacity || "";
   menuItem.style.cursor = menuItem.dataset.assetManagerOriginalCursor || "";
-
-  if (menuItem instanceof HTMLLabelElement) {
-    syncRestrictedActiveWatchlistMenuSwitch(menuItem, false);
-  }
 }
 
 function preserveActiveWatchlistMenuItemState(menuItem: HTMLElement) {
@@ -1113,43 +1104,6 @@ function preserveActiveWatchlistMenuItemState(menuItem: HTMLElement) {
   if (menuItem.dataset.assetManagerOriginalCursor === undefined) {
     menuItem.dataset.assetManagerOriginalCursor = menuItem.style.cursor || "";
   }
-}
-
-function syncRestrictedActiveWatchlistMenuSwitch(
-  menuItem: HTMLLabelElement,
-  shouldDisableSwitch: boolean,
-) {
-  const switchInput = menuItem.querySelector('input[role="switch"]');
-
-  if (!(switchInput instanceof HTMLInputElement)) {
-    return;
-  }
-
-  if (switchInput.dataset.assetManagerOriginalDisabled === undefined) {
-    switchInput.dataset.assetManagerOriginalDisabled = switchInput.disabled ? "true" : "false";
-  }
-
-  if (switchInput.dataset.assetManagerOriginalAriaDisabled === undefined) {
-    switchInput.dataset.assetManagerOriginalAriaDisabled =
-      switchInput.getAttribute("aria-disabled") || "";
-  }
-
-  switchInput.disabled = shouldDisableSwitch || switchInput.dataset.assetManagerOriginalDisabled === "true";
-
-  if (shouldDisableSwitch) {
-    switchInput.setAttribute("aria-disabled", "true");
-    return;
-  }
-
-  if (switchInput.dataset.assetManagerOriginalAriaDisabled === "") {
-    switchInput.removeAttribute("aria-disabled");
-    return;
-  }
-
-  switchInput.setAttribute(
-    "aria-disabled",
-    switchInput.dataset.assetManagerOriginalAriaDisabled,
-  );
 }
 
 function bindRestrictedActiveWatchlistMenuItem(menuItem: HTMLElement) {
