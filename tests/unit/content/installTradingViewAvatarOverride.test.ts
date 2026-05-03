@@ -81,6 +81,7 @@ const desktopActiveWatchlistMenuSelector = 'div.menuBox-XktvVkFF[data-qa-id="men
 const mobileActiveWatchlistMenuSelector = '[data-name="active-watchlist-menu"]';
 const watchlistAddSymbolButtonSelector = 'button[data-name="add-symbol-button"]';
 const watchlistAdvancedViewButtonSelector = 'button[data-name="advanced-view-button"]';
+const createLimitOrderButtonSelector = '[data-name="createLimitOrder"][data-role="button"]';
 const mobileWatchlistSymbolDrawerSelector = '.drawer-GQU5HVYO.positionBottom-GQU5HVYO';
 const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
 const dialogSelectButtonSelector =
@@ -671,6 +672,64 @@ describe("TradingView avatar override", () => {
       expect(button.style.opacity).toBe("");
       expect(button.style.cursor).toBe("");
     }
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("disables create limit order floating toolbar action for non-private users", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-create-limit-order-restricted.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingToolbarMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    const createLimitOrderButton = getCreateLimitOrderButton();
+    let bubbledClickHandled = false;
+
+    createLimitOrderButton.addEventListener("click", () => {
+      bubbledClickHandled = true;
+    });
+
+    expect(createLimitOrderButton.getAttribute("aria-disabled")).toBe("true");
+    expect(createLimitOrderButton.style.opacity).toBe("0.5");
+    expect(createLimitOrderButton.style.cursor).toBe("not-allowed");
+    expect(createLimitOrderButton.tabIndex).toBe(-1);
+    expect(
+      createLimitOrderButton.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      ),
+    ).toBe(false);
+    expect(bubbledClickHandled).toBe(false);
+
+    disposeTradingViewAvatarOverride();
+  });
+
+  it("keeps create limit order floating toolbar action enabled when private access is available", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-create-limit-order-private.png",
+        hasPrivateAccess: true,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingToolbarMarkup()}`;
+
+    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+
+    await flushAsyncWork();
+
+    const createLimitOrderButton = getCreateLimitOrderButton();
+
+    expect(createLimitOrderButton.getAttribute("aria-disabled")).toBeNull();
+    expect(createLimitOrderButton.style.opacity).toBe("");
+    expect(createLimitOrderButton.style.cursor).toBe("");
 
     disposeTradingViewAvatarOverride();
   });
@@ -1998,6 +2057,14 @@ function getWatchlistAdvancedViewButton() {
   return advancedViewButton as HTMLButtonElement;
 }
 
+function getCreateLimitOrderButton() {
+  const createLimitOrderButton = document.querySelector(createLimitOrderButtonSelector);
+
+  expect(createLimitOrderButton).toBeInstanceOf(HTMLElement);
+
+  return createLimitOrderButton as HTMLElement;
+}
+
 function getMobileWatchlistSymbolDrawerItem(predicate: (text: string) => boolean) {
   return (
     [...document.querySelectorAll(`${mobileWatchlistSymbolDrawerSelector} li.item-WJDah4zD`)].find(
@@ -2806,6 +2873,34 @@ function createSeriesThemePopupTemplateMenuMarkup() {
         ${createSeriesThemePopupTemplateMenuItemMarkup("gg")}
         ${createSeriesThemePopupTemplateMenuItemMarkup("old1")}
         <span class="invisibleFocusHandler-tFul0OhX" tabindex="0" aria-hidden="true"></span>
+      </div>
+    </div>
+  `;
+}
+
+function createDrawingToolbarMarkup() {
+  return `
+    <div class="tv-floating-toolbar ui-draggable" data-name="drawing-toolbar" style="z-index: 21; left: 252.571px; top: 127.528px;">
+      <div class="tv-floating-toolbar__widget-wrapper">
+        <div class="tv-floating-toolbar__drag js-drag ui-draggable-handle"></div>
+        <div class="tv-floating-toolbar__content js-content"></div>
+        <div class="floating-toolbar-react-widgets">
+          <div class="floating-toolbar-react-widgets__button button-merBkM5y apply-common-tooltip" data-role="button" data-name="templates"></div>
+          <div
+            data-role="button"
+            class="floating-toolbar-react-widgets__button button-xNqEcuN2 button-GwQQdU8S apply-common-tooltip isInteractive-GwQQdU8S"
+            data-name="createLimitOrder"
+          >
+            <span role="img" class="icon-GwQQdU8S" aria-hidden="true"></span>
+          </div>
+          <div
+            data-role="button"
+            class="floating-toolbar-react-widgets__button button-xNqEcuN2 button-GwQQdU8S apply-common-tooltip isInteractive-GwQQdU8S"
+            data-name="settings"
+          >
+            <span role="img" class="icon-GwQQdU8S" aria-hidden="true"></span>
+          </div>
+        </div>
       </div>
     </div>
   `;

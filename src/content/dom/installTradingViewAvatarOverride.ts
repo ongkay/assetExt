@@ -99,6 +99,7 @@ const mobileActiveWatchlistMenuSelector = '[data-name="active-watchlist-menu"]';
 const activeWatchlistMenuItemSelector = '[data-role="menuitem"]';
 const watchlistAddSymbolButtonSelector = 'button[data-name="add-symbol-button"]';
 const watchlistAdvancedViewButtonSelector = 'button[data-name="advanced-view-button"]';
+const createLimitOrderButtonSelector = '[data-name="createLimitOrder"][data-role="button"]';
 const mobileWatchlistDialogSelector = '[data-name="watchlist-dialog"]';
 const mobileWatchlistSymbolDrawerSelector = '.drawer-GQU5HVYO.positionBottom-GQU5HVYO';
 const mobileWatchlistSymbolDrawerItemSelector = 'li.item-WJDah4zD';
@@ -204,6 +205,7 @@ const relevantTradingViewSelectors = [
   activeWatchlistMenuItemSelector,
   watchlistAddSymbolButtonSelector,
   watchlistAdvancedViewButtonSelector,
+  createLimitOrderButtonSelector,
   mobileWatchlistDialogSelector,
   mobileWatchlistSymbolDrawerSelector,
   mobileWatchlistSymbolDrawerItemSelector,
@@ -430,6 +432,7 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   syncRestrictedDesktopWatchlistSymbols(overrideState.publicId);
   syncRestrictedWatchlistAddSymbolButtons(overrideState.publicId);
   syncRestrictedWatchlistAdvancedViewButtons();
+  syncRestrictedCreateLimitOrderButtons();
   syncRestrictedMobileHorizontalLineContextMenus();
   syncRestrictedMobileWatchlistSymbolDrawers(overrideState.publicId);
   syncRestrictedActiveWatchlistMenus(overrideState.publicId);
@@ -665,11 +668,114 @@ function syncRestrictedWatchlistAdvancedViewButtons() {
   }
 }
 
+function syncRestrictedCreateLimitOrderButtons() {
+  const createLimitOrderButtons = document.querySelectorAll(createLimitOrderButtonSelector);
+
+  for (const createLimitOrderButton of createLimitOrderButtons) {
+    if (!(createLimitOrderButton instanceof HTMLElement)) {
+      continue;
+    }
+
+    disableRestrictedCreateLimitOrderButton(createLimitOrderButton);
+  }
+}
+
 function syncRestrictedWatchlistAddSymbolButton(
   addSymbolButton: HTMLButtonElement,
   shouldDisableButton: boolean,
 ) {
   syncRestrictedWatchlistActionButton(addSymbolButton, shouldDisableButton);
+}
+
+function disableRestrictedCreateLimitOrderButton(createLimitOrderButton: HTMLElement) {
+  preserveRestrictedCreateLimitOrderButtonState(createLimitOrderButton);
+  bindRestrictedCreateLimitOrderButton(createLimitOrderButton);
+
+  createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted = "true";
+  createLimitOrderButton.setAttribute("aria-disabled", "true");
+  createLimitOrderButton.style.opacity = "0.5";
+  createLimitOrderButton.style.cursor = "not-allowed";
+  createLimitOrderButton.tabIndex = -1;
+}
+
+function preserveRestrictedCreateLimitOrderButtonState(createLimitOrderButton: HTMLElement) {
+  if (createLimitOrderButton.dataset.assetManagerOriginalAriaDisabled === undefined) {
+    createLimitOrderButton.dataset.assetManagerOriginalAriaDisabled =
+      createLimitOrderButton.getAttribute("aria-disabled") || "";
+  }
+
+  if (createLimitOrderButton.dataset.assetManagerOriginalOpacity === undefined) {
+    createLimitOrderButton.dataset.assetManagerOriginalOpacity =
+      createLimitOrderButton.style.opacity || "";
+  }
+
+  if (createLimitOrderButton.dataset.assetManagerOriginalCursor === undefined) {
+    createLimitOrderButton.dataset.assetManagerOriginalCursor =
+      createLimitOrderButton.style.cursor || "";
+  }
+
+  if (createLimitOrderButton.dataset.assetManagerOriginalTabIndex === undefined) {
+    createLimitOrderButton.dataset.assetManagerOriginalTabIndex =
+      createLimitOrderButton.getAttribute("tabindex") || "";
+  }
+}
+
+function bindRestrictedCreateLimitOrderButton(createLimitOrderButton: HTMLElement) {
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound === "true") {
+    return;
+  }
+
+  createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound = "true";
+
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
+    createLimitOrderButton.addEventListener(
+      eventName,
+      handleRestrictedCreateLimitOrderButtonPointerEvent,
+      true,
+    );
+  }
+
+  createLimitOrderButton.addEventListener(
+    "keydown",
+    handleRestrictedCreateLimitOrderButtonKeyDown,
+    true,
+  );
+}
+
+function handleRestrictedCreateLimitOrderButtonPointerEvent(event: Event) {
+  const createLimitOrderButton = event.currentTarget;
+
+  if (!(createLimitOrderButton instanceof HTMLElement)) {
+    return;
+  }
+
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== "true") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+function handleRestrictedCreateLimitOrderButtonKeyDown(event: KeyboardEvent) {
+  const createLimitOrderButton = event.currentTarget;
+
+  if (!(createLimitOrderButton instanceof HTMLElement)) {
+    return;
+  }
+
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== "true") {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
 }
 
 function syncRestrictedWatchlistActionButton(
