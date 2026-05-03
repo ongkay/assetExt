@@ -124,7 +124,7 @@ function filterRestrictedHorizontalLineContextMenuRows(menuRoot: HTMLElement) {
       continue;
     }
 
-    menuRow.remove();
+    hideDesktopContextMenuRow(menuRow);
   }
 }
 

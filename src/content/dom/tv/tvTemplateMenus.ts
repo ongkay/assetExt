@@ -12,7 +12,7 @@ import {
   seriesThemeTemplateActionSelector,
   templatesMenuRootSelector,
 } from './tvSelectors';
-import { getMenuItemContainer, normalizeText, removeElement } from './tvDomUtils';
+import { getMenuItemContainer, normalizeText } from './tvDomUtils';
 
 export function syncRestrictedTvTemplateMenus(publicId: string | null) {
   const requiredPublicId = publicId?.trim() ?? '';
@@ -99,13 +99,13 @@ function filterRestrictedDrawingTemplateRows(menuRoot: HTMLElement, requiredPubl
 
     const spacerRow = menuRow.nextElementSibling;
 
-    menuRow.remove();
+    hideTemplateMenuRow(menuRow);
 
     if (
       spacerRow instanceof HTMLTableRowElement &&
       spacerRow.matches(drawingTemplateSpacerRowSelector)
     ) {
-      spacerRow.remove();
+      hideTemplateMenuRow(spacerRow);
     }
   }
 }
@@ -125,7 +125,7 @@ function filterRestrictedPopupTemplateMenuItems(menuRoot: HTMLElement, requiredP
       continue;
     }
 
-    removeElement(getMenuItemContainer(templateItem));
+    hidePopupTemplateMenuItem(getMenuItemContainer(templateItem));
   }
 }
 
@@ -166,4 +166,16 @@ function findPopupTemplateMenuItemByNormalizedText(menuRoot: HTMLElement, label:
       return getPopupTemplateMenuItemLabel(menuItem) === label;
     }) ?? null
   );
+}
+
+function hideTemplateMenuRow(menuRow: HTMLTableRowElement) {
+  menuRow.hidden = true;
+  menuRow.setAttribute('aria-hidden', 'true');
+  menuRow.style.display = 'none';
+}
+
+function hidePopupTemplateMenuItem(menuItem: HTMLElement) {
+  menuItem.hidden = true;
+  menuItem.setAttribute('aria-hidden', 'true');
+  menuItem.style.display = 'none';
 }

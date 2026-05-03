@@ -2165,6 +2165,8 @@ function getVisibleDrawingTemplateTitles() {
     .filter(
       (row): row is HTMLTableRowElement =>
         row instanceof HTMLTableRowElement &&
+        !row.hidden &&
+        row.style.display !== "none" &&
         row.querySelector('span[aria-label="Remove"]') instanceof HTMLElement,
     )
     .map((row) => normalizeText(row.querySelector('span[data-label="true"]')?.textContent));
@@ -2179,6 +2181,8 @@ function getVisibleDrawingTemplateActionLabels() {
     .filter(
       (row): row is HTMLTableRowElement =>
         row instanceof HTMLTableRowElement &&
+        !row.hidden &&
+        row.style.display !== "none" &&
         !(row.querySelector('span[aria-label="Remove"]') instanceof HTMLElement),
     )
     .map((row) => normalizeText(row.querySelector('span[data-label="true"]')?.textContent));
@@ -2186,14 +2190,20 @@ function getVisibleDrawingTemplateActionLabels() {
 
 function getDrawingTemplateTitle(templateTitle: string) {
   return (
-    [...document.querySelectorAll(`${drawingTemplatesMenuSelector} span[data-label="true"]`)].find(
-      (label) => label instanceof HTMLSpanElement && normalizeText(label.textContent) === templateTitle,
+    [...document.querySelectorAll(`${drawingTemplatesMenuSelector} tr[data-role="menuitem"]`)].find(
+      (row) =>
+        row instanceof HTMLTableRowElement &&
+        !row.hidden &&
+        row.style.display !== "none" &&
+        normalizeText(row.querySelector('span[data-label="true"]')?.textContent) === templateTitle,
     ) ?? null
   );
 }
 
 function countDrawingTemplateSpacerRows() {
-  return document.querySelectorAll(`${drawingTemplatesMenuSelector} tr.subMenu-GJX1EXhk`).length;
+  return [...document.querySelectorAll(`${drawingTemplatesMenuSelector} tr.subMenu-GJX1EXhk`)].filter(
+    (row) => row instanceof HTMLTableRowElement && !row.hidden && row.style.display !== "none",
+  ).length;
 }
 
 function getVisiblePopupTemplateTitles() {
@@ -2209,6 +2219,10 @@ function getVisiblePopupTemplateTitlesWithin(rootSelector: string) {
     .filter(
       (menuItem): menuItem is HTMLDivElement =>
         menuItem instanceof HTMLDivElement &&
+        !menuItem.hidden &&
+        menuItem.style.display !== "none" &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.hidden) &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
         menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement,
     )
     .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
@@ -2227,6 +2241,10 @@ function getVisiblePopupTemplateActionLabelsWithin(rootSelector: string) {
     .filter(
       (menuItem): menuItem is HTMLDivElement =>
         menuItem instanceof HTMLDivElement &&
+        !menuItem.hidden &&
+        menuItem.style.display !== "none" &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.hidden) &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
         !(menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement),
     )
     .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
@@ -2238,8 +2256,14 @@ function getPopupTemplateTitle(templateTitle: string) {
 
 function getPopupTemplateTitleWithin(rootSelector: string, templateTitle: string) {
   return (
-    [...document.querySelectorAll(`${rootSelector} .label-BOZdoKo9`)].find(
-      (label) => label instanceof HTMLSpanElement && normalizeText(label.textContent) === templateTitle,
+    [...document.querySelectorAll(`${rootSelector} .item-BOZdoKo9[class*="defaultsButtonItem-"]`)].find(
+      (menuItem) =>
+        menuItem instanceof HTMLDivElement &&
+        !menuItem.hidden &&
+        menuItem.style.display !== "none" &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.hidden) &&
+        !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
+        normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent) === templateTitle,
     ) ?? null
   );
 }
@@ -2266,7 +2290,9 @@ function countTableMenuRowsWithin(rootSelector: string) {
 
   expect(menuRoot).toBeInstanceOf(HTMLElement);
 
-  return (menuRoot as HTMLElement).querySelectorAll("tbody > tr").length;
+  return [...(menuRoot as HTMLElement).querySelectorAll("tbody > tr")].filter(
+    (row) => row instanceof HTMLTableRowElement && !row.hidden && row.style.display !== "none",
+  ).length;
 }
 
 function getVisibleMobileDrawerLabelsWithin(rootSelector: string) {
