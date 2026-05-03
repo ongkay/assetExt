@@ -14,7 +14,7 @@ import {
 import { useThemePreference } from "@/lib/useThemePreference";
 
 import { markRecentAutoAccessReload } from "./autoAccessReloadGuard";
-import { installTradingViewAvatarOverride } from "./dom/installTradingViewAvatarOverride";
+import { installTvDomPatches } from "./dom/installTvDomPatches";
 import { prepareManualAutoAccessPageLoad } from "./pageLoadControl";
 import { AccessOverlay } from "./ui/AccessOverlay";
 
@@ -40,7 +40,7 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
       return;
     }
 
-    return installTradingViewAvatarOverride();
+    return installTvDomPatches();
   }, [platform]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { installTradingViewAvatarOverride } from "@/content/dom/installTradingViewAvatarOverride";
+import { installTvDomPatches } from "@/content/dom/installTvDomPatches";
 import * as assetPlatforms from "@/lib/asset-access/platforms";
 import { runtimeMessageType } from "@/lib/runtime/messages";
 import {
@@ -108,7 +108,7 @@ type Deferred<TValue> = {
   resolve: (value: TValue) => void;
 };
 
-describe("TradingView avatar override", () => {
+describe("TV DOM patches", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
     mockDetectedPlatform("tradingview");
@@ -131,7 +131,7 @@ describe("TradingView avatar override", () => {
     );
     renderTradingViewPage();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -167,7 +167,7 @@ describe("TradingView avatar override", () => {
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
     expect(getLogoutMenuItem().textContent).toContain("Logout");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("does nothing outside TradingView", async () => {
@@ -180,7 +180,7 @@ describe("TradingView avatar override", () => {
     mockDetectedPlatform("fxreplay");
     renderTradingViewPage();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -200,7 +200,7 @@ describe("TradingView avatar override", () => {
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Sign out");
     expect(getLogoutMenuItem().textContent).toContain("Sign out");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("delays the first desktop avatar click until TradingView state is ready", async () => {
@@ -215,7 +215,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = createTradingViewHeaderMarkup();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
     const avatarClick = new MouseEvent("click", { bubbles: true, cancelable: true });
 
     expect(getMainMenuButton().dispatchEvent(avatarClick)).toBe(false);
@@ -230,7 +230,7 @@ describe("TradingView avatar override", () => {
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-delayed.png");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("does not block the first mobile avatar click while state is still loading", async () => {
@@ -247,12 +247,12 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = createTradingViewHeaderMarkup();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
     const avatarClick = new MouseEvent("click", { bubbles: true, cancelable: true });
 
     expect(getMainMenuButton().dispatchEvent(avatarClick)).toBe(true);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps non-logout menu rows visible when private access is available", async () => {
@@ -264,7 +264,7 @@ describe("TradingView avatar override", () => {
     );
     renderTradingViewPage();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -296,7 +296,7 @@ describe("TradingView avatar override", () => {
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
     expect(getLogoutMenuItem().textContent).toContain("Logout");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("applies restricted menu rules to the mobile TradingView menu", async () => {
@@ -310,7 +310,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileTradingViewMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -328,7 +328,7 @@ describe("TradingView avatar override", () => {
     expect(getHomeMenuItem().href).toBe("https://google.com/");
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps non-logout rows visible in the mobile TradingView menu when private access is available", async () => {
@@ -342,7 +342,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileTradingViewMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -364,7 +364,7 @@ describe("TradingView avatar override", () => {
     expect(getHomeMenuItem().getAttribute("href")).toBe("/");
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Logout");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("removes only the restricted Recently used sections on desktop", async () => {
@@ -376,7 +376,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -404,7 +404,7 @@ describe("TradingView avatar override", () => {
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
     expect(getRootText(watchlistsRecentMenuRootSelector)).not.toContain("Recently used");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps the Recently used sections when private access is available", async () => {
@@ -416,7 +416,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -442,7 +442,7 @@ describe("TradingView avatar override", () => {
     expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(3);
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Recently used");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("removes the restricted Recently used sections on mobile", async () => {
@@ -456,7 +456,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewRecentMenusMarkup({ useMobileWatchlistsTitle: true })}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -470,7 +470,7 @@ describe("TradingView avatar override", () => {
     expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(2);
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables favorite buttons and removes their tooltip in restricted mode", async () => {
@@ -482,7 +482,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createFavoriteButtonsMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -509,7 +509,7 @@ describe("TradingView avatar override", () => {
       ).toBe(false);
     }
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps favorite buttons interactive when private access is available", async () => {
@@ -521,7 +521,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createFavoriteButtonsMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -547,7 +547,7 @@ describe("TradingView avatar override", () => {
       ).toBe(true);
     }
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("autofills restricted dialog inputs with publicId and enables save only when value contains it", async () => {
@@ -560,7 +560,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -592,7 +592,7 @@ describe("TradingView avatar override", () => {
       getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled"),
     ).toBe("true");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps restricted dialog save buttons disabled when publicId is unavailable", async () => {
@@ -605,7 +605,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -617,7 +617,7 @@ describe("TradingView avatar override", () => {
     expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
     expect(getVisibleIndicatorTemplateTitles()).toEqual([]);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables alert action buttons for non-private users", async () => {
@@ -630,7 +630,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createAlertDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -645,7 +645,7 @@ describe("TradingView avatar override", () => {
       expect(button.style.cursor).toBe("not-allowed");
     }
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps alert action buttons enabled when private access is available", async () => {
@@ -658,7 +658,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createAlertDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -673,7 +673,7 @@ describe("TradingView avatar override", () => {
       expect(button.style.cursor).toBe("");
     }
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables create limit order floating toolbar action for non-private users", async () => {
@@ -686,7 +686,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingToolbarMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -708,7 +708,7 @@ describe("TradingView avatar override", () => {
     ).toBe(false);
     expect(bubbledClickHandled).toBe(false);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps create limit order floating toolbar action enabled when private access is available", async () => {
@@ -721,7 +721,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingToolbarMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -731,7 +731,7 @@ describe("TradingView avatar override", () => {
     expect(createLimitOrderButton.style.opacity).toBe("");
     expect(createLimitOrderButton.style.cursor).toBe("");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters indicator template rows by publicId and disables non-My templates tabs", async () => {
@@ -745,7 +745,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -797,7 +797,7 @@ describe("TradingView avatar override", () => {
     expect(getVisibleIndicatorTemplateTitles()).toEqual(["50975 delta", "50975 epsilon"]);
     expect(getIndicatorTemplatesTab("technicals").style.opacity).toBe("0.5");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables Technicals and Financials on the mobile Indicator templates screen", async () => {
@@ -814,7 +814,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesCategoryDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -846,7 +846,7 @@ describe("TradingView avatar override", () => {
     expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
     expect(bubbledClickHandled).toBe(false);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters rows on the mobile My templates screen by publicId", async () => {
@@ -861,7 +861,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesMyTemplatesDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -871,7 +871,7 @@ describe("TradingView avatar override", () => {
       ),
     ).toEqual(["50975 alpha", "50975 beta", "50975 gamma"]);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps the mobile Indicator templates flow unchanged when private access is available", async () => {
@@ -886,7 +886,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileIndicatorTemplatesCategoryDialogMarkup()}${createMobileIndicatorTemplatesMyTemplatesDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -914,7 +914,7 @@ describe("TradingView avatar override", () => {
       "50975 gamma",
     ]);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters desktop My watchlists rows, hides empty sections, and disables Hotlists", async () => {
@@ -929,7 +929,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistsDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -963,7 +963,7 @@ describe("TradingView avatar override", () => {
     expect(bubbledClickHandled).toBe(false);
     expect(hotlistsTab.getAttribute("aria-selected")).toBe("false");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("autofills and locks the desktop Layouts searchbox to publicId in restricted mode", async () => {
@@ -976,7 +976,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createLayoutsDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -987,7 +987,7 @@ describe("TradingView avatar override", () => {
     expect(getLayoutsClearButton().getAttribute("aria-hidden")).toBe("true");
     expect(getLayoutsClearButton().style.display).toBe("none");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("autofills and locks the mobile Layouts searchbox to publicId in restricted mode", async () => {
@@ -1002,7 +1002,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createLayoutsDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1012,7 +1012,7 @@ describe("TradingView avatar override", () => {
     expect(getLayoutsClearButton().hidden).toBe(true);
     expect(getLayoutsClearButton().style.pointerEvents).toBe("none");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters drawing template rows by publicId and keeps action rows intact", async () => {
@@ -1025,7 +1025,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingTemplatesMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1042,7 +1042,7 @@ describe("TradingView avatar override", () => {
     expect(getDrawingTemplateTitle("Biru")).toBeNull();
     expect(countDrawingTemplateSpacerRows()).toBe(5);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters compact drawing template menus by publicId when save-as row is absent", async () => {
@@ -1056,7 +1056,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1065,7 +1065,7 @@ describe("TradingView avatar override", () => {
     expect(getDrawingTemplateTitle("PDA")).toBeNull();
     expect(countDrawingTemplateSpacerRows()).toBe(2);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("hides all compact drawing template rows when no template contains publicId", async () => {
@@ -1079,7 +1079,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1089,7 +1089,7 @@ describe("TradingView avatar override", () => {
     expect(getDrawingTemplateTitle("PDA")).toBeNull();
     expect(countDrawingTemplateSpacerRows()).toBe(1);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters popup template menu rows by publicId without touching action rows", async () => {
@@ -1102,7 +1102,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createPopupTemplateMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1111,7 +1111,7 @@ describe("TradingView avatar override", () => {
     expect(getPopupTemplateTitle("A")).toBeNull();
     expect(getPopupTemplateTitle("d")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters series theme popup template rows by publicId without touching action rows", async () => {
@@ -1124,7 +1124,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createSeriesThemePopupTemplateMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1139,7 +1139,7 @@ describe("TradingView avatar override", () => {
     expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "gg")).toBeNull();
     expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "old1")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("hides all series theme popup template rows when no template contains publicId", async () => {
@@ -1152,7 +1152,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createSeriesThemePopupTemplateMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1166,7 +1166,7 @@ describe("TradingView avatar override", () => {
     expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "gg")).toBeNull();
     expect(getPopupTemplateTitleWithin(seriesThemePopupTemplateMenuSelector, "old1")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps only the horizontal line row in the restricted chart context menu", async () => {
@@ -1180,7 +1180,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}${createGenericTableMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1194,7 +1194,7 @@ describe("TradingView avatar override", () => {
     ]);
     expect(countTableMenuRowsWithin(genericTableMenuRootSelector)).toBe(3);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps the horizontal line chart context menu unchanged for private access", async () => {
@@ -1207,7 +1207,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1221,7 +1221,7 @@ describe("TradingView avatar override", () => {
     ]);
     expect(countTableMenuRowsWithin(horizontalLineContextMenuRootSelector)).toBe(14);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("restricts desktop watchlist symbol drag, remove, and context menu for foreign watchlists only", async () => {
@@ -1235,7 +1235,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1306,7 +1306,7 @@ describe("TradingView avatar override", () => {
       true,
     );
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps desktop watchlist symbol actions unchanged when private access is available", async () => {
@@ -1320,7 +1320,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1343,7 +1343,7 @@ describe("TradingView avatar override", () => {
     ).toBe(true);
     expect(contextMenuHandled).toBe(true);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables foreign desktop active watchlist menu items and always removes add-alert/share-list", async () => {
@@ -1359,7 +1359,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1383,7 +1383,7 @@ describe("TradingView avatar override", () => {
     ).toBe(false);
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps owned desktop active watchlist menu items enabled but still removes add-alert/share-list", async () => {
@@ -1397,7 +1397,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1413,7 +1413,7 @@ describe("TradingView avatar override", () => {
     expect(renameItem.style.cursor).toBe("");
     expect(renameItem.getAttribute("aria-disabled")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables foreign mobile active watchlist menu items and always removes add-alert/share-list", async () => {
@@ -1431,7 +1431,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("dua")}${createMobileActiveWatchlistMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1450,7 +1450,7 @@ describe("TradingView avatar override", () => {
     ).toBe(false);
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps owned mobile active watchlist menu items enabled but still removes add-alert/share-list", async () => {
@@ -1466,7 +1466,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("50975 dua")}${createMobileActiveWatchlistMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1482,7 +1482,7 @@ describe("TradingView avatar override", () => {
     expect(clearListItem.style.cursor).toBe("");
     expect(clearListItem.getAttribute("aria-disabled")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("removes restricted rows from the mobile symbol drawer and disables foreign watchlist actions", async () => {
@@ -1500,7 +1500,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("dua")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1534,7 +1534,7 @@ describe("TradingView avatar override", () => {
     ).toBe(false);
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps remaining mobile symbol drawer actions enabled for owned watchlists", async () => {
@@ -1550,7 +1550,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("50975 data")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1575,7 +1575,7 @@ describe("TradingView avatar override", () => {
     expect(addSectionItem.style.cursor).toBe("");
     expect(addSectionItem.getAttribute("aria-disabled")).toBeNull();
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps only the horizontal line row in the restricted mobile chart context drawer", async () => {
@@ -1591,7 +1591,7 @@ describe("TradingView avatar override", () => {
     document.body.innerHTML =
       `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}${createGenericMobileDrawerMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1605,7 +1605,7 @@ describe("TradingView avatar override", () => {
     ]);
     expect(countMobileDrawerChildrenWithin(genericMobileDrawerRootSelector)).toBe(3);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps the mobile horizontal line context drawer unchanged for private access", async () => {
@@ -1620,7 +1620,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1634,7 +1634,7 @@ describe("TradingView avatar override", () => {
     ]);
     expect(countMobileDrawerChildrenWithin(mobileHorizontalLineContextMenuRootSelector)).toBe(8);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("disables Hotlists on the mobile Watchlists category screen", async () => {
@@ -1651,7 +1651,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistsCategoryDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1677,7 +1677,7 @@ describe("TradingView avatar override", () => {
     expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
     expect(bubbledClickHandled).toBe(false);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters mobile My watchlists rows and hides empty sections", async () => {
@@ -1692,7 +1692,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileMyWatchlistsDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1717,7 +1717,7 @@ describe("TradingView avatar override", () => {
       getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 siap"),
     ).toBe("105px");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("filters only My watchlists rows on the mobile Watchlists Search screen and keeps Hotlists visible", async () => {
@@ -1732,7 +1732,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileSearchWatchlistsDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1746,7 +1746,7 @@ describe("TradingView avatar override", () => {
       getVisibleWatchlistSectionTitlesWithin(mobileSearchWatchlistsDialogSelector),
     ).toEqual(["My watchlists", "Hotlists"]);
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("does not modify dialog inputs when private access is available", async () => {
@@ -1759,7 +1759,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createRestrictedDialogsMarkup()}${createIndicatorTemplatesDialogMarkup()}`;
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1782,7 +1782,7 @@ describe("TradingView avatar override", () => {
     expect(getIndicatorTemplatesTab("technicals").getAttribute("aria-disabled")).toBeNull();
     expect(getIndicatorTemplatesTab("technicals").style.opacity).toBe("");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("uses a generated fallback avatar when the user has no avatar URL", async () => {
@@ -1794,7 +1794,7 @@ describe("TradingView avatar override", () => {
     );
     document.body.innerHTML = createTradingViewHeaderMarkup();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1803,7 +1803,7 @@ describe("TradingView avatar override", () => {
     );
     expect(getMainAvatarImage().alt).toBe("O");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("keeps the initial restricted rules for the current page session", async () => {
@@ -1815,7 +1815,7 @@ describe("TradingView avatar override", () => {
     );
     renderTradingViewPage();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1833,7 +1833,7 @@ describe("TradingView avatar override", () => {
     expect(getMenuItemByTextPrefix("Language")).toBeNull();
     expect(getHomeMenuItem().href).toBe("https://google.com/");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 
   it("sends logout through the extension runtime and updates the menu label", async () => {
@@ -1850,7 +1850,7 @@ describe("TradingView avatar override", () => {
     );
     renderTradingViewPage();
 
-    const disposeTradingViewAvatarOverride = installTradingViewAvatarOverride();
+    const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
@@ -1867,7 +1867,7 @@ describe("TradingView avatar override", () => {
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Success");
     expect(getLogoutMenuItem().textContent).toContain("Success");
 
-    disposeTradingViewAvatarOverride();
+    disposeTvDomPatches();
   });
 });
 
