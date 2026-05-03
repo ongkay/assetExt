@@ -245,7 +245,7 @@ export function installTradingViewAvatarOverride(): () => void {
   const syncTradingViewPage = () => {
     runWithoutObserver(() => {
       syncMainAvatar(overrideState);
-      removeMainAvatarBadge();
+  hideMainAvatarBadge();
       syncRestrictedTradingViewActions(overrideState);
       syncOpenPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
     });
@@ -422,8 +422,8 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
     return;
   }
 
-  removeRestrictedHeaderActions();
-  removeRestrictedRightSidebarActions();
+  hideRestrictedHeaderActions();
+  hideRestrictedRightSidebarActions();
   disableRestrictedRightSidebarActions();
   disableRestrictedFavoriteButtons();
   removeRestrictedRecentSections();
@@ -442,18 +442,18 @@ function syncRestrictedTradingViewActions(overrideState: TradingViewOverrideStat
   syncRestrictedWatchlistsDialogs(overrideState.publicId);
 }
 
-function removeRestrictedHeaderActions() {
-  removeElement(document.querySelector(desktopPublishSelector));
-  removeElement(findMobilePublishWrapper());
-  removeElement(document.querySelector(desktopTradeSelector));
-  removeElement(document.querySelector(quickSearchSelector));
-  removeElement(document.querySelector(createAlertSelector));
-  removeElement(document.querySelector(favoriteIndicatorsSelector));
+function hideRestrictedHeaderActions() {
+  hidePersistentElement(document.querySelector(desktopPublishSelector));
+  hidePersistentElement(findMobilePublishWrapper());
+  hidePersistentElement(document.querySelector(desktopTradeSelector));
+  hidePersistentElement(document.querySelector(quickSearchSelector));
+  hidePersistentElement(document.querySelector(createAlertSelector));
+  hidePersistentElement(document.querySelector(favoriteIndicatorsSelector));
 }
 
-function removeRestrictedRightSidebarActions() {
-  removeElement(document.querySelector(sidebarAlertsSelector));
-  removeElement(document.querySelector(sidebarChatsSelector));
+function hideRestrictedRightSidebarActions() {
+  hidePersistentElement(document.querySelector(sidebarAlertsSelector));
+  hidePersistentElement(document.querySelector(sidebarChatsSelector));
 }
 
 function disableRestrictedRightSidebarActions() {
@@ -2138,11 +2138,11 @@ function syncRestrictedDialogSaveButtons(dialogRoot: HTMLElement, publicId: stri
   }
 }
 
-function removeMainAvatarBadge() {
+function hideMainAvatarBadge() {
   const avatarBadge = document.querySelector(mainAvatarBadgeSelector);
 
   if (avatarBadge instanceof HTMLElement) {
-    avatarBadge.remove();
+    hidePersistentElement(avatarBadge);
   }
 }
 
@@ -2292,6 +2292,16 @@ function removeElement(element: Element | null) {
   }
 
   element.remove();
+}
+
+function hidePersistentElement(element: Element | null) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  element.setAttribute("aria-hidden", "true");
+  element.style.display = "none";
+  element.style.pointerEvents = "none";
 }
 
 function setInputValue(dialogInput: HTMLInputElement, nextValue: string) {

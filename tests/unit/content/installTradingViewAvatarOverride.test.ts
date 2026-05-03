@@ -135,16 +135,16 @@ describe("TradingView avatar override", () => {
     await flushAsyncWork();
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-a.png");
-    expect(document.querySelector(".menuNotifications-U2jIw4km")).toBeNull();
-    expect(getMenuItemBySelector(desktopPublishSelector)).toBeNull();
-    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeNull();
-    expect(getMenuItemBySelector(desktopTradeSelector)).toBeNull();
-    expect(getMenuItemBySelector(quickSearchSelector)).toBeNull();
-    expect(getMenuItemBySelector(createAlertSelector)).toBeNull();
-    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeNull();
+    expectSelectorToBeHidden(".menuNotifications-U2jIw4km");
+    expectSelectorToBeHidden(desktopPublishSelector);
+    expectSelectorToBeHidden(mobilePublishWrapperSelector);
+    expectSelectorToBeHidden(desktopTradeSelector);
+    expectSelectorToBeHidden(quickSearchSelector);
+    expectSelectorToBeHidden(createAlertSelector);
+    expectSelectorToBeHidden(favoriteIndicatorsSelector);
     expect(getMenuItemBySelector(sidebarWatchlistSelector)).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector(sidebarAlertsSelector)).toBeNull();
-    expect(getMenuItemBySelector(sidebarChatsSelector)).toBeNull();
+    expectSelectorToBeHidden(sidebarAlertsSelector);
+    expectSelectorToBeHidden(sidebarChatsSelector);
     expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(true);
     expect(getButtonBySelector(sidebarProductsSelector).getAttribute("aria-disabled")).toBe(
       "true",
@@ -313,11 +313,11 @@ describe("TradingView avatar override", () => {
 
     await flushAsyncWork();
 
-    expect(getMenuItemBySelector(desktopPublishSelector)).toBeNull();
-    expect(getMenuItemBySelector(mobilePublishWrapperSelector)).toBeNull();
-    expect(getMenuItemBySelector(quickSearchSelector)).toBeNull();
-    expect(getMenuItemBySelector(createAlertSelector)).toBeNull();
-    expect(getMenuItemBySelector(favoriteIndicatorsSelector)).toBeNull();
+    expectSelectorToBeHidden(desktopPublishSelector);
+    expectSelectorToBeHidden(mobilePublishWrapperSelector);
+    expectSelectorToBeHidden(quickSearchSelector);
+    expectSelectorToBeHidden(createAlertSelector);
+    expectSelectorToBeHidden(favoriteIndicatorsSelector);
     expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
     expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeNull();
     expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeNull();
@@ -2301,6 +2301,15 @@ function renderIndicatorTemplatesTab(
 
 function getMenuItemBySelector(selector: string) {
   return document.querySelector(selector);
+}
+
+function expectSelectorToBeHidden(selector: string) {
+  const element = document.querySelector(selector);
+
+  expect(element).toBeInstanceOf(HTMLElement);
+  expect((element as HTMLElement).style.display).toBe("none");
+  expect((element as HTMLElement).style.pointerEvents).toBe("none");
+  expect((element as HTMLElement).getAttribute("aria-hidden")).toBe("true");
 }
 
 function getMenuItemByTextPrefix(textPrefix: string) {
