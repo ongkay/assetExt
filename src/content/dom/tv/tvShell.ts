@@ -24,6 +24,9 @@ import {
   watchlistsRecentTitleSelector,
   watchlistsSeparatorSelector,
   menuDividerSelector,
+  desktopActiveWatchlistMenuSelector,
+  mobileActiveWatchlistMenuSelector,
+  activeWatchlistMenuItemSelector,
   logoutMenuItemSelector,
   homeMenuItemSelector,
   desktopProfileMenuItemSelector,
@@ -204,33 +207,106 @@ function removeRestrictedRecentSections() {
 }
 
 function removeRestrictedRecentWatchlistsSection() {
-  const recentTitleNodes = document.querySelectorAll(watchlistsRecentTitleSelector);
+  const watchlistsMenuRoots = findRestrictedRecentWatchlistsMenuRoots();
 
-  for (const recentTitleNode of recentTitleNodes) {
-    if (!(recentTitleNode instanceof HTMLElement)) {
+  for (const watchlistsMenuRoot of watchlistsMenuRoots) {
+    const menuContentRoot = findWatchlistsMenuContentRoot(watchlistsMenuRoot);
+    const recentSectionRoot = findWatchlistsRecentSectionRoot(menuContentRoot);
+
+    if (!(recentSectionRoot instanceof HTMLElement)) {
       continue;
     }
 
-    if (normalizeText(recentTitleNode.textContent) !== 'Recently used') {
+    removeRecentWatchlistsSeparator(recentSectionRoot.previousElementSibling);
+    recentSectionRoot.remove();
+  }
+}
+
+function findRestrictedRecentWatchlistsMenuRoots() {
+  const menuRoots = new Set<HTMLElement>();
+
+  for (const selector of [desktopActiveWatchlistMenuSelector, mobileActiveWatchlistMenuSelector]) {
+    const matchedMenuRoots = document.querySelectorAll(selector);
+
+    for (const matchedMenuRoot of matchedMenuRoots) {
+      if (!(matchedMenuRoot instanceof HTMLElement) || !isRestrictedRecentWatchlistsMenuRoot(matchedMenuRoot)) {
+        continue;
+      }
+
+      menuRoots.add(matchedMenuRoot);
+    }
+  }
+
+  return [...menuRoots];
+}
+
+function isRestrictedRecentWatchlistsMenuRoot(menuRoot: HTMLElement) {
+  return ['Create new list', 'Upload list', 'Open list'].every((labelPrefix) =>
+    Boolean(findActiveWatchlistsMenuItemByTextPrefix(menuRoot, labelPrefix)),
+  );
+}
+
+function findActiveWatchlistsMenuItemByTextPrefix(menuRoot: HTMLElement, labelPrefix: string) {
+  return (
+    [...menuRoot.querySelectorAll(activeWatchlistMenuItemSelector)].find((menuItem) => {
+      if (!(menuItem instanceof HTMLElement)) {
+        return false;
+      }
+
+      return normalizeText(menuItem.textContent).startsWith(labelPrefix);
+    }) ?? null
+  );
+}
+
+function findWatchlistsMenuContentRoot(menuRoot: HTMLElement) {
+  for (const childElement of menuRoot.children) {
+    if (!(childElement instanceof HTMLElement)) {
       continue;
     }
 
-    const sectionRoot = recentTitleNode.parentElement;
+    if (childElement.classList.contains('newView-mQBvegEO')) {
+      return childElement;
+    }
 
-    if (!(sectionRoot instanceof HTMLElement)) {
+    for (const nestedChild of childElement.children) {
+      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains('newView-mQBvegEO')) {
+        return nestedChild;
+      }
+    }
+  }
+
+  return menuRoot;
+}
+
+function findWatchlistsRecentSectionRoot(menuContentRoot: HTMLElement) {
+  for (const childElement of menuContentRoot.children) {
+    if (!(childElement instanceof HTMLElement)) {
       continue;
     }
 
-    const previousElement = sectionRoot.previousElementSibling;
+    const recentTitleNode = childElement.querySelector(watchlistsRecentTitleSelector);
 
     if (
-      previousElement instanceof HTMLElement &&
-      previousElement.matches(watchlistsSeparatorSelector)
+      recentTitleNode instanceof HTMLElement &&
+      normalizeText(recentTitleNode.textContent) === 'Recently used'
     ) {
-      previousElement.remove();
+      return childElement;
     }
+  }
 
-    sectionRoot.remove();
+  return null;
+}
+
+function removeRecentWatchlistsSeparator(separatorCandidate: Element | null) {
+  if (!(separatorCandidate instanceof HTMLElement)) {
+    return;
+  }
+
+  if (
+    separatorCandidate.matches(watchlistsSeparatorSelector) ||
+    separatorCandidate.matches(menuDividerSelector)
+  ) {
+    separatorCandidate.remove();
   }
 }
 

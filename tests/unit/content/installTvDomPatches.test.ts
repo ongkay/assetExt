@@ -1598,6 +1598,43 @@ describe("TV DOM patches", () => {
     disposeTvDomPatches();
   });
 
+  it("removes Recently used and empty wrappers from the live desktop active watchlist menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-watchlist-menu-live-owned.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML =
+      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createLiveDesktopActiveWatchlistMenuMarkup()}`;
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
+    expect(queryWithin(desktopActiveWatchlistMenuSelector, watchlistsRecentTitleSelector)).toBeNull();
+    expect(getRootText(desktopActiveWatchlistMenuSelector)).not.toContain("Recently used");
+    expect(
+      countWithin(
+        desktopActiveWatchlistMenuSelector,
+        '.newView-mQBvegEO > .background-wJ4EfuBP:empty',
+      ),
+    ).toBe(0);
+    expect(
+      countWithin(
+        desktopActiveWatchlistMenuSelector,
+        '.newView-mQBvegEO > .menu-divider-YZ5qU_gy[role="separator"]',
+      ),
+    ).toBe(2);
+    expect(getRootText(desktopActiveWatchlistMenuSelector)).toContain("Make a copy…");
+    expect(getRootText(desktopActiveWatchlistMenuSelector)).toContain("Open list…");
+
+    disposeTvDomPatches();
+  });
+
   it("disables foreign mobile active watchlist menu items and always removes add-alert/share-list", async () => {
     document.documentElement.classList.add("feature-mobiletouch");
 
@@ -3422,6 +3459,42 @@ function createMobileActiveWatchlistMenuMarkup() {
   `;
 }
 
+function createLiveDesktopActiveWatchlistMenuMarkup() {
+  return `
+    <div class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+      <div>
+        <div class="newView-mQBvegEO desktop-mQBvegEO">
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createActiveWatchlistShareListMarkup()}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Add alert on the list…")}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Make a copy…")}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Rename")}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Add section")}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Clear list")}</div>
+          <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Create new list…")}</div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Upload list…")}</div>
+          <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+          <div>
+            <div>
+              <div class="customListItem-KOmCbcJ6" aria-label="Recently used" data-qa-id="ui-lib-title-list-item">
+                <div><div class="wrapper-AO80rc_p secondaryTitleWrapper-AO80rc_p"><div class="content-AO80rc_p"><div class="title-AO80rc_p" id=":watchlists-recent-title:"><span role="gridcell" aria-colspan="3">Recently used</span></div></div></div></div>
+              </div>
+              <div id=":watchlists-recent-actions:" role="menu" aria-orientation="horizontal"></div>
+            </div>
+            <div aria-labelledby=":watchlists-recent-title:" id=":watchlists-recent-group:">
+              <div class="background-wJ4EfuBP selected-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("50975 bwa")}</div>
+              <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("dua")}</div>
+              <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("50975 data")}</div>
+            </div>
+          </div>
+          <div class="menu-divider-YZ5qU_gy" role="separator"><div class="menu-divider-line-YZ5qU_gy"></div></div>
+          <div class="background-wJ4EfuBP medium-wJ4EfuBP neutral-wJ4EfuBP">${createDesktopWrappedActiveWatchlistMenuRowMarkup("Open list…", "Shift + W")}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function createActiveWatchlistShareListMarkup() {
   return `
     <label class="wrapper-bl9AR3Gv accessible-bl9AR3Gv" tabindex="-1" data-role="menuitem" aria-selected="false">
@@ -3443,6 +3516,18 @@ function createActiveWatchlistMenuRowMarkup(label: string) {
     <div data-role="menuitem" class="accessible-NQERJsv9 item-BOZdoKo9 item-E2qCgOMz withIcon-BOZdoKo9 withIcon-E2qCgOMz" tabindex="-1">
       <span class="icon-BOZdoKo9"></span>
       <span class="labelRow-BOZdoKo9"><span class="label-BOZdoKo9">${label}</span></span>
+    </div>
+  `;
+}
+
+function createDesktopWrappedActiveWatchlistMenuRowMarkup(label: string, shortcut?: string) {
+  return `
+    <div role="row" aria-label="${label}" aria-level="1" class="button-HZXWyU6m" tabindex="-1" data-role="menuitem">
+      <div class="buttonContent-_b0ghPff">
+        <div class="left-_b0ghPff" style="--ui-lib-private-listItem-leftSlotItemsNumber: 1;"><div class="wrapper-vkdW50tN"><span aria-hidden="true" role="img" class="blockIcon-JMh4y6KH"></span></div></div>
+        <div class="middle-RDCgMoEQ hasTitle-RDCgMoEQ"><div class="title-RDCgMoEQ withGaps-tEiLUFuT apply-overflow-tooltip"><span role="gridcell" aria-colspan="3">${label}</span></div></div>
+        ${shortcut ? `<div class="right-ocwOCm5j"><div class="child-ocwOCm5j"><div class="hotkey-VUKsQhT0">${shortcut}</div></div></div>` : ""}
+      </div>
     </div>
   `;
 }

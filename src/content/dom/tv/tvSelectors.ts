@@ -116,7 +116,8 @@ export const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"
 export const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
 export const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
 export const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
-export const watchlistsRecentTitleSelector = '.columnsTitle-mQBvegEO.title-GlrQ9d9L';
+export const watchlistsRecentTitleSelector =
+  '.columnsTitle-mQBvegEO.title-GlrQ9d9L, [data-qa-id="ui-lib-title-list-item"]';
 export const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
 export const tvShellHiddenOnPendingAndRestrictedSelectors = [
   desktopPublishSelector,

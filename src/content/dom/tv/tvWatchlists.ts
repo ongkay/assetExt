@@ -686,6 +686,7 @@ function isDesktopActiveWatchlistMenuRoot(menuRoot: HTMLElement) {
 function syncRestrictedActiveWatchlistMenu(menuRoot: HTMLElement, isOwnedWatchlist: boolean) {
   removeActiveWatchlistMenuItem(menuRoot, 'Add alert on the list…');
   removeActiveWatchlistMenuItem(menuRoot, 'Share list');
+  removeEmptyActiveWatchlistMenuRows(menuRoot);
 
   if (isOwnedWatchlist) {
     restoreActiveWatchlistMenuItem(menuRoot, 'Rename');
@@ -702,9 +703,62 @@ function syncRestrictedActiveWatchlistMenu(menuRoot: HTMLElement, isOwnedWatchli
 function removeActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
   const menuItem = findActiveWatchlistMenuItemByText(menuRoot, label);
 
-  if (menuItem instanceof HTMLElement) {
-    menuItem.remove();
+  if (!(menuItem instanceof HTMLElement)) {
+    return;
   }
+
+  findActiveWatchlistMenuItemContainer(menuRoot, menuItem)?.remove();
+}
+
+function removeEmptyActiveWatchlistMenuRows(menuRoot: HTMLElement) {
+  const menuContentRoot = findActiveWatchlistMenuContentRoot(menuRoot);
+
+  for (const childElement of [...menuContentRoot.children]) {
+    if (!(childElement instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (childElement.childElementCount !== 0 || normalizeText(childElement.textContent).length > 0) {
+      continue;
+    }
+
+    childElement.remove();
+  }
+}
+
+function findActiveWatchlistMenuItemContainer(menuRoot: HTMLElement, menuItem: HTMLElement) {
+  const menuContentRoot = findActiveWatchlistMenuContentRoot(menuRoot);
+  let menuItemContainer: HTMLElement = menuItem;
+
+  while (
+    menuItemContainer.parentElement instanceof HTMLElement &&
+    menuItemContainer.parentElement !== menuContentRoot &&
+    menuItemContainer.parentElement !== menuRoot
+  ) {
+    menuItemContainer = menuItemContainer.parentElement;
+  }
+
+  return menuItemContainer;
+}
+
+function findActiveWatchlistMenuContentRoot(menuRoot: HTMLElement) {
+  for (const childElement of menuRoot.children) {
+    if (!(childElement instanceof HTMLElement)) {
+      continue;
+    }
+
+    if (childElement.classList.contains('newView-mQBvegEO')) {
+      return childElement;
+    }
+
+    for (const nestedChild of childElement.children) {
+      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains('newView-mQBvegEO')) {
+        return nestedChild;
+      }
+    }
+  }
+
+  return menuRoot;
 }
 
 function disableActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
