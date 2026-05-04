@@ -24,6 +24,7 @@ const restrictedDesktopContextMenuLabelPatterns = [
   /^Add financial metric for /,
   /^Add .+ to watchlist$/,
   /^Add text note for /,
+  /^Template$/,
   /^Add this indicator to favorites?$/,
   /^Remove this indicator from favorites?$/,
 ] as const;

@@ -60,6 +60,7 @@ const horizontalLineContextMenuRootSelector = "#horizontal-line-context-menu";
 const chartRightClickContextMenuRootSelector = "#chart-right-click-context-menu";
 const candleRightClickContextMenuRootSelector = "#candle-right-click-context-menu";
 const indicatorRightClickContextMenuRootSelector = "#indicator-right-click-context-menu";
+const drawingObjectContextMenuRootSelector = "#drawing-object-context-menu";
 const genericTableMenuRootSelector = "#generic-table-menu";
 const mobileHorizontalLineContextMenuRootSelector = "#mobile-horizontal-line-context-menu";
 const genericMobileDrawerRootSelector = "#generic-mobile-drawer";
@@ -1293,6 +1294,38 @@ describe("TV DOM patches", () => {
       "About this script…",
       "Copy",
       "Hide",
+      "Settings…",
+    ]);
+
+    disposeTvDomPatches();
+  });
+
+  it("hides the Template row in the drawing object desktop context menu", async () => {
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-drawing-object-context-menu.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDrawingObjectContextMenuMarkup()}`;
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(getVisibleTableMenuLabelsWithin(drawingObjectContextMenuRootSelector)).toEqual([
+      "Visual order",
+      "Visibility on intervals",
+      "Object tree",
+      "Clone",
+      "Copy",
+      "No sync",
+      "Sync in layout",
+      "Sync globally",
+      "Lock",
+      "Hide",
+      "Remove",
       "Settings…",
     ]);
 
@@ -3137,6 +3170,54 @@ function createIndicatorRightClickContextMenuMarkup() {
               <tr class="subMenu-GJX1EXhk"><td></td></tr>
               ${createContextTableMenuItemMarkup("Hide")}
               <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Settings…")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function createDrawingObjectContextMenuMarkup() {
+  return `
+    <div class="menu-Tx5xMZww context-menu menuWrap-XktvVkFF">
+      <div class="scrollWrap-XktvVkFF">
+        <div id="drawing-object-context-menu" class="menuBox-XktvVkFF" data-qa-id="menu-inner">
+          <table>
+            <tbody>
+              ${createContextTableMenuItemMarkup("Add alert on rectangle…", "Alt + A")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Template")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Visual order")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Visibility on intervals")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Object tree")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Clone", "Ctrl + Drag")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Copy", "Ctrl + C")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("No sync")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Sync in layout")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Sync globally")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
+              ${createContextTableMenuItemMarkup("Lock")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Hide")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              ${createContextTableMenuItemMarkup("Remove", "Del")}
+              <tr class="subMenu-GJX1EXhk"><td></td></tr>
+              <tr class="row-DFIg7eOh"><td><div class="line-DFIg7eOh"></div></td><td><div class="line-DFIg7eOh"></div></td></tr>
               ${createContextTableMenuItemMarkup("Settings…")}
               <tr class="subMenu-GJX1EXhk"><td></td></tr>
             </tbody>
