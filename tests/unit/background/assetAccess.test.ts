@@ -35,7 +35,6 @@ describe("background asset access", () => {
       "https://www.tradingview.com/chart/",
       undefined,
     );
-    expect(testRuntime.markPopupNavigationAutoAccessSkip).toHaveBeenCalledWith("tradingview");
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(456, "tradingview");
   });
 
@@ -129,7 +128,6 @@ describe("background asset access", () => {
     ).resolves.toEqual(readyAssetResponse);
 
     expect(testRuntime.openOrReloadTab).not.toHaveBeenCalled();
-    expect(testRuntime.markPopupNavigationAutoAccessSkip).not.toHaveBeenCalled();
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(789, "tradingview");
   });
 });
@@ -192,9 +190,6 @@ async function importAssetAccessTestRuntime({
       }),
     ),
   }));
-  vi.doMock("@/lib/storage/popupNavigationAutoAccessSkip", () => ({
-    markPopupNavigationAutoAccessSkip: vi.fn(() => Promise.resolve()),
-  }));
   vi.doMock("@/background/core/tabs", () => ({
     openOrReloadTab: vi.fn(() => Promise.resolve({ id: openedTabId })),
   }));
@@ -206,15 +201,10 @@ async function importAssetAccessTestRuntime({
   const extensionApi = await import("@/lib/api/extensionApi");
   const tabs = await import("@/background/core/tabs");
   const heartbeat = await import("@/background/core/heartbeat");
-  const popupNavigationAutoAccessSkip =
-    await import("@/lib/storage/popupNavigationAutoAccessSkip");
 
   return {
     assetAccess,
     fetchExtensionAsset: vi.mocked(extensionApi.fetchExtensionAsset),
-    markPopupNavigationAutoAccessSkip: vi.mocked(
-      popupNavigationAutoAccessSkip.markPopupNavigationAutoAccessSkip,
-    ),
     openOrReloadTab: vi.mocked(tabs.openOrReloadTab),
     startHeartbeat: vi.mocked(heartbeat.startHeartbeat),
   };

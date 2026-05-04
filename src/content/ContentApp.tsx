@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 
-import {
-  detectAssetPlatformFromHostname,
-  getAssetPlatformConfig,
-  type AssetPlatform,
-} from "@/lib/asset-access/platforms";
-import type { ExtensionAssetResponse, ExtensionMode } from "@/lib/api/extensionApiTypes";
+import { detectAssetPlatformFromHostname, type AssetPlatform } from "@/lib/asset-access/platforms";
 import {
   runtimeMessageType,
+  type AssetSessionEnsureResult,
   type RuntimeMessage,
   type RuntimeResponse,
 } from "@/lib/runtime/messages";
 import { useThemePreference } from "@/lib/useThemePreference";
 
-import { markRecentAutoAccessReload } from "./autoAccessReloadGuard";
 import { installTvDomPatches } from "./dom/installTvDomPatches";
-import { prepareManualAutoAccessPageLoad } from "./pageLoadControl";
 import { AccessOverlay } from "./ui/AccessOverlay";
 
 type ContentAppProps = {
@@ -23,11 +17,6 @@ type ContentAppProps = {
 };
 
 type AccessOverlayState = "idle" | "loading" | "success" | "error";
-
-type AutoAccessRequest = {
-  mode?: ExtensionMode;
-  platform: AssetPlatform;
-};
 
 export function ContentApp({ themeRoot }: ContentAppProps) {
   const { isReady } = useThemePreference(themeRoot);
@@ -48,56 +37,39 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
       return;
     }
 
-    async function requestAutoAccessUnlessPopupNavigation(platform: AssetPlatform) {
-      const shouldRunManualAutoAccess = await prepareManualAutoAccessPageLoad(platform);
+    let shouldIgnoreReload = false;
 
-      if (!shouldRunManualAutoAccess) {
+    void sendRuntimeMessage<null>({
+      platform,
+      type: runtimeMessageType.heartbeatStarted,
+    });
+
+    async function ensureAssetSession(platform: AssetPlatform) {
+      const ensureResult = await sendRuntimeMessage<AssetSessionEnsureResult>({
+        platform,
+        type: runtimeMessageType.assetSessionEnsureRequested,
+      });
+
+      if (shouldIgnoreReload || ensureResult.value?.action !== "reload_required") {
         return;
       }
 
-      await requestAutoAccess({ platform });
+      setMessage("Akses aktif. Halaman akan dimuat ulang.");
+      setState("loading");
+
+      window.setTimeout(() => {
+        if (!shouldIgnoreReload) {
+          window.location.reload();
+        }
+      }, 500);
     }
 
-    void requestAutoAccessUnlessPopupNavigation(platform);
+    void ensureAssetSession(platform);
+
+    return () => {
+      shouldIgnoreReload = true;
+    };
   }, [platform]);
-
-  async function requestAutoAccess({ mode, platform }: AutoAccessRequest) {
-    const platformLabel = getAssetPlatformConfig(platform).label;
-
-    setState("loading");
-    setMessage(
-      mode ? `Mengaktifkan akses ${platformLabel}...` : `Memeriksa akses ${platformLabel}...`,
-    );
-
-    const result = await sendRuntimeMessage<ExtensionAssetResponse>({
-      mode,
-      platform,
-      type: runtimeMessageType.autoAccessRequested,
-    });
-
-    if (result.errorMessage || !result.value) {
-      setMessage(result.errorMessage ?? "Akses asset belum tersedia.");
-      setState("error");
-      return;
-    }
-
-    if (result.value.status === "selection_required") {
-      setMessage("Mode akses belum bisa ditentukan otomatis.");
-      setState("error");
-      return;
-    }
-
-    if (result.value.status === "forbidden") {
-      setMessage("Langganan aktif diperlukan untuk membuka asset ini.");
-      setState("error");
-      return;
-    }
-
-    setMessage("Akses aktif. Halaman akan dimuat ulang.");
-    setState("success");
-    markRecentAutoAccessReload(platform);
-    window.setTimeout(() => window.location.reload(), 500);
-  }
 
   if (!isReady) {
     return null;

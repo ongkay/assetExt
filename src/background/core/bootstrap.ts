@@ -14,6 +14,7 @@ import {
   writeBootstrapCache,
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
+import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
 import { clearAllAssetPlatformCookies } from "./cookies";
 
@@ -50,6 +51,7 @@ export async function replaceBootstrapCacheFromSnapshot(
   latestExplicitBootstrapCache = nextCache;
   bootstrapWriteRevision += 1;
   await writeBootstrapCache(nextCache);
+  await clearAssetSessionSyncState();
 
   return nextCache;
 }
@@ -65,6 +67,7 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
   latestExplicitBootstrapCache = null;
   bootstrapWriteRevision += 1;
   await clearBootstrapCache();
+  await clearAssetSessionSyncState();
   await clearAllAssetPlatformCookies();
 
   return {

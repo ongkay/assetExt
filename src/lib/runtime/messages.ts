@@ -10,7 +10,7 @@ export const runtimeMessageType = {
   bootstrapRequested: "BOOTSTRAP_REQUESTED",
   bootstrapRefreshRequested: "BOOTSTRAP_REFRESH_REQUESTED",
   assetAccessRequested: "ASSET_ACCESS_REQUESTED",
-  autoAccessRequested: "AUTO_ACCESS_REQUESTED",
+  assetSessionEnsureRequested: "ASSET_SESSION_ENSURE_REQUESTED",
   assetModeSelected: "ASSET_MODE_SELECTED",
   redeemCdKeyRequested: "REDEEM_CD_KEY_REQUESTED",
   logoutRequested: "LOGOUT_REQUESTED",
@@ -34,10 +34,9 @@ export type AssetAccessRequestedMessage = {
   type: (typeof runtimeMessageType)["assetAccessRequested"];
 };
 
-export type AutoAccessRequestedMessage = {
-  mode?: ExtensionMode;
+export type AssetSessionEnsureRequestedMessage = {
   platform: AssetPlatform;
-  type: (typeof runtimeMessageType)["autoAccessRequested"];
+  type: (typeof runtimeMessageType)["assetSessionEnsureRequested"];
 };
 
 export type AssetModeSelectedMessage = {
@@ -57,12 +56,12 @@ export type LogoutRequestedMessage = {
 
 export type HeartbeatStartedMessage = {
   platform: AssetPlatform;
-  tabId: number;
+  tabId?: number;
   type: (typeof runtimeMessageType)["heartbeatStarted"];
 };
 
 export type HeartbeatStoppedMessage = {
-  tabId: number;
+  tabId?: number;
   type: (typeof runtimeMessageType)["heartbeatStopped"];
 };
 
@@ -74,11 +73,18 @@ export type OverlayStateChangedMessage = {
   type: (typeof runtimeMessageType)["overlayStateChanged"];
 };
 
+export type AssetSessionEnsureResult = {
+  action: "none" | "reload_required";
+  fallbackUsed: boolean;
+  lastErrorMessage: string | null;
+  status: "idle" | "running" | "success" | "failed" | "skipped";
+};
+
 export type RuntimeMessage =
   | BootstrapRequestedMessage
   | BootstrapRefreshRequestedMessage
   | AssetAccessRequestedMessage
-  | AutoAccessRequestedMessage
+  | AssetSessionEnsureRequestedMessage
   | AssetModeSelectedMessage
   | RedeemCdKeyRequestedMessage
   | LogoutRequestedMessage
@@ -106,5 +112,6 @@ export type BootstrapRuntimeValue = {
 export type BootstrapRuntimeResponse = RuntimeResponse<BootstrapRuntimeValue>;
 export type BootstrapRefreshRuntimeResponse = RuntimeResponse<BootstrapCacheRecord>;
 export type AssetAccessRuntimeResponse = RuntimeResponse<ExtensionAssetResponse>;
+export type AssetSessionEnsureRuntimeResponse = RuntimeResponse<AssetSessionEnsureResult>;
 export type RedeemCdKeyRuntimeResponse = RuntimeResponse<ExtensionBootstrap>;
 export type LogoutRuntimeResponse = RuntimeResponse<{ redirectTo: string }>;

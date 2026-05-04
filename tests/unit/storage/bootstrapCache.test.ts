@@ -10,10 +10,6 @@ import {
   isInjectionCooldownActive,
   markInjectionCooldown,
 } from "@/lib/storage/injectionCooldown";
-import {
-  consumePopupNavigationAutoAccessSkip,
-  markPopupNavigationAutoAccessSkip,
-} from "@/lib/storage/popupNavigationAutoAccessSkip";
 
 const originalChrome = globalThis.chrome;
 
@@ -143,48 +139,3 @@ describe("injection cooldown storage", () => {
     await expect(isInjectionCooldownActive("fxreplay", 1001)).resolves.toBe(true);
   });
 });
-
-describe("popup navigation auto access skip storage", () => {
-  it("consumes a recent popup navigation skip only once", async () => {
-    installImmediateChromeStorage({});
-
-    await markPopupNavigationAutoAccessSkip("tradingview", 1_000);
-
-    await expect(consumePopupNavigationAutoAccessSkip("tradingview", 1_001)).resolves.toBe(
-      true,
-    );
-    await expect(consumePopupNavigationAutoAccessSkip("tradingview", 1_002)).resolves.toBe(
-      false,
-    );
-  });
-
-  it("does not consume expired popup navigation skip markers as active", async () => {
-    installImmediateChromeStorage({});
-
-    await markPopupNavigationAutoAccessSkip("tradingview", 1_000);
-
-    await expect(consumePopupNavigationAutoAccessSkip("tradingview", 31_001)).resolves.toBe(
-      false,
-    );
-  });
-});
-
-function installImmediateChromeStorage(storageValues: ChromeStorageValues) {
-  globalThis.chrome = {
-    storage: {
-      local: {
-        get: vi.fn((key: string) => Promise.resolve({ [key]: storageValues[key] })),
-        remove: vi.fn((key: string) => {
-          delete storageValues[key];
-
-          return Promise.resolve();
-        }),
-        set: vi.fn((values: ChromeStorageValues) => {
-          Object.assign(storageValues, values);
-
-          return Promise.resolve();
-        }),
-      },
-    },
-  } as unknown as typeof chrome;
-}

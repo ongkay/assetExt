@@ -240,6 +240,7 @@ describe("background bootstrap core", () => {
     });
     expect(testRuntime.getCurrentCache()).toBeNull();
     expect(testRuntime.clearBootstrapCache).toHaveBeenCalledTimes(1);
+    expect(testRuntime.clearAssetSessionSyncState).toHaveBeenCalledTimes(1);
     expect(testRuntime.clearAllAssetPlatformCookies).toHaveBeenCalledTimes(1);
     expect(testRuntime.writeBootstrapCache).not.toHaveBeenCalled();
   });
@@ -272,6 +273,9 @@ async function importBootstrapCoreTestRuntime(
   vi.doMock("@/background/core/cookies", () => ({
     clearAllAssetPlatformCookies: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/lib/storage/assetSessionSync", () => ({
+    clearAssetSessionSyncState: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/storage/bootstrapCache", async (importOriginal) => {
     const originalBootstrapCache =
       await importOriginal<typeof import("@/lib/storage/bootstrapCache")>();
@@ -296,11 +300,13 @@ async function importBootstrapCoreTestRuntime(
 
   const bootstrapCore = await import("@/background/core/bootstrap");
   const backgroundCookies = await import("@/background/core/cookies");
+  const assetSessionSync = await import("@/lib/storage/assetSessionSync");
   const bootstrapCache = await import("@/lib/storage/bootstrapCache");
   const extensionApi = await import("@/lib/api/extensionApi");
 
   return {
     bootstrapCore,
+    clearAssetSessionSyncState: vi.mocked(assetSessionSync.clearAssetSessionSyncState),
     clearAllAssetPlatformCookies: vi.mocked(backgroundCookies.clearAllAssetPlatformCookies),
     fetchExtensionBootstrap: vi.mocked(extensionApi.fetchExtensionBootstrap),
     postExtensionLogout: vi.mocked(extensionApi.postExtensionLogout),

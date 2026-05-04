@@ -2,6 +2,7 @@ import { redeemExtensionCdKey } from "@/lib/api/extensionApi";
 import {
   runtimeMessageType,
   type AssetAccessRuntimeResponse,
+  type AssetSessionEnsureRuntimeResponse,
   type BootstrapRefreshRuntimeResponse,
   type BootstrapRuntimeResponse,
   type LogoutRuntimeResponse,
@@ -20,8 +21,19 @@ import {
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
 import { syncProductionOriginHeaderRule } from "./core/productionOrigin";
+import {
+  ensureAssetSessionForPage,
+  ensureStartupAssetSync,
+  markAssetSessionSyncSuccess,
+} from "./core/startupAssetSync";
 
 void syncProductionOriginHeaderRule().catch(() => undefined);
+chrome.runtime.onInstalled.addListener(() => {
+  void ensureStartupAssetSync().catch(() => undefined);
+});
+chrome.runtime.onStartup.addListener(() => {
+  void ensureStartupAssetSync().catch(() => undefined);
+});
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)
@@ -91,28 +103,31 @@ async function handleRuntimeMessage(
         tabId: message.tabId,
       });
 
+      if (assetResponse.status === "ready") {
+        await markAssetSessionSyncSuccess(message.platform);
+      }
+
       return {
         ok: true,
         value: assetResponse,
       } satisfies AssetAccessRuntimeResponse;
     }
 
-    case runtimeMessageType.autoAccessRequested: {
-      const assetResponse = await runAssetAccess({
-        mode: message.mode,
-        platform: message.platform,
-        shouldNavigate: false,
-        tabId: sender.tab?.id,
-      });
+    case runtimeMessageType.assetSessionEnsureRequested: {
+      const assetSessionEnsureResult = await ensureAssetSessionForPage(message.platform);
 
       return {
         ok: true,
-        value: assetResponse,
-      } satisfies AssetAccessRuntimeResponse;
+        value: assetSessionEnsureResult,
+      } satisfies AssetSessionEnsureRuntimeResponse;
     }
 
     case runtimeMessageType.heartbeatStarted: {
-      await startHeartbeat(message.tabId, message.platform);
+      const tabId = message.tabId ?? sender.tab?.id;
+
+      if (tabId) {
+        await startHeartbeat(tabId, message.platform);
+      }
 
       return {
         ok: true,
@@ -121,7 +136,11 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.heartbeatStopped: {
-      stopHeartbeat(message.tabId);
+      const tabId = message.tabId ?? sender.tab?.id;
+
+      if (tabId) {
+        stopHeartbeat(tabId);
+      }
 
       return {
         ok: true,
