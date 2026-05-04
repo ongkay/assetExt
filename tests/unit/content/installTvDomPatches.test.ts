@@ -11,6 +11,8 @@ import {
 
 const mainMenuButtonSelector = 'button[data-qa-id="main-menu-button"]';
 const mainAvatarImageSelector = `${mainMenuButtonSelector} img`;
+const tvShellStateAttributeName = "data-asset-manager-tv-shell";
+const tvShellBootstrapStyleElementId = "asset-manager-tv-shell-style";
 const logoutMenuItemSelector = '[data-qa-id="main-menu-sign-out-item"][data-role="menuitem"]';
 const desktopPublishSelector = "#header-toolbar-publish-desktop";
 const mobilePublishWrapperSelector = ".mobilePublish-OhqNVIYA";
@@ -124,6 +126,8 @@ describe("TV DOM patches", () => {
     globalThis.chrome = originalChrome;
     document.body.innerHTML = "";
     document.documentElement.className = originalDocumentClassName;
+    document.documentElement.removeAttribute(tvShellStateAttributeName);
+    document.getElementById(tvShellBootstrapStyleElementId)?.remove();
   });
 
   it("applies restricted menu rules when private access is unavailable", async () => {
@@ -233,6 +237,76 @@ describe("TV DOM patches", () => {
     await flushAsyncWork();
 
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-delayed.png");
+
+    disposeTvDomPatches();
+  });
+
+  it("hides restricted shell controls immediately while TradingView state is still loading", async () => {
+    const pendingBootstrapCache = createDeferred<BootstrapCacheRecord | null>();
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-pending-restricted.png",
+        hasPrivateAccess: false,
+      }),
+      { pendingBootstrapCache },
+    );
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    expect(document.documentElement.getAttribute(tvShellStateAttributeName)).toBe("pending");
+    expectSelectorToHaveComputedDisplay(desktopPublishSelector, "none");
+    expectSelectorToHaveComputedDisplay(sidebarAlertsSelector, "none");
+    expect(window.getComputedStyle(getMainAvatarImage()).visibility).toBe("hidden");
+
+    pendingBootstrapCache.resolve(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-pending-restricted.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    await flushAsyncWork();
+
+    expect(document.documentElement.getAttribute(tvShellStateAttributeName)).toBe("restricted");
+    expectSelectorToHaveComputedDisplay(desktopPublishSelector, "none");
+    expect(window.getComputedStyle(getMainAvatarImage()).visibility).toBe("visible");
+
+    disposeTvDomPatches();
+  });
+
+  it("reveals private shell controls only after TradingView state becomes ready", async () => {
+    const pendingBootstrapCache = createDeferred<BootstrapCacheRecord | null>();
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-pending-private.png",
+        hasPrivateAccess: true,
+      }),
+      { pendingBootstrapCache },
+    );
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    expect(document.documentElement.getAttribute(tvShellStateAttributeName)).toBe("pending");
+    expectSelectorToHaveComputedDisplay(desktopPublishSelector, "none");
+    expect(window.getComputedStyle(getMainAvatarImage()).visibility).toBe("hidden");
+
+    pendingBootstrapCache.resolve(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-pending-private.png",
+        hasPrivateAccess: true,
+      }),
+    );
+    await flushAsyncWork();
+
+    expect(document.documentElement.getAttribute(tvShellStateAttributeName)).toBe("default");
+    expect(window.getComputedStyle(getMainAvatarImage()).visibility).toBe("visible");
+    expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-pending-private.png");
+    expect(window.getComputedStyle(getMenuItemBySelector(desktopPublishSelector) as Element).display).not.toBe(
+      "none",
+    );
 
     disposeTvDomPatches();
   });
@@ -2520,6 +2594,13 @@ function expectSelectorToBeHidden(selector: string) {
   expect((element as HTMLElement).getAttribute("aria-hidden")).toBe("true");
 }
 
+function expectSelectorToHaveComputedDisplay(selector: string, expectedDisplay: string) {
+  const element = document.querySelector(selector);
+
+  expect(element).toBeInstanceOf(HTMLElement);
+  expect(window.getComputedStyle(element as HTMLElement).display).toBe(expectedDisplay);
+}
+
 function getMenuItemByTextPrefix(textPrefix: string) {
   return (
     [...document.querySelectorAll('[data-role="menuitem"]')].find((candidate) => {
@@ -3833,6 +3914,8 @@ function installChromeExtensionMocks(
 }
 
 async function flushAsyncWork() {
+  await Promise.resolve();
+  await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
 }

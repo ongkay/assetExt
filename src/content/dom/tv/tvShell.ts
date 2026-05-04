@@ -31,6 +31,9 @@ import {
   restrictedMenuLabels,
   restrictedMenuPrefixes,
   googleHomeUrl,
+  tvShellBootstrapStyleElementId,
+  tvShellHiddenOnPendingAndRestrictedSelectors,
+  tvShellStateAttributeName,
   tvRelevantMutationSelectors,
 } from './tvSelectors';
 import type { TvLogoutStatus, TvOverrideState } from './tvTypes';
@@ -43,6 +46,22 @@ import {
   hidePersistentElement,
   normalizeText,
 } from './tvDomUtils';
+
+type TvShellBootstrapState = 'pending' | 'default' | 'restricted';
+
+export function installTvShellBootstrapState() {
+  ensureTvShellBootstrapStyle();
+  setTvShellBootstrapState('pending');
+}
+
+export function syncTvShellBootstrapState(overrideState: TvOverrideState | null) {
+  setTvShellBootstrapState(overrideState?.menuMode ?? 'pending');
+}
+
+export function cleanupTvShellBootstrapState() {
+  document.documentElement.removeAttribute(tvShellStateAttributeName);
+  document.getElementById(tvShellBootstrapStyleElementId)?.remove();
+}
 
 export function syncTvMainAvatar(overrideState: TvOverrideState | null) {
   const avatarImage = document.querySelector(mainAvatarImageSelector);
@@ -448,4 +467,28 @@ function getAvatarColor(seed: string) {
   }
 
   return palette[hash % palette.length];
+}
+
+function ensureTvShellBootstrapStyle() {
+  if (document.getElementById(tvShellBootstrapStyleElementId)) {
+    return;
+  }
+
+  const styleElement = document.createElement('style');
+  styleElement.id = tvShellBootstrapStyleElementId;
+  styleElement.textContent = createTvShellBootstrapStyleText();
+
+  (document.head ?? document.documentElement).append(styleElement);
+}
+
+function setTvShellBootstrapState(nextState: TvShellBootstrapState) {
+  document.documentElement.setAttribute(tvShellStateAttributeName, nextState);
+}
+
+function createTvShellBootstrapStyleText() {
+  return [
+    `html[${tvShellStateAttributeName}] ${mainAvatarBadgeSelector} { display: none !important; pointer-events: none !important; }`,
+    `html[${tvShellStateAttributeName}="pending"] ${mainAvatarImageSelector} { visibility: hidden !important; }`,
+    `html[${tvShellStateAttributeName}="pending"] ${tvShellHiddenOnPendingAndRestrictedSelectors}, html[${tvShellStateAttributeName}="restricted"] ${tvShellHiddenOnPendingAndRestrictedSelectors} { display: none !important; pointer-events: none !important; }`,
+  ].join('\n');
 }

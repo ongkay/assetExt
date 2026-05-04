@@ -8,13 +8,16 @@ import { syncRestrictedTvIndicatorTemplates } from './tv/tvIndicatorTemplates';
 import { syncRestrictedTvLayouts } from './tv/tvLayouts';
 import { logoutRedirectDelayMs, mainMenuButtonSelector } from './tv/tvSelectors';
 import {
+  cleanupTvShellBootstrapState,
   createTvOverrideState,
   findOpenTvMenu,
   hideTvMainAvatarBadge,
   hideTvMenuUntilStateIsReady,
+  installTvShellBootstrapState,
   isRelevantTvMutation,
   syncOpenTvPopupMenu,
   syncRestrictedTvShell,
+  syncTvShellBootstrapState,
   syncTvMainAvatar,
 } from './tv/tvShell';
 import { syncRestrictedTvTemplateMenus } from './tv/tvTemplateMenus';
@@ -33,13 +36,21 @@ export function installTvDomPatches(): () => void {
   let loadOverrideStatePromise: Promise<void> | null = null;
   let mutationObserver: MutationObserver | null = null;
   let isObserverActive = false;
+  let isDisposed = false;
+
+  installTvShellBootstrapState();
 
   const syncTvPage = () => {
+    if (isDisposed) {
+      return;
+    }
+
     runWithoutObserver(() => {
       syncTvMainAvatar(overrideState);
       hideTvMainAvatarBadge();
       syncRestrictedTvActions(overrideState);
       syncOpenTvPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
+      syncTvShellBootstrapState(overrideState);
     });
   };
 
@@ -53,7 +64,12 @@ export function installTvDomPatches(): () => void {
     }
 
     loadOverrideStatePromise = readBootstrapCache()
+      .catch(() => null)
       .then((bootstrapCacheRecord) => {
+        if (isDisposed) {
+          return;
+        }
+
         overrideState = createTvOverrideState(bootstrapCacheRecord);
         syncTvPage();
       })
@@ -180,8 +196,10 @@ export function installTvDomPatches(): () => void {
   syncTvPage();
 
   return () => {
+    isDisposed = true;
     pauseObserver();
     document.removeEventListener('click', handleMainMenuButtonClick, true);
+    cleanupTvShellBootstrapState();
   };
 }
 

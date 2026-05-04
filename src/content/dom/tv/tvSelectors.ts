@@ -1,6 +1,8 @@
 export const mainMenuButtonSelector = 'button[data-qa-id="main-menu-button"]';
 export const mainAvatarImageSelector = `${mainMenuButtonSelector} img`;
 export const mainAvatarBadgeSelector = `${mainMenuButtonSelector} + span`;
+export const tvShellStateAttributeName = 'data-asset-manager-tv-shell';
+export const tvShellBootstrapStyleElementId = 'asset-manager-tv-shell-style';
 export const desktopPopupMenuSelector = '[data-qa-id="popup-menu-container"][role="treegrid"]';
 export const mobilePopupMenuSelector = '[data-qa-id="overlap-manager-root"] .container-U2jIw4km';
 export const desktopProfileMenuItemSelector =
@@ -116,6 +118,16 @@ export const recentIndicatorMenuItemSelector = '[data-group-name="recent"]';
 export const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
 export const watchlistsRecentTitleSelector = '.columnsTitle-mQBvegEO.title-GlrQ9d9L';
 export const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
+export const tvShellHiddenOnPendingAndRestrictedSelectors = [
+  desktopPublishSelector,
+  mobilePublishWrapperSelector,
+  desktopTradeSelector,
+  quickSearchSelector,
+  createAlertSelector,
+  favoriteIndicatorsSelector,
+  sidebarAlertsSelector,
+  sidebarChatsSelector,
+].join(', ');
 
 export const restrictedMenuLabels = [
   'Help Center',
