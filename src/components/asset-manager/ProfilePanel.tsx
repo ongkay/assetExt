@@ -111,16 +111,18 @@ export function ProfilePanel({
         </div>
 
         <Button
-          className="w-full shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+          className="w-full relative overflow-hidden bg-destructive/10! hover:bg-destructive/20! text-destructive! font-medium border! border-destructive/20! shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.98] active:translate-y-0 group/logout"
           disabled={isLoggingOut}
           type="button"
-          variant="destructive"
           onClick={() => void onLogout()}
         >
           {isLoggingOut ? (
             <Spinner data-icon="inline-start" />
           ) : (
-            <LogOutIcon data-icon="inline-start" />
+            <LogOutIcon
+              className="transition-transform duration-300 group-hover/logout:-translate-x-1"
+              data-icon="inline-start"
+            />
           )}
           Logout
         </Button>

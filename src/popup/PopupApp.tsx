@@ -272,31 +272,38 @@ export function PopupApp() {
 
         <div className="grid grid-cols-2 gap-2 pt-2">
           <Button
+            className="relative overflow-hidden bg-muted/80! hover:bg-muted! text-foreground! font-medium border! border-border/60! shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.98] active:translate-y-0 group/refresh"
             disabled={isSyncing}
             type="button"
-            variant="outline"
             onClick={handleRefreshBootstrap}
           >
             {isSyncing ? (
               <Spinner data-icon="inline-start" />
             ) : (
               <RefreshCcwIcon
-                className={isSyncing ? "animate-spin" : ""}
+                className={
+                  isSyncing
+                    ? "animate-spin"
+                    : "transition-transform duration-500 group-hover/refresh:rotate-180"
+                }
                 data-icon="inline-start"
               />
             )}
             Refresh
           </Button>
           <Button
+            className="relative overflow-hidden bg-destructive/10! hover:bg-destructive/20! text-destructive! font-medium border! border-destructive/20! shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.98] active:translate-y-0 group/logout"
             disabled={isLoggingOut}
             type="button"
-            variant="destructive"
             onClick={() => void handleLogout()}
           >
             {isLoggingOut ? (
               <Spinner data-icon="inline-start" />
             ) : (
-              <LogOutIcon data-icon="inline-start" />
+              <LogOutIcon
+                className="transition-transform duration-300 group-hover/logout:-translate-x-1"
+                data-icon="inline-start"
+              />
             )}
             Logout
           </Button>
