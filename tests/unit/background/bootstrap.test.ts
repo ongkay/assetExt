@@ -194,7 +194,7 @@ describe("background bootstrap core", () => {
     });
   });
 
-  it("returns unauthenticated bootstrap for current render without persisting it", async () => {
+  it("persists unauthenticated bootstrap for current render", async () => {
     const unauthenticatedSnapshot = {
       auth: { status: "unauthenticated" as const, loginUrl: "/login" },
       version: { status: "supported" as const },
@@ -211,8 +211,12 @@ describe("background bootstrap core", () => {
       },
       isSyncing: false,
     });
-    expect(testRuntime.getCurrentCache()).toBeNull();
-    expect(testRuntime.writeBootstrapCache).not.toHaveBeenCalled();
+    expect(testRuntime.getCurrentCache()).toEqual({
+      fetchedAt: expect.any(Number) as number,
+      isValid: false,
+      snapshot: unauthenticatedSnapshot,
+    });
+    expect(testRuntime.writeBootstrapCache).toHaveBeenCalledTimes(1);
   });
 
   it("clears persisted bootstrap cache on logout", async () => {

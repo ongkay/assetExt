@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LogOutIcon, RefreshCcwIcon } from "lucide-react";
 
 import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
@@ -28,8 +28,11 @@ import {
   type RuntimeMessage,
   type RuntimeResponse,
 } from "@/lib/runtime/messages";
-import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
-import { createBootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
+import {
+  bootstrapCacheStorageKey,
+  createBootstrapCacheRecord,
+  type BootstrapCacheRecord,
+} from "@/lib/storage/bootstrapCache";
 import { useThemePreference } from "@/lib/useThemePreference";
 
 import { PopupShell } from "./ui/PopupShell";
@@ -47,9 +50,9 @@ export function PopupApp() {
   const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
-  const isSyncing = Boolean(bootstrapValue?.isSyncing || isPending);
+  const isSyncing = Boolean(bootstrapValue?.isSyncing || isRefreshing);
 
   const requestAssetAccess = useCallback(async (platform: AssetPlatform, mode?: ExtensionMode) => {
     setAccessingPlatform(platform);
@@ -87,10 +90,35 @@ export function PopupApp() {
     void requestBootstrap();
   }, []);
 
+  useEffect(() => {
+    if (typeof chrome === "undefined" || !chrome.storage?.onChanged) {
+      return () => {};
+    }
+
+    const listener: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
+      if (areaName !== "local") {
+        return;
+      }
+
+      if (!(bootstrapCacheStorageKey in changes)) {
+        return;
+      }
+
+      const nextCache = changes[bootstrapCacheStorageKey]?.newValue as BootstrapCacheRecord | undefined;
+
+      setBootstrapValue({ cache: nextCache ?? null, isSyncing: false });
+      setIsRefreshing(false);
+    };
+
+    chrome.storage.onChanged.addListener(listener);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(listener);
+    };
+  }, []);
+
   const handleRefreshBootstrap = () => {
-    startTransition(() => {
-      void refreshBootstrap();
-    });
+    void refreshBootstrap();
   };
 
   const handleAccessAsset = (asset: ExtensionAssetSummary) => {
@@ -308,9 +336,13 @@ export function PopupApp() {
   }
 
   async function refreshBootstrap() {
+    setIsRefreshing(true);
+
     const bootstrapCache = await sendRuntimeMessage<BootstrapCacheRecord>({
       type: runtimeMessageType.bootstrapRefreshRequested,
     });
+
+    setIsRefreshing(false);
 
     if (bootstrapCache.value) {
       updateBootstrapCache(bootstrapCache.value);

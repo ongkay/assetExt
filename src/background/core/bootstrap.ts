@@ -4,6 +4,7 @@ import type { ExtensionBootstrap, ExtensionLogoutResponse } from "@/lib/api/exte
 import {
   clearBootstrapCache,
   createBootstrapCacheErrorRecord,
+  createInvalidUnauthenticatedBootstrapCache,
   createBootstrapCacheRecord,
   isBootstrapCacheExpired,
   readBootstrapCache,
@@ -104,10 +105,9 @@ async function fetchAndWriteBootstrapCache(
 
     if (bootstrapResult.ok) {
       if (bootstrapResult.value.auth.status === "unauthenticated") {
-        const nextCache = createUnauthenticatedBootstrapRuntimeCache(bootstrapResult.value);
-        await clearBootstrapCache();
+        const nextCache = createInvalidUnauthenticatedBootstrapCache(bootstrapResult.value.auth.loginUrl);
 
-        return nextCache;
+        return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
       }
 
       const nextCache = createBootstrapCacheRecord(bootstrapResult.value);
@@ -132,14 +132,6 @@ async function fetchAndWriteBootstrapCache(
 
     return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
   }
-}
-
-function createUnauthenticatedBootstrapRuntimeCache(snapshot: ExtensionBootstrap): BootstrapCacheRecord {
-  return {
-    fetchedAt: Date.now(),
-    isValid: false,
-    snapshot,
-  };
 }
 
 async function writeBootstrapCacheIfSyncIsCurrent(
