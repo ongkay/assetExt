@@ -259,9 +259,6 @@ export function PopupApp() {
 
         {hasActiveSubscription ? (
           <div className="flex flex-col gap-2 mt-1">
-            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase px-1">
-              Your Assets
-            </span>
             <AssetAccessList
               assets={assets}
               isAccessingPlatform={accessingPlatform}
