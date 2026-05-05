@@ -535,7 +535,7 @@ describe("extension API client", () => {
 
     await fetchExtensionBootstrap({
       apiBaseUrl: "http://localhost:3000",
-      extensionId: "allowed-id",
+      extensionId: "test-extension-id",
       extensionVersion: "2.0.0",
     });
 
@@ -544,7 +544,7 @@ describe("extension API client", () => {
       expect.objectContaining({
         credentials: "include",
         headers: expect.objectContaining({
-          "x-extension-id": "allowed-id",
+          "x-extension-id": "test-extension-id",
           "x-extension-version": "2.0.0",
         }),
         method: "GET",
@@ -563,7 +563,11 @@ describe("extension API client", () => {
     );
 
     const result = await redeemExtensionCdKey(
-      { apiBaseUrl: "http://localhost:3000", extensionId: "allowed-id", extensionVersion: "2.0.0" },
+      {
+        apiBaseUrl: "http://localhost:3000",
+        extensionId: "test-extension-id",
+        extensionVersion: "2.0.0",
+      },
       "WRONGCODE",
     );
 

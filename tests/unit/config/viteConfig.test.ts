@@ -17,7 +17,7 @@ describe("Vite dev server config", () => {
 
     expect(
       allowedOrigins.some(
-        (origin) => origin instanceof RegExp && origin.test("chrome-extension://allowed-id"),
+        (origin) => origin instanceof RegExp && origin.test("chrome-extension://test-extension-id"),
       ),
     ).toBe(true);
   });

@@ -344,8 +344,8 @@ Untuk local/Postman verification yang sama dengan hasil runtime final:
 
 ```text
 x-extension-version: 2.0.0
-x-ext-dev-origin: chrome-extension://allowed-id
-x-ext-dev-extension-id: allowed-id
+x-ext-dev-origin: chrome-extension://<your-extension-id>
+x-ext-dev-extension-id: <your-extension-id>
 ```
 
 Tambahkan salah satu:

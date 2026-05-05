@@ -16,7 +16,6 @@ const fallbackExtensionApiError: ExtensionApiError = {
   code: "EXT_REQUEST_INVALID",
   message: "Request extension gagal diproses.",
 };
-const localDevelopmentExtensionId = "allowed-id";
 
 export function fetchExtensionBootstrap(
   config: ExtensionApiConfig,
@@ -106,8 +105,10 @@ async function getExtensionApiHeaders(config: ExtensionApiConfig): Promise<Heade
   });
 
   if (config.isDev) {
-    headers.set("x-ext-dev-extension-id", localDevelopmentExtensionId);
-    headers.set("x-ext-dev-origin", `chrome-extension://${localDevelopmentExtensionId}`);
+    if (config.extensionId) {
+      headers.set("x-ext-dev-extension-id", config.extensionId);
+      headers.set("x-ext-dev-origin", `chrome-extension://${config.extensionId}`);
+    }
 
     const appSessionToken = await readLocalDevelopmentAppSession(config.apiBaseUrl);
 

@@ -20,7 +20,7 @@ type FetchMock = ReturnType<
 
 const extensionApiConfig: ExtensionApiConfig = {
   apiBaseUrl: "http://localhost:3000",
-  extensionId: "allowed-id",
+  extensionId: "test-extension-id",
   extensionVersion: "2.0.0",
   isDev: true,
 };
@@ -55,8 +55,8 @@ describe("extension API client", () => {
       method: "GET",
     });
     expect(requestHeaders.get("x-extension-version")).toBe("2.0.0");
-    expect(requestHeaders.get("x-ext-dev-extension-id")).toBe("allowed-id");
-    expect(requestHeaders.get("x-ext-dev-origin")).toBe("chrome-extension://allowed-id");
+    expect(requestHeaders.get("x-ext-dev-extension-id")).toBe("test-extension-id");
+    expect(requestHeaders.get("x-ext-dev-origin")).toBe("chrome-extension://test-extension-id");
     expect(requestHeaders.get("x-extension-id")).toBeNull();
   });
 
@@ -80,8 +80,8 @@ describe("extension API client", () => {
     const [, requestInit] = fetchMock.mock.calls[0];
     const requestHeaders = new Headers(requestInit?.headers);
 
-    expect(requestHeaders.get("x-extension-id")).toBe("allowed-id");
-    expect(requestHeaders.get("origin")).toBe("chrome-extension://allowed-id");
+    expect(requestHeaders.get("x-extension-id")).toBe("test-extension-id");
+    expect(requestHeaders.get("origin")).toBe("chrome-extension://test-extension-id");
     expect(requestHeaders.get("x-extension-version")).toBe("2.0.0");
     expect(requestHeaders.get("x-ext-dev-extension-id")).toBeNull();
     expect(requestHeaders.get("x-ext-dev-origin")).toBeNull();
@@ -106,8 +106,8 @@ describe("extension API client", () => {
     const [, requestInit] = fetchMock.mock.calls[0];
     const requestHeaders = new Headers(requestInit?.headers);
 
-    expect(requestHeaders.get("x-extension-id")).toBe("allowed-id");
-    expect(requestHeaders.get("origin")).toBe("chrome-extension://allowed-id");
+    expect(requestHeaders.get("x-extension-id")).toBe("test-extension-id");
+    expect(requestHeaders.get("origin")).toBe("chrome-extension://test-extension-id");
     expect(requestHeaders.get("x-ext-dev-extension-id")).toBeNull();
     expect(requestHeaders.get("x-ext-dev-origin")).toBeNull();
     expect(requestHeaders.get("x-ext-dev-app-session")).toBeNull();
