@@ -30,6 +30,15 @@ const previousCache: BootstrapCacheRecord = {
   snapshot: previousSnapshot,
 };
 
+const invalidUnauthenticatedCache: BootstrapCacheRecord = {
+  fetchedAt: 0,
+  isValid: false,
+  snapshot: {
+    auth: { status: "unauthenticated", loginUrl: "/login" },
+    version: { status: "supported" },
+  },
+};
+
 function createDeferred<TValue>(): Deferred<TValue> {
   let rejectDeferred: (reason: unknown) => void = () => {};
   let resolveDeferred: (value: TValue) => void = () => {};
@@ -217,6 +226,46 @@ describe("background bootstrap core", () => {
       snapshot: unauthenticatedSnapshot,
     });
     expect(testRuntime.writeBootstrapCache).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes invalid unauthenticated cache before rendering popup bootstrap", async () => {
+    const authenticatedSnapshot = {
+      auth: { status: "authenticated" as const },
+      assets: [],
+      packages: [],
+      subscription: {
+        countdownSeconds: 0,
+        endAt: null,
+        packageName: null,
+        status: "none" as const,
+      },
+      user: {
+        avatarUrl: null,
+        email: "user@example.com",
+        id: "user-id",
+        publicId: "PUB-001",
+        username: "user",
+      },
+      version: { status: "supported" as const },
+    };
+    const testRuntime = await importBootstrapCoreTestRuntime(invalidUnauthenticatedCache, () =>
+      Promise.resolve({ ok: true, status: 200, value: authenticatedSnapshot }),
+    );
+
+    await expect(testRuntime.bootstrapCore.readBootstrapState(false)).resolves.toEqual({
+      cache: {
+        fetchedAt: expect.any(Number) as number,
+        isValid: true,
+        snapshot: authenticatedSnapshot,
+      },
+      isSyncing: false,
+    });
+    expect(testRuntime.fetchExtensionBootstrap).toHaveBeenCalledTimes(1);
+    expect(testRuntime.getCurrentCache()).toEqual({
+      fetchedAt: expect.any(Number) as number,
+      isValid: true,
+      snapshot: authenticatedSnapshot,
+    });
   });
 
   it("clears persisted bootstrap cache on logout", async () => {

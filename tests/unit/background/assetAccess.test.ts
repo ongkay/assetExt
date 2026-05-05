@@ -160,6 +160,9 @@ async function importAssetAccessTestRuntime({
   vi.doMock("@/background/core/bootstrap", () => ({
     createExtensionApiConfig: vi.fn(() => ({ baseUrl: "http://localhost:3000" })),
   }));
+  vi.doMock("@/background/core/productionOrigin", () => ({
+    ensureProductionOriginHeaderRuleReady: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/api/extensionApi", () => ({
     fetchExtensionAsset: vi.fn(() => {
       const nextAssetResponse = assetResponses.shift() ?? readyAssetResponse;

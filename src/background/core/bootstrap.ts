@@ -23,7 +23,7 @@ let latestExplicitBootstrapCache: BootstrapCacheRecord | null = null;
 export async function readBootstrapState(forceRefresh: boolean) {
   const previousCache = await readBootstrapCache();
 
-  if (forceRefresh || !previousCache) {
+  if (forceRefresh || !previousCache || !previousCache.isValid) {
     const cache = await syncBootstrapCache(previousCache);
     return { cache, isSyncing: false };
   }
