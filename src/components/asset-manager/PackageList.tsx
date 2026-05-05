@@ -1,13 +1,7 @@
 import { CreditCardIcon, ExternalLinkIcon, PackageIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ExtensionPackage } from "@/lib/api/extensionApiTypes";
 
 import { createPackageCheckoutUrl } from "./packageCheckoutUrl";

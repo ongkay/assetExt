@@ -23,14 +23,14 @@ import {
   watchlistsSearchInputSelector,
   watchlistsSectionContainerSelector,
   watchlistsSectionTitleSelector,
-} from './tvSelectors';
+} from "./tvSelectors";
 import {
   disableRestrictedNavigationButtons,
   findButtonByNormalizedText,
   isTvMobileLayout,
   normalizeText,
   syncRestrictedListRowVisibility,
-} from './tvDomUtils';
+} from "./tvDomUtils";
 
 type RestrictedActiveWatchlistState = {
   activeWatchlistTitle: string;
@@ -53,7 +53,7 @@ function getRestrictedActiveWatchlistState(publicId: string | null): RestrictedA
   const activeWatchlistTitle = normalizeText(
     document.querySelector(desktopWatchlistActiveTitleSelector)?.textContent,
   );
-  const requiredPublicId = publicId?.trim() ?? '';
+  const requiredPublicId = publicId?.trim() ?? "";
   const isOwnedWatchlist =
     activeWatchlistTitle.length > 0 &&
     requiredPublicId.length > 0 &&
@@ -99,11 +99,11 @@ function syncRestrictedDesktopWatchlistSymbolRow(
   preserveDesktopWatchlistRowState(symbolRow);
   bindRestrictedDesktopWatchlistRow(symbolRow);
 
-  symbolRow.dataset.assetManagerWatchlistRestricted = shouldRestrictSymbolRow ? 'true' : 'false';
-  symbolRow.dataset.assetManagerWatchlistContextMenuRestricted = 'true';
+  symbolRow.dataset.assetManagerWatchlistRestricted = shouldRestrictSymbolRow ? "true" : "false";
+  symbolRow.dataset.assetManagerWatchlistContextMenuRestricted = "true";
   symbolRow.setAttribute(
-    'draggable',
-    shouldRestrictSymbolRow ? 'false' : symbolRow.dataset.assetManagerOriginalDraggable || 'true',
+    "draggable",
+    shouldRestrictSymbolRow ? "false" : symbolRow.dataset.assetManagerOriginalDraggable || "true",
   );
 
   const removeButton = symbolRow.querySelector(desktopWatchlistRemoveButtonSelector);
@@ -115,20 +115,20 @@ function syncRestrictedDesktopWatchlistSymbolRow(
 
 function preserveDesktopWatchlistRowState(symbolRow: HTMLDivElement) {
   if (symbolRow.dataset.assetManagerOriginalDraggable === undefined) {
-    symbolRow.dataset.assetManagerOriginalDraggable = symbolRow.getAttribute('draggable') || '';
+    symbolRow.dataset.assetManagerOriginalDraggable = symbolRow.getAttribute("draggable") || "";
   }
 }
 
 function bindRestrictedDesktopWatchlistRow(symbolRow: HTMLDivElement) {
-  if (symbolRow.dataset.assetManagerWatchlistBound === 'true') {
+  if (symbolRow.dataset.assetManagerWatchlistBound === "true") {
     return;
   }
 
-  symbolRow.dataset.assetManagerWatchlistBound = 'true';
-  symbolRow.addEventListener('dragstart', handleRestrictedDesktopWatchlistDragEvent, true);
-  symbolRow.addEventListener('dragover', handleRestrictedDesktopWatchlistDragEvent, true);
-  symbolRow.addEventListener('drop', handleRestrictedDesktopWatchlistDragEvent, true);
-  symbolRow.addEventListener('contextmenu', handleRestrictedDesktopWatchlistContextMenu, true);
+  symbolRow.dataset.assetManagerWatchlistBound = "true";
+  symbolRow.addEventListener("dragstart", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("dragover", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("drop", handleRestrictedDesktopWatchlistDragEvent, true);
+  symbolRow.addEventListener("contextmenu", handleRestrictedDesktopWatchlistContextMenu, true);
 }
 
 function handleRestrictedDesktopWatchlistDragEvent(event: Event) {
@@ -138,7 +138,7 @@ function handleRestrictedDesktopWatchlistDragEvent(event: Event) {
     return;
   }
 
-  if (symbolRow.dataset.assetManagerWatchlistRestricted !== 'true') {
+  if (symbolRow.dataset.assetManagerWatchlistRestricted !== "true") {
     return;
   }
 
@@ -154,7 +154,7 @@ function handleRestrictedDesktopWatchlistContextMenu(event: MouseEvent) {
     return;
   }
 
-  if (symbolRow.dataset.assetManagerWatchlistContextMenuRestricted !== 'true') {
+  if (symbolRow.dataset.assetManagerWatchlistContextMenuRestricted !== "true") {
     return;
   }
 
@@ -168,29 +168,21 @@ function syncRestrictedDesktopWatchlistRemoveButton(
   shouldRestrictRemoveButton: boolean,
 ) {
   bindRestrictedDesktopWatchlistRemoveButton(removeButton);
-  removeButton.dataset.assetManagerWatchlistRestricted = shouldRestrictRemoveButton ? 'true' : 'false';
-  removeButton.setAttribute('aria-disabled', shouldRestrictRemoveButton ? 'true' : 'false');
-  removeButton.style.opacity = shouldRestrictRemoveButton ? '0.5' : '';
-  removeButton.style.cursor = shouldRestrictRemoveButton ? 'not-allowed' : '';
+  removeButton.dataset.assetManagerWatchlistRestricted = shouldRestrictRemoveButton ? "true" : "false";
+  removeButton.setAttribute("aria-disabled", shouldRestrictRemoveButton ? "true" : "false");
+  removeButton.style.opacity = shouldRestrictRemoveButton ? "0.5" : "";
+  removeButton.style.cursor = shouldRestrictRemoveButton ? "not-allowed" : "";
 }
 
 function bindRestrictedDesktopWatchlistRemoveButton(removeButton: HTMLSpanElement) {
-  if (removeButton.dataset.assetManagerWatchlistBound === 'true') {
+  if (removeButton.dataset.assetManagerWatchlistBound === "true") {
     return;
   }
 
-  removeButton.dataset.assetManagerWatchlistBound = 'true';
-  removeButton.addEventListener('click', handleRestrictedDesktopWatchlistRemoveButtonEvent, true);
-  removeButton.addEventListener(
-    'mousedown',
-    handleRestrictedDesktopWatchlistRemoveButtonEvent,
-    true,
-  );
-  removeButton.addEventListener(
-    'pointerdown',
-    handleRestrictedDesktopWatchlistRemoveButtonEvent,
-    true,
-  );
+  removeButton.dataset.assetManagerWatchlistBound = "true";
+  removeButton.addEventListener("click", handleRestrictedDesktopWatchlistRemoveButtonEvent, true);
+  removeButton.addEventListener("mousedown", handleRestrictedDesktopWatchlistRemoveButtonEvent, true);
+  removeButton.addEventListener("pointerdown", handleRestrictedDesktopWatchlistRemoveButtonEvent, true);
 }
 
 function handleRestrictedDesktopWatchlistRemoveButtonEvent(event: Event) {
@@ -200,7 +192,7 @@ function handleRestrictedDesktopWatchlistRemoveButtonEvent(event: Event) {
     return;
   }
 
-  if (removeButton.dataset.assetManagerWatchlistRestricted !== 'true') {
+  if (removeButton.dataset.assetManagerWatchlistRestricted !== "true") {
     return;
   }
 
@@ -250,43 +242,41 @@ function disableRestrictedCreateLimitOrderButton(createLimitOrderButton: HTMLEle
   preserveRestrictedCreateLimitOrderButtonState(createLimitOrderButton);
   bindRestrictedCreateLimitOrderButton(createLimitOrderButton);
 
-  createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted = 'true';
-  createLimitOrderButton.setAttribute('aria-disabled', 'true');
-  createLimitOrderButton.style.opacity = '0.5';
-  createLimitOrderButton.style.cursor = 'not-allowed';
+  createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted = "true";
+  createLimitOrderButton.setAttribute("aria-disabled", "true");
+  createLimitOrderButton.style.opacity = "0.5";
+  createLimitOrderButton.style.cursor = "not-allowed";
   createLimitOrderButton.tabIndex = -1;
 }
 
 function preserveRestrictedCreateLimitOrderButtonState(createLimitOrderButton: HTMLElement) {
   if (createLimitOrderButton.dataset.assetManagerOriginalAriaDisabled === undefined) {
     createLimitOrderButton.dataset.assetManagerOriginalAriaDisabled =
-      createLimitOrderButton.getAttribute('aria-disabled') || '';
+      createLimitOrderButton.getAttribute("aria-disabled") || "";
   }
 
   if (createLimitOrderButton.dataset.assetManagerOriginalOpacity === undefined) {
-    createLimitOrderButton.dataset.assetManagerOriginalOpacity =
-      createLimitOrderButton.style.opacity || '';
+    createLimitOrderButton.dataset.assetManagerOriginalOpacity = createLimitOrderButton.style.opacity || "";
   }
 
   if (createLimitOrderButton.dataset.assetManagerOriginalCursor === undefined) {
-    createLimitOrderButton.dataset.assetManagerOriginalCursor =
-      createLimitOrderButton.style.cursor || '';
+    createLimitOrderButton.dataset.assetManagerOriginalCursor = createLimitOrderButton.style.cursor || "";
   }
 
   if (createLimitOrderButton.dataset.assetManagerOriginalTabIndex === undefined) {
     createLimitOrderButton.dataset.assetManagerOriginalTabIndex =
-      createLimitOrderButton.getAttribute('tabindex') || '';
+      createLimitOrderButton.getAttribute("tabindex") || "";
   }
 }
 
 function bindRestrictedCreateLimitOrderButton(createLimitOrderButton: HTMLElement) {
-  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound === 'true') {
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound === "true") {
     return;
   }
 
-  createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound = 'true';
+  createLimitOrderButton.dataset.assetManagerCreateLimitOrderBound = "true";
 
-  for (const eventName of ['click', 'mousedown', 'pointerdown']) {
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
     createLimitOrderButton.addEventListener(
       eventName,
       handleRestrictedCreateLimitOrderButtonPointerEvent,
@@ -294,11 +284,7 @@ function bindRestrictedCreateLimitOrderButton(createLimitOrderButton: HTMLElemen
     );
   }
 
-  createLimitOrderButton.addEventListener(
-    'keydown',
-    handleRestrictedCreateLimitOrderButtonKeyDown,
-    true,
-  );
+  createLimitOrderButton.addEventListener("keydown", handleRestrictedCreateLimitOrderButtonKeyDown, true);
 }
 
 function handleRestrictedCreateLimitOrderButtonPointerEvent(event: Event) {
@@ -308,7 +294,7 @@ function handleRestrictedCreateLimitOrderButtonPointerEvent(event: Event) {
     return;
   }
 
-  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== 'true') {
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== "true") {
     return;
   }
 
@@ -324,11 +310,11 @@ function handleRestrictedCreateLimitOrderButtonKeyDown(event: KeyboardEvent) {
     return;
   }
 
-  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== 'true') {
+  if (createLimitOrderButton.dataset.assetManagerCreateLimitOrderRestricted !== "true") {
     return;
   }
 
-  if (event.key !== 'Enter' && event.key !== ' ') {
+  if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
 
@@ -337,49 +323,42 @@ function handleRestrictedCreateLimitOrderButtonKeyDown(event: KeyboardEvent) {
   event.stopImmediatePropagation();
 }
 
-function syncRestrictedWatchlistActionButton(
-  actionButton: HTMLButtonElement,
-  shouldDisableButton: boolean,
-) {
+function syncRestrictedWatchlistActionButton(actionButton: HTMLButtonElement, shouldDisableButton: boolean) {
   if (actionButton.dataset.assetManagerOriginalDisabled === undefined) {
-    actionButton.dataset.assetManagerOriginalDisabled = actionButton.disabled ? 'true' : 'false';
+    actionButton.dataset.assetManagerOriginalDisabled = actionButton.disabled ? "true" : "false";
   }
 
   if (actionButton.dataset.assetManagerOriginalAriaDisabled === undefined) {
-    actionButton.dataset.assetManagerOriginalAriaDisabled =
-      actionButton.getAttribute('aria-disabled') || '';
+    actionButton.dataset.assetManagerOriginalAriaDisabled = actionButton.getAttribute("aria-disabled") || "";
   }
 
   if (actionButton.dataset.assetManagerOriginalOpacity === undefined) {
-    actionButton.dataset.assetManagerOriginalOpacity = actionButton.style.opacity || '';
+    actionButton.dataset.assetManagerOriginalOpacity = actionButton.style.opacity || "";
   }
 
   if (actionButton.dataset.assetManagerOriginalCursor === undefined) {
-    actionButton.dataset.assetManagerOriginalCursor = actionButton.style.cursor || '';
+    actionButton.dataset.assetManagerOriginalCursor = actionButton.style.cursor || "";
   }
 
-  const originalDisabled = actionButton.dataset.assetManagerOriginalDisabled === 'true';
+  const originalDisabled = actionButton.dataset.assetManagerOriginalDisabled === "true";
 
   actionButton.disabled = shouldDisableButton || originalDisabled;
 
   if (shouldDisableButton) {
-    actionButton.setAttribute('aria-disabled', 'true');
-    actionButton.style.opacity = '0.5';
-    actionButton.style.cursor = 'not-allowed';
+    actionButton.setAttribute("aria-disabled", "true");
+    actionButton.style.opacity = "0.5";
+    actionButton.style.cursor = "not-allowed";
     return;
   }
 
-  if (actionButton.dataset.assetManagerOriginalAriaDisabled === '') {
-    actionButton.removeAttribute('aria-disabled');
+  if (actionButton.dataset.assetManagerOriginalAriaDisabled === "") {
+    actionButton.removeAttribute("aria-disabled");
   } else if (actionButton.dataset.assetManagerOriginalAriaDisabled) {
-    actionButton.setAttribute(
-      'aria-disabled',
-      actionButton.dataset.assetManagerOriginalAriaDisabled,
-    );
+    actionButton.setAttribute("aria-disabled", actionButton.dataset.assetManagerOriginalAriaDisabled);
   }
 
-  actionButton.style.opacity = actionButton.dataset.assetManagerOriginalOpacity || '';
-  actionButton.style.cursor = actionButton.dataset.assetManagerOriginalCursor || '';
+  actionButton.style.opacity = actionButton.dataset.assetManagerOriginalOpacity || "";
+  actionButton.style.cursor = actionButton.dataset.assetManagerOriginalCursor || "";
 }
 
 function syncRestrictedMobileWatchlistSymbolDrawers(publicId: string | null) {
@@ -387,16 +366,11 @@ function syncRestrictedMobileWatchlistSymbolDrawers(publicId: string | null) {
     return;
   }
 
-  const { isOwnedWatchlist, shouldRestrictForeignWatchlist } =
-    getRestrictedActiveWatchlistState(publicId);
+  const { isOwnedWatchlist, shouldRestrictForeignWatchlist } = getRestrictedActiveWatchlistState(publicId);
   const drawerRoots = findRestrictedMobileWatchlistSymbolDrawerRoots();
 
   for (const drawerRoot of drawerRoots) {
-    syncRestrictedMobileWatchlistSymbolDrawer(
-      drawerRoot,
-      isOwnedWatchlist,
-      shouldRestrictForeignWatchlist,
-    );
+    syncRestrictedMobileWatchlistSymbolDrawer(drawerRoot, isOwnedWatchlist, shouldRestrictForeignWatchlist);
   }
 }
 
@@ -412,7 +386,7 @@ function isMobileWatchlistSymbolDrawerRoot(drawerRoot: HTMLElement) {
     return false;
   }
 
-  return ['Symbol details…', 'Add section', 'Add symbol'].every((label) =>
+  return ["Symbol details…", "Add section", "Add symbol"].every((label) =>
     Boolean(findMobileWatchlistSymbolDrawerItemByText(drawerRoot, label)),
   );
 }
@@ -430,7 +404,7 @@ function syncRestrictedMobileWatchlistSymbolDrawer(
   );
   removeMobileWatchlistSymbolDrawerItemByPredicate(
     drawerRoot,
-    (item) => normalizeText(item.textContent) === 'Unflag all symbols',
+    (item) => normalizeText(item.textContent) === "Unflag all symbols",
   );
   removeFirstMobileWatchlistSymbolDrawerSeparator(drawerRoot);
   removeMobileWatchlistSymbolDrawerItemByPredicate(drawerRoot, (item) =>
@@ -452,7 +426,7 @@ function syncRestrictedMobileWatchlistSymbolDrawer(
     );
     restoreMobileWatchlistSymbolDrawerItem(
       drawerRoot,
-      (item) => normalizeText(item.textContent) === 'Add section',
+      (item) => normalizeText(item.textContent) === "Add section",
     );
     return;
   }
@@ -466,7 +440,7 @@ function syncRestrictedMobileWatchlistSymbolDrawer(
   );
   disableMobileWatchlistSymbolDrawerItem(
     drawerRoot,
-    (item) => normalizeText(item.textContent) === 'Add section',
+    (item) => normalizeText(item.textContent) === "Add section",
   );
 }
 
@@ -508,7 +482,7 @@ function removeFirstMobileWatchlistSymbolDrawerSeparator(drawerRoot: HTMLElement
     const previousText = normalizeText(previousItem?.textContent);
     const nextText = normalizeText(nextItem?.textContent);
 
-    if (previousText === 'Unflag all symbols' || /^Add .+ to watchlist$/.test(nextText)) {
+    if (previousText === "Unflag all symbols" || /^Add .+ to watchlist$/.test(nextText)) {
       separator.remove();
       return;
     }
@@ -516,13 +490,11 @@ function removeFirstMobileWatchlistSymbolDrawerSeparator(drawerRoot: HTMLElement
 }
 
 function getIsMobileWatchlistSymbolFlagTitleItem(menuItem: HTMLLIElement) {
-  return normalizeText(menuItem.textContent).startsWith('Flag/Unflag ');
+  return normalizeText(menuItem.textContent).startsWith("Flag/Unflag ");
 }
 
 function getIsMobileWatchlistSymbolColorMenuItem(menuItem: HTMLLIElement) {
-  return (
-    menuItem.querySelector(mobileWatchlistSymbolDrawerColorMenuItemSelector) instanceof HTMLElement
-  );
+  return menuItem.querySelector(mobileWatchlistSymbolDrawerColorMenuItemSelector) instanceof HTMLElement;
 }
 
 function disableMobileWatchlistSymbolDrawerItem(
@@ -555,51 +527,51 @@ function disableRestrictedWatchlistOwnedElement(element: HTMLElement) {
   preserveRestrictedWatchlistOwnedElementState(element);
   bindRestrictedWatchlistOwnedElement(element);
 
-  element.dataset.assetManagerWatchlistMenuRestricted = 'true';
-  element.setAttribute('aria-disabled', 'true');
-  element.style.opacity = '0.5';
-  element.style.cursor = 'not-allowed';
+  element.dataset.assetManagerWatchlistMenuRestricted = "true";
+  element.setAttribute("aria-disabled", "true");
+  element.style.opacity = "0.5";
+  element.style.cursor = "not-allowed";
 }
 
 function restoreRestrictedWatchlistOwnedElement(element: HTMLElement) {
-  element.dataset.assetManagerWatchlistMenuRestricted = 'false';
+  element.dataset.assetManagerWatchlistMenuRestricted = "false";
 
-  if (element.dataset.assetManagerOriginalAriaDisabled === '') {
-    element.removeAttribute('aria-disabled');
+  if (element.dataset.assetManagerOriginalAriaDisabled === "") {
+    element.removeAttribute("aria-disabled");
   } else if (element.dataset.assetManagerOriginalAriaDisabled) {
-    element.setAttribute('aria-disabled', element.dataset.assetManagerOriginalAriaDisabled);
+    element.setAttribute("aria-disabled", element.dataset.assetManagerOriginalAriaDisabled);
   }
 
-  element.style.opacity = element.dataset.assetManagerOriginalOpacity || '';
-  element.style.cursor = element.dataset.assetManagerOriginalCursor || '';
+  element.style.opacity = element.dataset.assetManagerOriginalOpacity || "";
+  element.style.cursor = element.dataset.assetManagerOriginalCursor || "";
 }
 
 function preserveRestrictedWatchlistOwnedElementState(element: HTMLElement) {
   if (element.dataset.assetManagerOriginalAriaDisabled === undefined) {
-    element.dataset.assetManagerOriginalAriaDisabled = element.getAttribute('aria-disabled') || '';
+    element.dataset.assetManagerOriginalAriaDisabled = element.getAttribute("aria-disabled") || "";
   }
 
   if (element.dataset.assetManagerOriginalOpacity === undefined) {
-    element.dataset.assetManagerOriginalOpacity = element.style.opacity || '';
+    element.dataset.assetManagerOriginalOpacity = element.style.opacity || "";
   }
 
   if (element.dataset.assetManagerOriginalCursor === undefined) {
-    element.dataset.assetManagerOriginalCursor = element.style.cursor || '';
+    element.dataset.assetManagerOriginalCursor = element.style.cursor || "";
   }
 }
 
 function bindRestrictedWatchlistOwnedElement(element: HTMLElement) {
-  if (element.dataset.assetManagerWatchlistMenuBound === 'true') {
+  if (element.dataset.assetManagerWatchlistMenuBound === "true") {
     return;
   }
 
-  element.dataset.assetManagerWatchlistMenuBound = 'true';
+  element.dataset.assetManagerWatchlistMenuBound = "true";
 
-  for (const eventName of ['click', 'mousedown', 'pointerdown']) {
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
     element.addEventListener(eventName, handleRestrictedWatchlistOwnedElementPointerEvent, true);
   }
 
-  element.addEventListener('keydown', handleRestrictedWatchlistOwnedElementKeyDown, true);
+  element.addEventListener("keydown", handleRestrictedWatchlistOwnedElementKeyDown, true);
 }
 
 function handleRestrictedWatchlistOwnedElementPointerEvent(event: Event) {
@@ -609,7 +581,7 @@ function handleRestrictedWatchlistOwnedElementPointerEvent(event: Event) {
     return;
   }
 
-  if (element.dataset.assetManagerWatchlistMenuRestricted !== 'true') {
+  if (element.dataset.assetManagerWatchlistMenuRestricted !== "true") {
     return;
   }
 
@@ -617,7 +589,7 @@ function handleRestrictedWatchlistOwnedElementPointerEvent(event: Event) {
   event.stopPropagation();
   event.stopImmediatePropagation();
 
-  if (event.type === 'click') {
+  if (event.type === "click") {
     window.alert(restrictedActiveWatchlistMenuMessage);
   }
 }
@@ -629,11 +601,11 @@ function handleRestrictedWatchlistOwnedElementKeyDown(event: KeyboardEvent) {
     return;
   }
 
-  if (element.dataset.assetManagerWatchlistMenuRestricted !== 'true') {
+  if (element.dataset.assetManagerWatchlistMenuRestricted !== "true") {
     return;
   }
 
-  if (event.key !== 'Enter' && event.key !== ' ') {
+  if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
 
@@ -658,10 +630,7 @@ function findRestrictedActiveWatchlistMenuRoots() {
   const desktopMenuRoots = document.querySelectorAll(desktopActiveWatchlistMenuSelector);
 
   for (const desktopMenuRoot of desktopMenuRoots) {
-    if (
-      desktopMenuRoot instanceof HTMLElement &&
-      isDesktopActiveWatchlistMenuRoot(desktopMenuRoot)
-    ) {
+    if (desktopMenuRoot instanceof HTMLElement && isDesktopActiveWatchlistMenuRoot(desktopMenuRoot)) {
       menuRoots.add(desktopMenuRoot);
     }
   }
@@ -678,26 +647,26 @@ function findRestrictedActiveWatchlistMenuRoots() {
 }
 
 function isDesktopActiveWatchlistMenuRoot(menuRoot: HTMLElement) {
-  return ['Share list', 'Rename', 'Clear list', 'Upload list…'].every((label) =>
+  return ["Share list", "Rename", "Clear list", "Upload list…"].every((label) =>
     Boolean(findActiveWatchlistMenuItemByText(menuRoot, label)),
   );
 }
 
 function syncRestrictedActiveWatchlistMenu(menuRoot: HTMLElement, isOwnedWatchlist: boolean) {
-  removeActiveWatchlistMenuItem(menuRoot, 'Add alert on the list…');
-  removeActiveWatchlistMenuItem(menuRoot, 'Share list');
+  removeActiveWatchlistMenuItem(menuRoot, "Add alert on the list…");
+  removeActiveWatchlistMenuItem(menuRoot, "Share list");
   removeEmptyActiveWatchlistMenuRows(menuRoot);
 
   if (isOwnedWatchlist) {
-    restoreActiveWatchlistMenuItem(menuRoot, 'Rename');
-    restoreActiveWatchlistMenuItem(menuRoot, 'Add section');
-    restoreActiveWatchlistMenuItem(menuRoot, 'Clear list');
+    restoreActiveWatchlistMenuItem(menuRoot, "Rename");
+    restoreActiveWatchlistMenuItem(menuRoot, "Add section");
+    restoreActiveWatchlistMenuItem(menuRoot, "Clear list");
     return;
   }
 
-  disableActiveWatchlistMenuItem(menuRoot, 'Rename');
-  disableActiveWatchlistMenuItem(menuRoot, 'Add section');
-  disableActiveWatchlistMenuItem(menuRoot, 'Clear list');
+  disableActiveWatchlistMenuItem(menuRoot, "Rename");
+  disableActiveWatchlistMenuItem(menuRoot, "Add section");
+  disableActiveWatchlistMenuItem(menuRoot, "Clear list");
 }
 
 function removeActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
@@ -747,12 +716,12 @@ function findActiveWatchlistMenuContentRoot(menuRoot: HTMLElement) {
       continue;
     }
 
-    if (childElement.classList.contains('newView-mQBvegEO')) {
+    if (childElement.classList.contains("newView-mQBvegEO")) {
       return childElement;
     }
 
     for (const nestedChild of childElement.children) {
-      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains('newView-mQBvegEO')) {
+      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains("newView-mQBvegEO")) {
         return nestedChild;
       }
     }
@@ -771,10 +740,10 @@ function disableActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
   preserveActiveWatchlistMenuItemState(menuItem);
   bindRestrictedActiveWatchlistMenuItem(menuItem);
 
-  menuItem.dataset.assetManagerWatchlistMenuRestricted = 'true';
-  menuItem.setAttribute('aria-disabled', 'true');
-  menuItem.style.opacity = '0.5';
-  menuItem.style.cursor = 'not-allowed';
+  menuItem.dataset.assetManagerWatchlistMenuRestricted = "true";
+  menuItem.setAttribute("aria-disabled", "true");
+  menuItem.style.opacity = "0.5";
+  menuItem.style.cursor = "not-allowed";
 }
 
 function restoreActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
@@ -784,44 +753,44 @@ function restoreActiveWatchlistMenuItem(menuRoot: HTMLElement, label: string) {
     return;
   }
 
-  menuItem.dataset.assetManagerWatchlistMenuRestricted = 'false';
+  menuItem.dataset.assetManagerWatchlistMenuRestricted = "false";
 
-  if (menuItem.dataset.assetManagerOriginalAriaDisabled === '') {
-    menuItem.removeAttribute('aria-disabled');
+  if (menuItem.dataset.assetManagerOriginalAriaDisabled === "") {
+    menuItem.removeAttribute("aria-disabled");
   } else if (menuItem.dataset.assetManagerOriginalAriaDisabled) {
-    menuItem.setAttribute('aria-disabled', menuItem.dataset.assetManagerOriginalAriaDisabled);
+    menuItem.setAttribute("aria-disabled", menuItem.dataset.assetManagerOriginalAriaDisabled);
   }
 
-  menuItem.style.opacity = menuItem.dataset.assetManagerOriginalOpacity || '';
-  menuItem.style.cursor = menuItem.dataset.assetManagerOriginalCursor || '';
+  menuItem.style.opacity = menuItem.dataset.assetManagerOriginalOpacity || "";
+  menuItem.style.cursor = menuItem.dataset.assetManagerOriginalCursor || "";
 }
 
 function preserveActiveWatchlistMenuItemState(menuItem: HTMLElement) {
   if (menuItem.dataset.assetManagerOriginalAriaDisabled === undefined) {
-    menuItem.dataset.assetManagerOriginalAriaDisabled = menuItem.getAttribute('aria-disabled') || '';
+    menuItem.dataset.assetManagerOriginalAriaDisabled = menuItem.getAttribute("aria-disabled") || "";
   }
 
   if (menuItem.dataset.assetManagerOriginalOpacity === undefined) {
-    menuItem.dataset.assetManagerOriginalOpacity = menuItem.style.opacity || '';
+    menuItem.dataset.assetManagerOriginalOpacity = menuItem.style.opacity || "";
   }
 
   if (menuItem.dataset.assetManagerOriginalCursor === undefined) {
-    menuItem.dataset.assetManagerOriginalCursor = menuItem.style.cursor || '';
+    menuItem.dataset.assetManagerOriginalCursor = menuItem.style.cursor || "";
   }
 }
 
 function bindRestrictedActiveWatchlistMenuItem(menuItem: HTMLElement) {
-  if (menuItem.dataset.assetManagerWatchlistMenuBound === 'true') {
+  if (menuItem.dataset.assetManagerWatchlistMenuBound === "true") {
     return;
   }
 
-  menuItem.dataset.assetManagerWatchlistMenuBound = 'true';
+  menuItem.dataset.assetManagerWatchlistMenuBound = "true";
 
-  for (const eventName of ['click', 'mousedown', 'pointerdown']) {
+  for (const eventName of ["click", "mousedown", "pointerdown"]) {
     menuItem.addEventListener(eventName, handleRestrictedActiveWatchlistMenuPointerEvent, true);
   }
 
-  menuItem.addEventListener('keydown', handleRestrictedActiveWatchlistMenuKeyDown, true);
+  menuItem.addEventListener("keydown", handleRestrictedActiveWatchlistMenuKeyDown, true);
 }
 
 function handleRestrictedActiveWatchlistMenuPointerEvent(event: Event) {
@@ -831,7 +800,7 @@ function handleRestrictedActiveWatchlistMenuPointerEvent(event: Event) {
     return;
   }
 
-  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== 'true') {
+  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== "true") {
     return;
   }
 
@@ -839,7 +808,7 @@ function handleRestrictedActiveWatchlistMenuPointerEvent(event: Event) {
   event.stopPropagation();
   event.stopImmediatePropagation();
 
-  if (event.type === 'click') {
+  if (event.type === "click") {
     window.alert(restrictedActiveWatchlistMenuMessage);
   }
 }
@@ -851,11 +820,11 @@ function handleRestrictedActiveWatchlistMenuKeyDown(event: KeyboardEvent) {
     return;
   }
 
-  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== 'true') {
+  if (menuItem.dataset.assetManagerWatchlistMenuRestricted !== "true") {
     return;
   }
 
-  if (event.key !== 'Enter' && event.key !== ' ') {
+  if (event.key !== "Enter" && event.key !== " ") {
     return;
   }
 
@@ -914,8 +883,8 @@ function isDesktopWatchlistsDialogRoot(dialogRoot: HTMLElement) {
 }
 
 function syncRestrictedWatchlistsDialog(dialogRoot: HTMLElement, publicId: string | null) {
-  const dialogName = dialogRoot.dataset.dialogName ?? '';
-  const requiredPublicId = publicId?.trim() ?? '';
+  const dialogName = dialogRoot.dataset.dialogName ?? "";
+  const requiredPublicId = publicId?.trim() ?? "";
 
   if (isDesktopWatchlistsDialogRoot(dialogRoot)) {
     disableRestrictedNavigationButtons(getRestrictedDesktopHotlistsButtons(dialogRoot));
@@ -923,17 +892,17 @@ function syncRestrictedWatchlistsDialog(dialogRoot: HTMLElement, publicId: strin
     return;
   }
 
-  if (dialogName === 'Watchlists') {
+  if (dialogName === "Watchlists") {
     disableRestrictedNavigationButtons(getRestrictedMobileHotlistsButtons(dialogRoot));
     return;
   }
 
-  if (dialogName === 'My watchlists') {
+  if (dialogName === "My watchlists") {
     syncRestrictedWatchlistsRows(dialogRoot, requiredPublicId);
     return;
   }
 
-  if (dialogName === 'Search') {
+  if (dialogName === "Search") {
     syncRestrictedWatchlistsRows(dialogRoot, requiredPublicId);
   }
 }
@@ -945,14 +914,14 @@ function getRestrictedDesktopHotlistsButtons(dialogRoot: HTMLElement) {
 }
 
 function getRestrictedMobileHotlistsButtons(dialogRoot: HTMLElement) {
-  const hotlistsButton = findButtonByNormalizedText(dialogRoot, 'Hotlists');
+  const hotlistsButton = findButtonByNormalizedText(dialogRoot, "Hotlists");
 
   return hotlistsButton ? [hotlistsButton] : [];
 }
 
 function syncRestrictedWatchlistsRows(dialogRoot: HTMLElement, requiredPublicId: string) {
   const layoutItems = getOrderedWatchlistsLayoutItems(dialogRoot);
-  let currentSectionTitle = '';
+  let currentSectionTitle = "";
 
   for (const layoutItem of layoutItems) {
     if (layoutItem.matches(watchlistsSectionContainerSelector)) {
@@ -960,10 +929,10 @@ function syncRestrictedWatchlistsRows(dialogRoot: HTMLElement, requiredPublicId:
       continue;
     }
 
-    const watchlistTitle = layoutItem.dataset.title?.trim() ?? '';
+    const watchlistTitle = layoutItem.dataset.title?.trim() ?? "";
     const shouldShowRow = shouldShowRestrictedWatchlistsRow({
       currentSectionTitle,
-      dialogName: dialogRoot.dataset.dialogName ?? '',
+      dialogName: dialogRoot.dataset.dialogName ?? "",
       requiredPublicId,
       watchlistTitle,
     });
@@ -1000,7 +969,7 @@ function syncRestrictedWatchlistsSectionVisibility(dialogRoot: HTMLElement) {
       continue;
     }
 
-    if (!layoutItem.hidden && layoutItem.style.display !== 'none') {
+    if (!layoutItem.hidden && layoutItem.style.display !== "none") {
       hasVisibleRowsInSection = true;
     }
   }
@@ -1014,14 +983,11 @@ function shouldShowRestrictedWatchlistsRow(options: {
   requiredPublicId: string;
   watchlistTitle: string;
 }) {
-  if (options.dialogName === 'Search' && options.currentSectionTitle === 'Hotlists') {
+  if (options.dialogName === "Search" && options.currentSectionTitle === "Hotlists") {
     return true;
   }
 
-  return (
-    options.requiredPublicId.length > 0 &&
-    options.watchlistTitle.includes(options.requiredPublicId)
-  );
+  return options.requiredPublicId.length > 0 && options.watchlistTitle.includes(options.requiredPublicId);
 }
 
 function getOrderedWatchlistsLayoutItems(dialogRoot: HTMLElement) {
@@ -1057,7 +1023,7 @@ function syncRestrictedWatchlistsLayout(dialogRoot: HTMLElement) {
 
   if (
     layoutItems.length === 0 ||
-    !layoutItems.some((item) => item.style.position === 'absolute' || item.style.top)
+    !layoutItems.some((item) => item.style.position === "absolute" || item.style.top)
   ) {
     return;
   }
@@ -1067,7 +1033,7 @@ function syncRestrictedWatchlistsLayout(dialogRoot: HTMLElement) {
   for (const layoutItem of layoutItems) {
     preserveWatchlistsLayoutMetrics(layoutItem);
 
-    if (layoutItem.hidden || layoutItem.style.display === 'none') {
+    if (layoutItem.hidden || layoutItem.style.display === "none") {
       continue;
     }
 
@@ -1084,17 +1050,16 @@ function syncRestrictedWatchlistsLayout(dialogRoot: HTMLElement) {
 
 function preserveWatchlistsLayoutMetrics(layoutItem: HTMLElement) {
   if (layoutItem.dataset.assetManagerOriginalTop === undefined) {
-    layoutItem.dataset.assetManagerOriginalTop = layoutItem.style.top || '';
+    layoutItem.dataset.assetManagerOriginalTop = layoutItem.style.top || "";
   }
 
   if (layoutItem.dataset.assetManagerOriginalHeight === undefined) {
-    layoutItem.dataset.assetManagerOriginalHeight = layoutItem.style.height || '';
+    layoutItem.dataset.assetManagerOriginalHeight = layoutItem.style.height || "";
   }
 }
 
 function getWatchlistsLayoutHeight(layoutItem: HTMLElement) {
-  const originalHeight =
-    layoutItem.dataset.assetManagerOriginalHeight ?? layoutItem.style.height;
+  const originalHeight = layoutItem.dataset.assetManagerOriginalHeight ?? layoutItem.style.height;
   const numericHeight = Number.parseFloat(originalHeight);
 
   if (Number.isFinite(numericHeight)) {

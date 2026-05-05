@@ -1,12 +1,12 @@
-import { detectAssetPlatformFromHostname } from '@/lib/asset-access/platforms';
-import { readBootstrapCache } from '@/lib/storage/bootstrapCache';
-import { runtimeMessageType } from '@/lib/runtime/messages';
+import { detectAssetPlatformFromHostname } from "@/lib/asset-access/platforms";
+import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import { runtimeMessageType } from "@/lib/runtime/messages";
 
-import { syncRestrictedTvContextMenus } from './tv/tvContextMenus';
-import { syncRestrictedTvDialogs } from './tv/tvDialogs';
-import { syncRestrictedTvIndicatorTemplates } from './tv/tvIndicatorTemplates';
-import { syncRestrictedTvLayouts } from './tv/tvLayouts';
-import { logoutRedirectDelayMs, mainMenuButtonSelector } from './tv/tvSelectors';
+import { syncRestrictedTvContextMenus } from "./tv/tvContextMenus";
+import { syncRestrictedTvDialogs } from "./tv/tvDialogs";
+import { syncRestrictedTvIndicatorTemplates } from "./tv/tvIndicatorTemplates";
+import { syncRestrictedTvLayouts } from "./tv/tvLayouts";
+import { logoutRedirectDelayMs, mainMenuButtonSelector } from "./tv/tvSelectors";
 import {
   cleanupTvShellBootstrapState,
   createTvOverrideState,
@@ -19,19 +19,19 @@ import {
   syncRestrictedTvShell,
   syncTvShellBootstrapState,
   syncTvMainAvatar,
-} from './tv/tvShell';
-import { syncRestrictedTvTemplateMenus } from './tv/tvTemplateMenus';
-import type { TvLogoutStatus, TvOverrideState } from './tv/tvTypes';
-import { syncRestrictedTvWatchlists } from './tv/tvWatchlists';
+} from "./tv/tvShell";
+import { syncRestrictedTvTemplateMenus } from "./tv/tvTemplateMenus";
+import type { TvLogoutStatus, TvOverrideState } from "./tv/tvTypes";
+import { syncRestrictedTvWatchlists } from "./tv/tvWatchlists";
 
 export function installTvDomPatches(): () => void {
   if (!isTvPage()) {
     return () => undefined;
   }
 
-  const usesMobileLayout = document.documentElement.classList.contains('feature-mobiletouch');
+  const usesMobileLayout = document.documentElement.classList.contains("feature-mobiletouch");
   let overrideState: TvOverrideState | null = null;
-  let logoutStatus: TvLogoutStatus = 'idle';
+  let logoutStatus: TvLogoutStatus = "idle";
   let isWaitingForFirstMenuOpen = false;
   let loadOverrideStatePromise: Promise<void> | null = null;
   let mutationObserver: MutationObserver | null = null;
@@ -133,16 +133,16 @@ export function installTvDomPatches(): () => void {
     event.preventDefault();
     event.stopPropagation();
 
-    if (logoutStatus === 'loading') {
+    if (logoutStatus === "loading") {
       return;
     }
 
-    logoutStatus = 'loading';
+    logoutStatus = "loading";
     syncTvPage();
 
     void requestTvLogout()
       .then((redirectTo) => {
-        logoutStatus = 'success';
+        logoutStatus = "success";
         syncTvPage();
 
         window.setTimeout(() => {
@@ -150,7 +150,7 @@ export function installTvDomPatches(): () => void {
         }, logoutRedirectDelayMs);
       })
       .catch(() => {
-        logoutStatus = 'error';
+        logoutStatus = "error";
         syncTvPage();
       });
   }
@@ -170,7 +170,7 @@ export function installTvDomPatches(): () => void {
     }
 
     mutationObserver.observe(document.documentElement, {
-      attributeFilter: ['src'],
+      attributeFilter: ["src"],
       attributes: true,
       childList: true,
       subtree: true,
@@ -190,7 +190,7 @@ export function installTvDomPatches(): () => void {
 
   mutationObserver = new MutationObserver(handleMutations);
   resumeObserver();
-  document.addEventListener('click', handleMainMenuButtonClick, true);
+  document.addEventListener("click", handleMainMenuButtonClick, true);
 
   void ensureOverrideStateLoaded().catch(() => undefined);
   syncTvPage();
@@ -198,17 +198,17 @@ export function installTvDomPatches(): () => void {
   return () => {
     isDisposed = true;
     pauseObserver();
-    document.removeEventListener('click', handleMainMenuButtonClick, true);
+    document.removeEventListener("click", handleMainMenuButtonClick, true);
     cleanupTvShellBootstrapState();
   };
 }
 
 function isTvPage() {
-  return detectAssetPlatformFromHostname(window.location.hostname) === 'tradingview';
+  return detectAssetPlatformFromHostname(window.location.hostname) === "tradingview";
 }
 
 function syncRestrictedTvActions(overrideState: TvOverrideState | null) {
-  if (!overrideState || overrideState.menuMode !== 'restricted') {
+  if (!overrideState || overrideState.menuMode !== "restricted") {
     return;
   }
 
@@ -222,25 +222,21 @@ function syncRestrictedTvActions(overrideState: TvOverrideState | null) {
 }
 
 async function requestTvLogout(): Promise<string> {
-  if (typeof chrome === 'undefined' || !chrome.runtime?.sendMessage) {
-    throw new Error('Runtime extension tidak tersedia.');
+  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+    throw new Error("Runtime extension tidak tersedia.");
   }
 
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
       { type: runtimeMessageType.logoutRequested },
-      (
-        response:
-          | { errorMessage?: string; ok?: boolean; value?: { redirectTo: string } }
-          | undefined,
-      ) => {
+      (response: { errorMessage?: string; ok?: boolean; value?: { redirectTo: string } } | undefined) => {
         if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message ?? 'Logout gagal diproses.'));
+          reject(new Error(chrome.runtime.lastError.message ?? "Logout gagal diproses."));
           return;
         }
 
         if (!response?.ok || !response.value?.redirectTo) {
-          reject(new Error(response?.errorMessage ?? 'Logout gagal diproses.'));
+          reject(new Error(response?.errorMessage ?? "Logout gagal diproses."));
           return;
         }
 

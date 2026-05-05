@@ -22,8 +22,7 @@ describe("production origin header rule", () => {
       runtime: { id: "runtime-id" },
     });
 
-    const { syncProductionOriginHeaderRule } =
-      await import("@/background/core/productionOrigin");
+    const { syncProductionOriginHeaderRule } = await import("@/background/core/productionOrigin");
 
     await syncProductionOriginHeaderRule();
 
@@ -63,8 +62,7 @@ describe("production origin header rule", () => {
       runtime: { id: "runtime-id" },
     });
 
-    const { syncProductionOriginHeaderRule } =
-      await import("@/background/core/productionOrigin");
+    const { syncProductionOriginHeaderRule } = await import("@/background/core/productionOrigin");
 
     await syncProductionOriginHeaderRule();
 

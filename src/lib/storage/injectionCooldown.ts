@@ -8,13 +8,8 @@ function getInjectionCooldownStorageKey(platform: AssetPlatform): string {
   return `${injectionCooldownStorageKey}.${platform}`;
 }
 
-export async function isInjectionCooldownActive(
-  platform: AssetPlatform,
-  now = Date.now(),
-): Promise<boolean> {
-  const lastInjectedAt = await getChromeStorageValue<number>(
-    getInjectionCooldownStorageKey(platform),
-  );
+export async function isInjectionCooldownActive(platform: AssetPlatform, now = Date.now()): Promise<boolean> {
+  const lastInjectedAt = await getChromeStorageValue<number>(getInjectionCooldownStorageKey(platform));
 
   if (lastInjectedAt === null) {
     return false;
@@ -23,9 +18,6 @@ export async function isInjectionCooldownActive(
   return now - lastInjectedAt <= injectionCooldownMs;
 }
 
-export async function markInjectionCooldown(
-  platform: AssetPlatform,
-  now = Date.now(),
-): Promise<void> {
+export async function markInjectionCooldown(platform: AssetPlatform, now = Date.now()): Promise<void> {
   await setChromeStorageValue(getInjectionCooldownStorageKey(platform), now);
 }

@@ -9,10 +9,10 @@ import {
   restrictedHorizontalLineContextMenuAlertLabelPrefix,
   restrictedHorizontalLineContextMenuLabelPrefix,
   restrictedHorizontalLineContextMenuTradeActionPrefix,
-} from './tvSelectors';
-import { isTvMobileLayout, normalizeText } from './tvDomUtils';
+} from "./tvSelectors";
+import { isTvMobileLayout, normalizeText } from "./tvDomUtils";
 
-const desktopContextMenuSeparatorRowSelector = 'tr.row-DFIg7eOh';
+const desktopContextMenuSeparatorRowSelector = "tr.row-DFIg7eOh";
 
 const restrictedDesktopContextMenuLabelPatterns = [
   /^Add alert on /,
@@ -80,19 +80,23 @@ function isRestrictedHorizontalLineContextMenuRoot(menuRoot: HTMLElement) {
   }
 
   if (
-    !(findMenuItemByNormalizedTextPrefix(menuRoot, restrictedHorizontalLineContextMenuLabelPrefix) instanceof
-      HTMLTableRowElement)
+    !(
+      findMenuItemByNormalizedTextPrefix(menuRoot, restrictedHorizontalLineContextMenuLabelPrefix) instanceof
+      HTMLTableRowElement
+    )
   ) {
     return false;
   }
 
   return (
-    findMenuItemByNormalizedTextPrefix(menuRoot, restrictedHorizontalLineContextMenuAlertLabelPrefix) instanceof
-      HTMLTableRowElement ||
+    findMenuItemByNormalizedTextPrefix(
+      menuRoot,
+      restrictedHorizontalLineContextMenuAlertLabelPrefix,
+    ) instanceof HTMLTableRowElement ||
     [...menuRoot.querySelectorAll(drawingTemplateMenuItemSelector)].some(
       (row) =>
         row instanceof HTMLTableRowElement &&
-        (row.dataset.actionName ?? '').startsWith(restrictedHorizontalLineContextMenuTradeActionPrefix),
+        (row.dataset.actionName ?? "").startsWith(restrictedHorizontalLineContextMenuTradeActionPrefix),
     )
   );
 }
@@ -103,10 +107,8 @@ function isRestrictedMobileHorizontalLineContextMenuRoot(drawerRoot: HTMLElement
       drawerRoot,
       restrictedHorizontalLineContextMenuAlertLabelPrefix,
     ) instanceof HTMLLIElement &&
-    findMobileDrawerItemByTextPrefix(
-      drawerRoot,
-      restrictedHorizontalLineContextMenuLabelPrefix,
-    ) instanceof HTMLLIElement
+    findMobileDrawerItemByTextPrefix(drawerRoot, restrictedHorizontalLineContextMenuLabelPrefix) instanceof
+      HTMLLIElement
   );
 }
 
@@ -148,7 +150,7 @@ function filterRestrictedDesktopContextMenuRows(menuRoot: HTMLElement) {
 }
 
 function filterRestrictedMobileHorizontalLineContextMenuItems(drawerRoot: HTMLElement) {
-  const drawerChildren = [...drawerRoot.querySelectorAll(':scope > ul > li')];
+  const drawerChildren = [...drawerRoot.querySelectorAll(":scope > ul > li")];
 
   for (const drawerChild of drawerChildren) {
     if (
@@ -186,16 +188,13 @@ function hideDesktopContextMenuRowWithSpacer(menuRow: HTMLTableRowElement) {
 
   hideDesktopContextMenuRow(menuRow);
 
-  if (
-    spacerRow instanceof HTMLTableRowElement &&
-    spacerRow.matches(drawingTemplateSpacerRowSelector)
-  ) {
+  if (spacerRow instanceof HTMLTableRowElement && spacerRow.matches(drawingTemplateSpacerRowSelector)) {
     hideDesktopContextMenuRow(spacerRow);
   }
 }
 
 function cleanupRestrictedDesktopContextMenuSeparators(menuRoot: HTMLElement) {
-  const tbody = menuRoot.querySelector('tbody');
+  const tbody = menuRoot.querySelector("tbody");
 
   if (!(tbody instanceof HTMLTableSectionElement)) {
     return;
@@ -210,8 +209,8 @@ function cleanupRestrictedDesktopContextMenuSeparators(menuRoot: HTMLElement) {
       continue;
     }
 
-    const previousSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, 'backward');
-    const nextSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, 'forward');
+    const previousSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, "backward");
+    const nextSignificantRow = findAdjacentDesktopContextMenuSignificantRow(row, "forward");
 
     if (
       !(previousSignificantRow instanceof HTMLTableRowElement) ||
@@ -226,10 +225,9 @@ function cleanupRestrictedDesktopContextMenuSeparators(menuRoot: HTMLElement) {
 
 function findAdjacentDesktopContextMenuSignificantRow(
   row: HTMLTableRowElement,
-  direction: 'forward' | 'backward',
+  direction: "forward" | "backward",
 ) {
-  let currentElement =
-    direction === 'forward' ? row.nextElementSibling : row.previousElementSibling;
+  let currentElement = direction === "forward" ? row.nextElementSibling : row.previousElementSibling;
 
   while (currentElement) {
     if (
@@ -239,9 +237,7 @@ function findAdjacentDesktopContextMenuSignificantRow(
     ) {
       if (isDesktopContextMenuRowHidden(currentElement)) {
         currentElement =
-          direction === 'forward'
-            ? currentElement.nextElementSibling
-            : currentElement.previousElementSibling;
+          direction === "forward" ? currentElement.nextElementSibling : currentElement.previousElementSibling;
         continue;
       }
 
@@ -249,7 +245,7 @@ function findAdjacentDesktopContextMenuSignificantRow(
     }
 
     currentElement =
-      direction === 'forward' ? currentElement.nextElementSibling : currentElement.previousElementSibling;
+      direction === "forward" ? currentElement.nextElementSibling : currentElement.previousElementSibling;
   }
 
   return null;
@@ -269,12 +265,12 @@ function getMenuItemLabel(menuRow: HTMLTableRowElement) {
 
 function hideDesktopContextMenuRow(menuRow: HTMLTableRowElement) {
   menuRow.hidden = true;
-  menuRow.setAttribute('aria-hidden', 'true');
-  menuRow.style.display = 'none';
+  menuRow.setAttribute("aria-hidden", "true");
+  menuRow.style.display = "none";
 }
 
 function isDesktopContextMenuRowHidden(menuRow: HTMLTableRowElement) {
-  return menuRow.hidden || menuRow.style.display === 'none';
+  return menuRow.hidden || menuRow.style.display === "none";
 }
 
 function isVisibleDesktopContextMenuMenuItemRow(menuRow: HTMLTableRowElement) {

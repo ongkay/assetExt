@@ -24,9 +24,7 @@ const HOST_PAGE = `
 `;
 
 test.describe("Tailwind Preflight isolation", () => {
-  test("reproduces issue: global CSS injection leaks Preflight into host page", async ({
-    page,
-  }) => {
+  test("reproduces issue: global CSS injection leaks Preflight into host page", async ({ page }) => {
     await page.setContent(HOST_PAGE);
 
     const before = await page.evaluate(() => ({

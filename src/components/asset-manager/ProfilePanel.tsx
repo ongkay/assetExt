@@ -1,21 +1,8 @@
-import {
-  ArrowLeftIcon,
-  LogOutIcon,
-  MailIcon,
-  MoonIcon,
-  SunIcon,
-  UserIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, LogOutIcon, MailIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
@@ -46,12 +33,8 @@ export function ProfilePanel({
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <Avatar size="lg" className="border border-border/50 shadow-sm">
-              {user.avatarUrl ? (
-                <AvatarImage alt={user.username} src={user.avatarUrl} />
-              ) : null}
-              <AvatarFallback className="bg-muted text-foreground">
-                {getProfileInitials(user)}
-              </AvatarFallback>
+              {user.avatarUrl ? <AvatarImage alt={user.username} src={user.avatarUrl} /> : null}
+              <AvatarFallback className="bg-muted text-foreground">{getProfileInitials(user)}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col gap-0.5">
               <CardTitle className="text-base font-semibold">{user.username}</CardTitle>
@@ -85,11 +68,7 @@ export function ProfilePanel({
         <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/30 p-3 transition-colors hover:bg-muted/50">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-md bg-background border border-border/50 text-foreground shadow-sm">
-              {theme === "dark" ? (
-                <MoonIcon className="size-4" />
-              ) : (
-                <SunIcon className="size-4" />
-              )}
+              {theme === "dark" ? <MoonIcon className="size-4" /> : <SunIcon className="size-4" />}
             </div>
             <Label htmlFor="theme-mode" className="text-sm font-medium">
               Mode Tampilan

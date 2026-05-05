@@ -1,8 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("content overlay mounted in Shadow DOM does not change host heading styles", async ({
-  page,
-}) => {
+test("content overlay mounted in Shadow DOM does not change host heading styles", async ({ page }) => {
   await page.setContent(`
     <!doctype html>
     <html>

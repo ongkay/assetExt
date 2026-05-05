@@ -1,12 +1,5 @@
-import {
-  assetPlatforms,
-  getAssetPlatformConfig,
-  type AssetPlatform,
-} from "@/lib/asset-access/platforms";
-import type {
-  ExtensionCookiePayload,
-  ExtensionCookieSameSite,
-} from "@/lib/api/extensionApiTypes";
+import { assetPlatforms, getAssetPlatformConfig, type AssetPlatform } from "@/lib/asset-access/platforms";
+import type { ExtensionCookiePayload, ExtensionCookieSameSite } from "@/lib/api/extensionApiTypes";
 
 export async function clearAssetPlatformCookies(platform: AssetPlatform): Promise<void> {
   const platformConfig = getAssetPlatformConfig(platform);
@@ -32,17 +25,11 @@ export async function clearAllAssetPlatformCookies(): Promise<void> {
   }
 }
 
-export async function injectExtensionCookies(
-  cookies: ExtensionCookiePayload[],
-): Promise<void> {
-  await Promise.all(
-    cookies.map((cookie) => chrome.cookies.set(toChromeCookieDetails(cookie))),
-  );
+export async function injectExtensionCookies(cookies: ExtensionCookiePayload[]): Promise<void> {
+  await Promise.all(cookies.map((cookie) => chrome.cookies.set(toChromeCookieDetails(cookie))));
 }
 
-export function toChromeCookieDetails(
-  cookie: ExtensionCookiePayload,
-): chrome.cookies.SetDetails {
+export function toChromeCookieDetails(cookie: ExtensionCookiePayload): chrome.cookies.SetDetails {
   return {
     domain: cookie.hostOnly ? undefined : cookie.domain,
     expirationDate: cookie.expirationDate,

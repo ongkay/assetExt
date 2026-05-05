@@ -19,9 +19,7 @@ export async function getThemePreference(): Promise<ThemePreference> {
   }
 
   try {
-    const stored = await chrome.storage.local.get<Record<string, unknown>>(
-      themePreferenceStorageKey,
-    );
+    const stored = await chrome.storage.local.get<Record<string, unknown>>(themePreferenceStorageKey);
     const theme = stored[themePreferenceStorageKey];
 
     return isThemePreference(theme) ? theme : defaultThemePreference;
@@ -47,10 +45,7 @@ export function onThemePreferenceChange(callback: (theme: ThemePreference) => vo
     return () => {};
   }
 
-  const listener: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (
-    changes,
-    areaName,
-  ) => {
+  const listener: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (changes, areaName) => {
     if (areaName !== "local") {
       return;
     }

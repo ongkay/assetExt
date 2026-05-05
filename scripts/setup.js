@@ -24,10 +24,7 @@ function question(prompt, defaultValue) {
 
 async function main() {
   const name = await question("Extension name", "My Extension");
-  const description = await question(
-    "Description",
-    "A Chrome extension built with React and TypeScript",
-  );
+  const description = await question("Description", "A Chrome extension built with React and TypeScript");
   const version = await question("Version", "0.1.0");
 
   applyTemplateMetadata({ rootDir, name, description, version });

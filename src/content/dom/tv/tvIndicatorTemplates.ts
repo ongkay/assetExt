@@ -5,12 +5,12 @@ import {
   indicatorTemplatesRestrictedTabSelector,
   indicatorTemplatesRowSelector,
   indicatorTemplatesSearchInputSelector,
-} from './tvSelectors';
+} from "./tvSelectors";
 import {
   disableRestrictedNavigationButtons,
   findButtonByNormalizedText,
   syncRestrictedListRowVisibility,
-} from './tvDomUtils';
+} from "./tvDomUtils";
 
 export function syncRestrictedTvIndicatorTemplates(publicId: string | null) {
   const dialogRoots = findRestrictedIndicatorTemplatesDialogRoots();
@@ -23,10 +23,7 @@ export function syncRestrictedTvIndicatorTemplates(publicId: string | null) {
 function findRestrictedIndicatorTemplatesDialogRoots() {
   const dialogRoots = new Set<HTMLElement>();
 
-  for (const selector of [
-    indicatorTemplatesDialogSelector,
-    indicatorTemplatesMyTemplatesDialogSelector,
-  ]) {
+  for (const selector of [indicatorTemplatesDialogSelector, indicatorTemplatesMyTemplatesDialogSelector]) {
     const matchedRoots = document.querySelectorAll(selector);
 
     for (const matchedRoot of matchedRoots) {
@@ -46,12 +43,9 @@ function isDesktopIndicatorTemplatesDialogRoot(dialogRoot: HTMLElement) {
   );
 }
 
-function syncRestrictedIndicatorTemplatesDialog(
-  dialogRoot: HTMLElement,
-  publicId: string | null,
-) {
-  const requiredPublicId = publicId?.trim() ?? '';
-  const dialogName = dialogRoot.dataset.dialogName ?? '';
+function syncRestrictedIndicatorTemplatesDialog(dialogRoot: HTMLElement, publicId: string | null) {
+  const requiredPublicId = publicId?.trim() ?? "";
+  const dialogName = dialogRoot.dataset.dialogName ?? "";
 
   if (isDesktopIndicatorTemplatesDialogRoot(dialogRoot)) {
     disableRestrictedNavigationButtons(getRestrictedDesktopIndicatorTemplatesButtons(dialogRoot));
@@ -59,12 +53,12 @@ function syncRestrictedIndicatorTemplatesDialog(
     return;
   }
 
-  if (dialogName === 'Indicator templates') {
+  if (dialogName === "Indicator templates") {
     disableRestrictedNavigationButtons(getRestrictedMobileIndicatorTemplatesButtons(dialogRoot));
     return;
   }
 
-  if (dialogName === 'My templates') {
+  if (dialogName === "My templates") {
     syncRestrictedIndicatorTemplatesRows(dialogRoot, requiredPublicId);
   }
 }
@@ -78,7 +72,7 @@ function getRestrictedDesktopIndicatorTemplatesButtons(dialogRoot: HTMLElement) 
 function getRestrictedMobileIndicatorTemplatesButtons(dialogRoot: HTMLElement) {
   const restrictedButtons: HTMLButtonElement[] = [];
 
-  for (const label of ['Technicals', 'Financials']) {
+  for (const label of ["Technicals", "Financials"]) {
     const restrictedButton = findButtonByNormalizedText(dialogRoot, label);
 
     if (restrictedButton) {
@@ -97,7 +91,7 @@ function syncRestrictedIndicatorTemplatesRows(dialogRoot: HTMLElement, requiredP
       continue;
     }
 
-    const templateTitle = templateRow.dataset.title?.trim() ?? '';
+    const templateTitle = templateRow.dataset.title?.trim() ?? "";
     const shouldShowRow = requiredPublicId.length > 0 && templateTitle.includes(requiredPublicId);
 
     syncRestrictedListRowVisibility(templateRow, shouldShowRow);

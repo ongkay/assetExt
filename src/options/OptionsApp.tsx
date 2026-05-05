@@ -1,21 +1,13 @@
 import manifestData from "../../manifest.json";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Logo } from "@/components/asset-manager/Logo";
 import { useThemePreference } from "@/lib/useThemePreference";
 
 const manifest =
-  typeof chrome !== "undefined" && chrome.runtime?.getManifest
-    ? chrome.runtime.getManifest()
-    : manifestData;
+  typeof chrome !== "undefined" && chrome.runtime?.getManifest ? chrome.runtime.getManifest() : manifestData;
 
 const extensionVersion = manifest?.version ?? "0.0.0";
 
@@ -41,8 +33,7 @@ export function OptionsApp() {
               <h1 className="text-xl font-semibold tracking-tight">Asset Manager Settings</h1>
               <p className="text-sm text-muted-foreground">Version {extensionVersion}</p>
               <p className="text-sm text-muted-foreground">
-                Atur preferensi tampilan ekstensi agar tetap nyaman dipakai di semua permukaan
-                Asset Manager.
+                Atur preferensi tampilan ekstensi agar tetap nyaman dipakai di semua permukaan Asset Manager.
               </p>
             </div>
           </div>

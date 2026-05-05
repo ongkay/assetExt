@@ -61,9 +61,7 @@ export function readBootstrapCache(): Promise<BootstrapCacheRecord | null> {
   return getChromeStorageValue<BootstrapCacheRecord>(bootstrapCacheStorageKey);
 }
 
-export function writeBootstrapCache(
-  bootstrapCacheRecord: BootstrapCacheRecord,
-): Promise<void> {
+export function writeBootstrapCache(bootstrapCacheRecord: BootstrapCacheRecord): Promise<void> {
   return setChromeStorageValue(bootstrapCacheStorageKey, bootstrapCacheRecord);
 }
 

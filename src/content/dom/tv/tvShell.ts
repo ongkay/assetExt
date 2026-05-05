@@ -1,4 +1,4 @@
-import type { BootstrapCacheRecord } from '@/lib/storage/bootstrapCache';
+import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 import {
   desktopPopupMenuSelector,
@@ -38,8 +38,8 @@ import {
   tvShellHiddenOnPendingAndRestrictedSelectors,
   tvShellStateAttributeName,
   tvRelevantMutationSelectors,
-} from './tvSelectors';
-import type { TvLogoutStatus, TvOverrideState } from './tvTypes';
+} from "./tvSelectors";
+import type { TvLogoutStatus, TvOverrideState } from "./tvTypes";
 import {
   disableButton,
   disableFavoriteButton,
@@ -48,17 +48,17 @@ import {
   getMenuItemContainer,
   hidePersistentElement,
   normalizeText,
-} from './tvDomUtils';
+} from "./tvDomUtils";
 
-type TvShellBootstrapState = 'pending' | 'default' | 'restricted';
+type TvShellBootstrapState = "pending" | "default" | "restricted";
 
 export function installTvShellBootstrapState() {
   ensureTvShellBootstrapStyle();
-  setTvShellBootstrapState('pending');
+  setTvShellBootstrapState("pending");
 }
 
 export function syncTvShellBootstrapState(overrideState: TvOverrideState | null) {
-  setTvShellBootstrapState(overrideState?.menuMode ?? 'pending');
+  setTvShellBootstrapState(overrideState?.menuMode ?? "pending");
 }
 
 export function cleanupTvShellBootstrapState() {
@@ -111,8 +111,8 @@ export function findOpenTvMenu() {
 }
 
 export function hideTvMenuUntilStateIsReady(popupMenu: HTMLElement) {
-  popupMenu.style.visibility = 'hidden';
-  popupMenu.style.pointerEvents = 'none';
+  popupMenu.style.visibility = "hidden";
+  popupMenu.style.pointerEvents = "none";
 }
 
 export function syncOpenTvPopupMenu(options: {
@@ -134,7 +134,7 @@ export function syncOpenTvPopupMenu(options: {
 
   showReadyMenu(openMenu);
 
-  if (options.overrideState?.menuMode !== 'restricted') {
+  if (options.overrideState?.menuMode !== "restricted") {
     return;
   }
 
@@ -143,27 +143,23 @@ export function syncOpenTvPopupMenu(options: {
 }
 
 export function isRelevantTvMutation(mutation: MutationRecord) {
-  if (mutation.type === 'attributes') {
+  if (mutation.type === "attributes") {
     return mutation.target instanceof Element && mutation.target.matches(mainAvatarImageSelector);
   }
 
   return [...mutation.addedNodes, ...mutation.removedNodes].some(isRelevantTvNode);
 }
 
-export function createTvOverrideState(
-  bootstrapCacheRecord: BootstrapCacheRecord | null,
-): TvOverrideState {
+export function createTvOverrideState(bootstrapCacheRecord: BootstrapCacheRecord | null): TvOverrideState {
   const user = bootstrapCacheRecord?.snapshot.user;
   const tradingViewAsset = bootstrapCacheRecord?.snapshot.assets?.find(
-    (assetSummary) => assetSummary.platform === 'tradingview',
+    (assetSummary) => assetSummary.platform === "tradingview",
   );
 
   return {
     avatarAlt: user ? getAvatarLabel(user.username, user.email, user.publicId) : null,
-    avatarSrc: user
-      ? getAvatarSource(user.avatarUrl, user.publicId, user.username, user.email)
-      : null,
-    menuMode: tradingViewAsset?.hasPrivateAccess === true ? 'default' : 'restricted',
+    avatarSrc: user ? getAvatarSource(user.avatarUrl, user.publicId, user.username, user.email) : null,
+    menuMode: tradingViewAsset?.hasPrivateAccess === true ? "default" : "restricted",
     publicId: user?.publicId?.trim() || null,
   };
 }
@@ -229,7 +225,10 @@ function findRestrictedRecentWatchlistsMenuRoots() {
     const matchedMenuRoots = document.querySelectorAll(selector);
 
     for (const matchedMenuRoot of matchedMenuRoots) {
-      if (!(matchedMenuRoot instanceof HTMLElement) || !isRestrictedRecentWatchlistsMenuRoot(matchedMenuRoot)) {
+      if (
+        !(matchedMenuRoot instanceof HTMLElement) ||
+        !isRestrictedRecentWatchlistsMenuRoot(matchedMenuRoot)
+      ) {
         continue;
       }
 
@@ -241,7 +240,7 @@ function findRestrictedRecentWatchlistsMenuRoots() {
 }
 
 function isRestrictedRecentWatchlistsMenuRoot(menuRoot: HTMLElement) {
-  return ['Create new list', 'Upload list', 'Open list'].every((labelPrefix) =>
+  return ["Create new list", "Upload list", "Open list"].every((labelPrefix) =>
     Boolean(findActiveWatchlistsMenuItemByTextPrefix(menuRoot, labelPrefix)),
   );
 }
@@ -264,12 +263,12 @@ function findWatchlistsMenuContentRoot(menuRoot: HTMLElement) {
       continue;
     }
 
-    if (childElement.classList.contains('newView-mQBvegEO')) {
+    if (childElement.classList.contains("newView-mQBvegEO")) {
       return childElement;
     }
 
     for (const nestedChild of childElement.children) {
-      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains('newView-mQBvegEO')) {
+      if (nestedChild instanceof HTMLElement && nestedChild.classList.contains("newView-mQBvegEO")) {
         return nestedChild;
       }
     }
@@ -288,7 +287,7 @@ function findWatchlistsRecentSectionRoot(menuContentRoot: HTMLElement) {
 
     if (
       recentTitleNode instanceof HTMLElement &&
-      normalizeText(recentTitleNode.textContent) === 'Recently used'
+      normalizeText(recentTitleNode.textContent) === "Recently used"
     ) {
       return childElement;
     }
@@ -336,10 +335,7 @@ function removeRecentRowgroupSections(recentItemSelector: string) {
 
     const titleContainer = rowgroup.previousElementSibling;
 
-    if (
-      !(titleContainer instanceof HTMLElement) ||
-      !isRecentlyUsedTitleContainer(titleContainer)
-    ) {
+    if (!(titleContainer instanceof HTMLElement) || !isRecentlyUsedTitleContainer(titleContainer)) {
       continue;
     }
 
@@ -361,12 +357,12 @@ function isRecentlyUsedTitleContainer(titleContainer: HTMLElement) {
     return false;
   }
 
-  return normalizeText(titleListItem.textContent) === 'Recently used';
+  return normalizeText(titleListItem.textContent) === "Recently used";
 }
 
 function showReadyMenu(popupMenu: HTMLElement) {
-  popupMenu.style.visibility = '';
-  popupMenu.style.pointerEvents = '';
+  popupMenu.style.visibility = "";
+  popupMenu.style.pointerEvents = "";
 }
 
 function removeRestrictedPopupMenuItems(popupMenu: HTMLElement) {
@@ -387,8 +383,8 @@ function patchRestrictedHomeMenuItem(homeMenuItem: HTMLAnchorElement | null) {
   }
 
   homeMenuItem.href = googleHomeUrl;
-  homeMenuItem.target = '_blank';
-  homeMenuItem.rel = 'noopener noreferrer';
+  homeMenuItem.target = "_blank";
+  homeMenuItem.rel = "noopener noreferrer";
 }
 
 function patchLogoutMenuItem(
@@ -402,16 +398,16 @@ function patchLogoutMenuItem(
 
   const logoutLabel = getLogoutLabel(logoutStatus);
 
-  logoutMenuItem.setAttribute('aria-disabled', logoutStatus === 'loading' ? 'true' : 'false');
-  logoutMenuItem.setAttribute('aria-label', logoutLabel);
+  logoutMenuItem.setAttribute("aria-disabled", logoutStatus === "loading" ? "true" : "false");
+  logoutMenuItem.setAttribute("aria-label", logoutLabel);
   updateMenuItemText(logoutMenuItem, logoutLabel);
 
-  if (logoutMenuItem.dataset.assetManagerLogoutPatched === 'true') {
+  if (logoutMenuItem.dataset.assetManagerLogoutPatched === "true") {
     return;
   }
 
-  logoutMenuItem.dataset.assetManagerLogoutPatched = 'true';
-  logoutMenuItem.addEventListener('click', onLogoutClick);
+  logoutMenuItem.dataset.assetManagerLogoutPatched = "true";
+  logoutMenuItem.addEventListener("click", onLogoutClick);
 }
 
 function removeMenuItem(menuItem: HTMLElement | null) {
@@ -434,15 +430,15 @@ function findProfileMenuItem(popupMenu: HTMLElement) {
   }
 
   return (
-    getPopupMenuItems(popupMenu).find((menuItem) => Boolean(menuItem.querySelector(profileMenuImageSelector))) ??
-    null
+    getPopupMenuItems(popupMenu).find((menuItem) =>
+      Boolean(menuItem.querySelector(profileMenuImageSelector)),
+    ) ?? null
   );
 }
 
 function findMenuItemByAriaLabel(popupMenu: HTMLElement, ariaLabel: string) {
   return (
-    getPopupMenuItems(popupMenu).find((menuItem) => menuItem.getAttribute('aria-label') === ariaLabel) ??
-    null
+    getPopupMenuItems(popupMenu).find((menuItem) => menuItem.getAttribute("aria-label") === ariaLabel) ?? null
   );
 }
 
@@ -472,19 +468,19 @@ function updateMenuItemText(menuItem: HTMLElement, label: string) {
 }
 
 function getLogoutLabel(logoutStatus: TvLogoutStatus) {
-  if (logoutStatus === 'loading') {
-    return 'Loading...';
+  if (logoutStatus === "loading") {
+    return "Loading...";
   }
 
-  if (logoutStatus === 'success') {
-    return 'Success';
+  if (logoutStatus === "success") {
+    return "Success";
   }
 
-  if (logoutStatus === 'error') {
-    return 'Logout failed';
+  if (logoutStatus === "error") {
+    return "Logout failed";
   }
 
-  return 'Logout';
+  return "Logout";
 }
 
 function isRelevantTvNode(node: Node) {
@@ -492,15 +488,12 @@ function isRelevantTvNode(node: Node) {
     return false;
   }
 
-  return node.matches(tvRelevantMutationSelectors) || Boolean(node.querySelector(tvRelevantMutationSelectors));
+  return (
+    node.matches(tvRelevantMutationSelectors) || Boolean(node.querySelector(tvRelevantMutationSelectors))
+  );
 }
 
-function getAvatarSource(
-  avatarUrl: string | null,
-  publicId: string,
-  username: string,
-  email: string,
-) {
+function getAvatarSource(avatarUrl: string | null, publicId: string, username: string, email: string) {
   if (avatarUrl) {
     return avatarUrl;
   }
@@ -512,8 +505,7 @@ function getAvatarSource(
 }
 
 function getAvatarLabel(...labelCandidates: Array<string | null | undefined>) {
-  const labelSource =
-    labelCandidates.find((candidate) => Boolean(candidate?.trim()))?.trim() ?? 'A';
+  const labelSource = labelCandidates.find((candidate) => Boolean(candidate?.trim()))?.trim() ?? "A";
 
   return labelSource.charAt(0).toUpperCase();
 }
@@ -526,16 +518,7 @@ function createFallbackAvatarUrl(seed: string, label: string) {
 }
 
 function getAvatarColor(seed: string) {
-  const palette = [
-    '#2563eb',
-    '#7c3aed',
-    '#db2777',
-    '#ea580c',
-    '#059669',
-    '#0891b2',
-    '#ca8a04',
-    '#4f46e5',
-  ];
+  const palette = ["#2563eb", "#7c3aed", "#db2777", "#ea580c", "#059669", "#0891b2", "#ca8a04", "#4f46e5"];
   let hash = 0;
 
   for (const character of seed) {
@@ -550,7 +533,7 @@ function ensureTvShellBootstrapStyle() {
     return;
   }
 
-  const styleElement = document.createElement('style');
+  const styleElement = document.createElement("style");
   styleElement.id = tvShellBootstrapStyleElementId;
   styleElement.textContent = createTvShellBootstrapStyleText();
 
@@ -566,5 +549,5 @@ function createTvShellBootstrapStyleText() {
     `html[${tvShellStateAttributeName}] ${mainAvatarBadgeSelector} { display: none !important; pointer-events: none !important; }`,
     `html[${tvShellStateAttributeName}="pending"] ${mainAvatarImageSelector} { visibility: hidden !important; }`,
     `html[${tvShellStateAttributeName}="pending"] ${tvShellHiddenOnPendingAndRestrictedSelectors}, html[${tvShellStateAttributeName}="restricted"] ${tvShellHiddenOnPendingAndRestrictedSelectors} { display: none !important; pointer-events: none !important; }`,
-  ].join('\n');
+  ].join("\n");
 }

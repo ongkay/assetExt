@@ -83,9 +83,7 @@ type RuntimeMessageResult<TValue> = {
   value: TValue | null;
 };
 
-async function sendRuntimeMessage<TValue>(
-  message: RuntimeMessage,
-): Promise<RuntimeMessageResult<TValue>> {
+async function sendRuntimeMessage<TValue>(message: RuntimeMessage): Promise<RuntimeMessageResult<TValue>> {
   if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
     return { errorMessage: "Runtime extension tidak tersedia.", value: null };
   }

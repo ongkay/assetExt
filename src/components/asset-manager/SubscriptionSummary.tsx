@@ -1,7 +1,4 @@
-import {
-  AlertCircleIcon,
-  CheckCircle2Icon,
-} from "lucide-react";
+import { AlertCircleIcon, CheckCircle2Icon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -26,9 +23,7 @@ export function SubscriptionSummary({ subscription }: SubscriptionSummaryProps) 
     <div className="flex flex-col gap-2">
       <Card className="overflow-hidden border border-border/50 bg-card shadow-sm p-3 gap-0">
         <div className="flex items-center justify-between pb-2.5 border-b border-border">
-          <span className="text-[11px] font-bold text-muted-foreground uppercase">
-            Subscription
-          </span>
+          <span className="text-[11px] font-bold text-muted-foreground uppercase">Subscription</span>
           <Badge
             variant="secondary"
             className={`gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border-0 ${

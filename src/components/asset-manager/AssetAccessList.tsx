@@ -1,9 +1,4 @@
-import {
-  ExternalLinkIcon,
-  CandlestickChartIcon,
-  TrendingUpIcon,
-  BarChart3Icon,
-} from "lucide-react";
+import { ExternalLinkIcon, CandlestickChartIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,11 +39,7 @@ function getPlatformDescription(platform: string, defaultDesc: string) {
   }
 }
 
-export function AssetAccessList({
-  assets,
-  isAccessingPlatform = null,
-  onAccessAsset,
-}: AssetAccessListProps) {
+export function AssetAccessList({ assets, isAccessingPlatform = null, onAccessAsset }: AssetAccessListProps) {
   if (assets.length === 0) {
     return (
       <Card size="sm">

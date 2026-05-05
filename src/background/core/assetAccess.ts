@@ -26,9 +26,7 @@ type PrepareAssetAccessSessionOptions = {
   platform: AssetPlatform;
 };
 
-export async function runAssetAccess(
-  options: RunAssetAccessOptions,
-): Promise<ExtensionAssetResponse> {
+export async function runAssetAccess(options: RunAssetAccessOptions): Promise<ExtensionAssetResponse> {
   const assetResponse = await prepareAssetAccessSession(options);
 
   if (assetResponse.status !== "ready") {
@@ -97,16 +95,12 @@ async function applyReadyAssetCookies(
 function getAutomaticModeFromSelection(
   assetResponse: Extract<ExtensionAssetResponse, { status: "selection_required" }>,
 ): ExtensionMode {
-  return assetResponse.availableModes.includes("private")
-    ? "private"
-    : assetResponse.defaultMode;
+  return assetResponse.availableModes.includes("private") ? "private" : assetResponse.defaultMode;
 }
 
 async function readAutomaticAssetMode(platform: AssetPlatform): Promise<ExtensionMode | null> {
   const bootstrapCache = await readBootstrapCache();
-  const asset = bootstrapCache?.snapshot.assets?.find(
-    (assetSummary) => assetSummary.platform === platform,
-  );
+  const asset = bootstrapCache?.snapshot.assets?.find((assetSummary) => assetSummary.platform === platform);
 
   if (!asset) {
     return null;

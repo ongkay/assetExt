@@ -69,10 +69,7 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.redeemCdKeyRequested: {
-      const redeemResult = await redeemExtensionCdKey(
-        createExtensionApiConfig(),
-        message.code,
-      );
+      const redeemResult = await redeemExtensionCdKey(createExtensionApiConfig(), message.code);
 
       if (!redeemResult.ok) {
         return createRuntimeErrorResponse(redeemResult.error.message);

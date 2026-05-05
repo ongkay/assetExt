@@ -48,8 +48,7 @@ export function detectAssetPlatformFromHostname(hostname: string): AssetPlatform
   for (const platform of assetPlatforms) {
     const platformConfig = getAssetPlatformConfig(platform);
     const matchesHostPattern = platformConfig.hostPatterns.some(
-      (hostPattern) =>
-        normalizedHostname === hostPattern || normalizedHostname.endsWith(`.${hostPattern}`),
+      (hostPattern) => normalizedHostname === hostPattern || normalizedHostname.endsWith(`.${hostPattern}`),
     );
 
     if (matchesHostPattern) {

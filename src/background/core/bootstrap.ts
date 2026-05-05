@@ -1,9 +1,5 @@
 import { fetchExtensionBootstrap, postExtensionLogout } from "@/lib/api/extensionApi";
-import {
-  getExtensionApiBaseUrl,
-  isDev,
-  type ExtensionApiConfig,
-} from "@/lib/api/extensionApiConfig";
+import { getExtensionApiBaseUrl, isDev, type ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
 import type { ExtensionBootstrap, ExtensionLogoutResponse } from "@/lib/api/extensionApiTypes";
 import {
   clearBootstrapCache,
@@ -72,10 +68,7 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
 
   return {
     ...logoutResult.value,
-    redirectTo: new URL(
-      logoutResult.value.redirectTo,
-      extensionApiConfig.apiBaseUrl,
-    ).toString(),
+    redirectTo: new URL(logoutResult.value.redirectTo, extensionApiConfig.apiBaseUrl).toString(),
   };
 }
 
@@ -88,19 +81,14 @@ export function createExtensionApiConfig(): ExtensionApiConfig {
   };
 }
 
-async function syncBootstrapCache(
-  previousCache: BootstrapCacheRecord | null,
-): Promise<BootstrapCacheRecord> {
+async function syncBootstrapCache(previousCache: BootstrapCacheRecord | null): Promise<BootstrapCacheRecord> {
   if (bootstrapSyncPromise) {
     return bootstrapSyncPromise;
   }
 
   const writeRevisionAtSyncStart = bootstrapWriteRevision;
 
-  bootstrapSyncPromise = fetchAndWriteBootstrapCache(
-    previousCache,
-    writeRevisionAtSyncStart,
-  ).finally(() => {
+  bootstrapSyncPromise = fetchAndWriteBootstrapCache(previousCache, writeRevisionAtSyncStart).finally(() => {
     bootstrapSyncPromise = null;
   });
 
@@ -130,10 +118,7 @@ async function fetchAndWriteBootstrapCache(
       throw new Error(bootstrapResult.error.message);
     }
 
-    const nextCache = createBootstrapCacheErrorRecord(
-      previousCache,
-      bootstrapResult.error.message,
-    );
+    const nextCache = createBootstrapCacheErrorRecord(previousCache, bootstrapResult.error.message);
 
     return writeBootstrapCacheIfSyncIsCurrent(nextCache, writeRevisionAtSyncStart);
   } catch (error) {
@@ -149,9 +134,7 @@ async function fetchAndWriteBootstrapCache(
   }
 }
 
-function createUnauthenticatedBootstrapRuntimeCache(
-  snapshot: ExtensionBootstrap,
-): BootstrapCacheRecord {
+function createUnauthenticatedBootstrapRuntimeCache(snapshot: ExtensionBootstrap): BootstrapCacheRecord {
   return {
     fetchedAt: Date.now(),
     isValid: false,

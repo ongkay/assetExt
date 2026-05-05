@@ -45,9 +45,7 @@ describe("background heartbeat", () => {
     const testRuntime = await importHeartbeatTestRuntime({ tabs: assetTabs });
 
     await Promise.all(
-      assetTabs.map((assetTab) =>
-        testRuntime.heartbeat.startHeartbeat(assetTab.id ?? 0, "tradingview"),
-      ),
+      assetTabs.map((assetTab) => testRuntime.heartbeat.startHeartbeat(assetTab.id ?? 0, "tradingview")),
     );
 
     expect(testRuntime.chromeAlarmsCreate).toHaveBeenCalledTimes(1);
@@ -122,9 +120,7 @@ async function importHeartbeatTestRuntime({
   const openTabs = new Map(tabs.flatMap((tab) => (tab.id ? [[tab.id, tab] as const] : [])));
   const activeAlarmNames = new Set<string>();
   let alarmListener: ((alarm: chrome.alarms.Alarm) => void) | null = null;
-  let tabRemovedListener:
-    | ((tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void)
-    | null = null;
+  let tabRemovedListener: ((tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void) | null = null;
 
   vi.doMock("@/background/core/bootstrap", () => ({
     createExtensionApiConfig: vi.fn(() => ({ baseUrl: "http://localhost:3000" })),
@@ -155,16 +151,12 @@ async function importHeartbeatTestRuntime({
       create: chromeAlarmsCreate,
       get: vi.fn((alarmName: string) =>
         Promise.resolve(
-          activeAlarmNames.has(alarmName)
-            ? ({ name: alarmName } as chrome.alarms.Alarm)
-            : undefined,
+          activeAlarmNames.has(alarmName) ? ({ name: alarmName } as chrome.alarms.Alarm) : undefined,
         ),
       ),
       getAll: vi.fn(() =>
         Promise.resolve(
-          Array.from(activeAlarmNames).map(
-            (alarmName) => ({ name: alarmName }) as chrome.alarms.Alarm,
-          ),
+          Array.from(activeAlarmNames).map((alarmName) => ({ name: alarmName }) as chrome.alarms.Alarm),
         ),
       ),
       onAlarm: {
@@ -184,11 +176,9 @@ async function importHeartbeatTestRuntime({
         return Promise.resolve(tab);
       }),
       onRemoved: {
-        addListener: vi.fn(
-          (listener: (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void) => {
-            tabRemovedListener = listener;
-          },
-        ),
+        addListener: vi.fn((listener: (tabId: number, removeInfo: chrome.tabs.TabRemoveInfo) => void) => {
+          tabRemovedListener = listener;
+        }),
       },
       query: vi.fn(() => Promise.resolve(Array.from(openTabs.values()))),
     },

@@ -38,9 +38,7 @@ export async function ensureStartupAssetSync(): Promise<void> {
   await startupAssetSyncPromise;
 }
 
-export async function ensureAssetSessionForPage(
-  platform: AssetPlatform,
-): Promise<AssetSessionEnsureResult> {
+export async function ensureAssetSessionForPage(platform: AssetPlatform): Promise<AssetSessionEnsureResult> {
   await ensureStartupAssetSync();
 
   let currentEntry = await readAssetSessionSyncEntry(platform);
@@ -64,10 +62,7 @@ export async function ensureAssetSessionForPage(
     const assetResponse = await prepareAssetAccessSession({ platform });
 
     if (assetResponse.status !== "ready") {
-      await markAssetSessionSyncFailure(
-        platform,
-        getAssetSessionFailureMessage(assetResponse),
-      );
+      await markAssetSessionSyncFailure(platform, getAssetSessionFailureMessage(assetResponse));
       currentEntry = await readAssetSessionSyncEntry(platform);
       return createEnsureResult("none", currentEntry);
     }
@@ -116,9 +111,7 @@ async function runStartupAssetSync(): Promise<void> {
     }
 
     for (const platform of assetPlatforms) {
-      const assetSummary = bootstrapCache.snapshot.assets?.find(
-        (asset) => asset.platform === platform,
-      );
+      const assetSummary = bootstrapCache.snapshot.assets?.find((asset) => asset.platform === platform);
       const automaticMode = assetSummary ? getAutomaticAssetMode(assetSummary) : null;
 
       if (!automaticMode) {
@@ -133,10 +126,7 @@ async function runStartupAssetSync(): Promise<void> {
   }
 }
 
-async function syncStartupAssetPlatform(
-  platform: AssetPlatform,
-  mode: ExtensionMode,
-): Promise<void> {
+async function syncStartupAssetPlatform(platform: AssetPlatform, mode: ExtensionMode): Promise<void> {
   await updateAssetSessionSyncEntry(platform, (entry) => ({
     ...entry,
     lastErrorMessage: null,
@@ -147,10 +137,7 @@ async function syncStartupAssetPlatform(
     const assetResponse = await prepareAssetAccessSession({ mode, platform });
 
     if (assetResponse.status !== "ready") {
-      await markAssetSessionSyncFailure(
-        platform,
-        getAssetSessionFailureMessage(assetResponse),
-      );
+      await markAssetSessionSyncFailure(platform, getAssetSessionFailureMessage(assetResponse));
       return;
     }
 
@@ -166,10 +153,7 @@ async function markAllAssetSessionSyncFailures(lastErrorMessage: string): Promis
   }
 }
 
-async function markAssetSessionSyncFailure(
-  platform: AssetPlatform,
-  lastErrorMessage: string,
-): Promise<void> {
+async function markAssetSessionSyncFailure(platform: AssetPlatform, lastErrorMessage: string): Promise<void> {
   await updateAssetSessionSyncEntry(platform, (entry) => ({
     ...entry,
     lastErrorMessage,

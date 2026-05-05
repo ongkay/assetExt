@@ -29,11 +29,7 @@ export function AssetModeChooser({
     return (
       <div className="flex flex-col gap-2 rounded-lg border border-border/70 bg-card p-3">
         <ChooserCopy platformLabel={platformLabel} secondsRemaining={secondsRemaining} />
-        <Button
-          disabled={isSubmitting}
-          type="button"
-          onClick={() => void onSelectMode(defaultMode)}
-        >
+        <Button disabled={isSubmitting} type="button" onClick={() => void onSelectMode(defaultMode)}>
           {defaultMode === "private" ? (
             <LockKeyholeIcon data-icon="inline-start" />
           ) : (

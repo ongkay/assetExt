@@ -15,9 +15,7 @@ type ButtonElementProps = {
 describe("asset manager link buttons", () => {
   it("disables native button semantics when Button renders an anchor", () => {
     const linkButtons = [
-      ...collectAnchorRenderedButtons(
-        UnauthenticatedPanel({ loginUrl: "http://localhost:3000/login" }),
-      ),
+      ...collectAnchorRenderedButtons(UnauthenticatedPanel({ loginUrl: "http://localhost:3000/login" })),
       ...collectAnchorRenderedButtons(
         VersionGatePanel({
           version: {
@@ -55,15 +53,8 @@ function collectAnchorRenderedButtons(node: ReactNode): ReactElement<ButtonEleme
   }
 
   const currentMatches =
-    node.type === Button && isValidElement(node.props.render) && node.props.render.type === "a"
-      ? [node]
-      : [];
-  const children = Array.isArray(node.props.children)
-    ? node.props.children
-    : [node.props.children];
+    node.type === Button && isValidElement(node.props.render) && node.props.render.type === "a" ? [node] : [];
+  const children = Array.isArray(node.props.children) ? node.props.children : [node.props.children];
 
-  return [
-    ...currentMatches,
-    ...children.flatMap((child) => collectAnchorRenderedButtons(child)),
-  ];
+  return [...currentMatches, ...children.flatMap((child) => collectAnchorRenderedButtons(child))];
 }

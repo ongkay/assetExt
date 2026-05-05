@@ -5,10 +5,7 @@ import { createPackageCheckoutUrl } from "@/components/asset-manager/packageChec
 describe("package checkout URL", () => {
   it("resolves relative checkout URLs against the API base URL", () => {
     expect(
-      createPackageCheckoutUrl(
-        "http://localhost:3000/api/extension",
-        "/paymentdummy?packageId=abc",
-      ),
+      createPackageCheckoutUrl("http://localhost:3000/api/extension", "/paymentdummy?packageId=abc"),
     ).toBe("http://localhost:3000/paymentdummy?packageId=abc");
   });
 

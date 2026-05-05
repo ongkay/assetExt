@@ -4,11 +4,7 @@ type LogoProps = {
   title?: string;
 };
 
-export function Logo({
-  className,
-  id = "asset-manager-logo",
-  title = "Asset Manager logo",
-}: LogoProps) {
+export function Logo({ className, id = "asset-manager-logo", title = "Asset Manager logo" }: LogoProps) {
   return (
     <svg
       className={className}

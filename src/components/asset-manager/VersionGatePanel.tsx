@@ -24,12 +24,9 @@ export function VersionGatePanel({ version }: VersionGatePanelProps) {
         <EmptyMedia variant="icon">
           <ShieldAlertIcon />
         </EmptyMedia>
-        <EmptyTitle>
-          {isRequiredUpdate ? "Update wajib tersedia" : "Update tersedia"}
-        </EmptyTitle>
+        <EmptyTitle>{isRequiredUpdate ? "Update wajib tersedia" : "Update tersedia"}</EmptyTitle>
         <EmptyDescription>
-          Versi terbaru {version.latestVersion}. Minimum versi yang didukung{" "}
-          {version.minimumVersion}.
+          Versi terbaru {version.latestVersion}. Minimum versi yang didukung {version.minimumVersion}.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

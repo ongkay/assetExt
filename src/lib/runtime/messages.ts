@@ -1,9 +1,5 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import type {
-  ExtensionAssetResponse,
-  ExtensionBootstrap,
-  ExtensionMode,
-} from "@/lib/api/extensionApiTypes";
+import type { ExtensionAssetResponse, ExtensionBootstrap, ExtensionMode } from "@/lib/api/extensionApiTypes";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 export const runtimeMessageType = {

@@ -22,13 +22,7 @@
     "page": "options.html",
     "open_in_tab": true
   },
-  "permissions": [
-    "alarms",
-    "cookies",
-    "declarativeNetRequestWithHostAccess",
-    "storage",
-    "tabs"
-  ],
+  "permissions": ["alarms", "cookies", "declarativeNetRequestWithHostAccess", "storage", "tabs"],
   "host_permissions": [
     "http://localhost:3000/*",
     "https://www.tradingview.com/*",

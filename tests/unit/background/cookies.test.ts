@@ -76,24 +76,12 @@ describe("background cookie helpers", () => {
   it("clears cookies for all configured asset platforms", async () => {
     const getAll = vi
       .fn()
-      .mockResolvedValueOnce([
-        { domain: ".tradingview.com", name: "tv", path: "/", storeId: "0" },
-      ])
-      .mockResolvedValueOnce([
-        { domain: "tradingview.com", name: "tv2", path: "/", storeId: "0" },
-      ])
-      .mockResolvedValueOnce([
-        { domain: ".fxreplay.com", name: "fx", path: "/", storeId: "0" },
-      ])
-      .mockResolvedValueOnce([
-        { domain: "fxreplay.com", name: "fx2", path: "/", storeId: "0" },
-      ])
-      .mockResolvedValueOnce([
-        { domain: ".forextester.com", name: "ft", path: "/", storeId: "0" },
-      ])
-      .mockResolvedValueOnce([
-        { domain: "forextester.com", name: "ft2", path: "/", storeId: "0" },
-      ]);
+      .mockResolvedValueOnce([{ domain: ".tradingview.com", name: "tv", path: "/", storeId: "0" }])
+      .mockResolvedValueOnce([{ domain: "tradingview.com", name: "tv2", path: "/", storeId: "0" }])
+      .mockResolvedValueOnce([{ domain: ".fxreplay.com", name: "fx", path: "/", storeId: "0" }])
+      .mockResolvedValueOnce([{ domain: "fxreplay.com", name: "fx2", path: "/", storeId: "0" }])
+      .mockResolvedValueOnce([{ domain: ".forextester.com", name: "ft", path: "/", storeId: "0" }])
+      .mockResolvedValueOnce([{ domain: "forextester.com", name: "ft2", path: "/", storeId: "0" }]);
     const remove = vi.fn(() => Promise.resolve(null));
 
     globalThis.chrome = {

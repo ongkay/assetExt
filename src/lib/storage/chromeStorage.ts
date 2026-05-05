@@ -12,10 +12,7 @@ export async function getChromeStorageValue<TValue>(key: string): Promise<TValue
   return storedValues[key] as TValue;
 }
 
-export async function setChromeStorageValue<TValue>(
-  key: string,
-  value: TValue,
-): Promise<void> {
+export async function setChromeStorageValue<TValue>(key: string, value: TValue): Promise<void> {
   if (typeof chrome === "undefined" || !chrome.storage?.local) {
     return;
   }

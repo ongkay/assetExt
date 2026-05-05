@@ -6,10 +6,7 @@ import type {
   ExtensionMode,
 } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import type {
-  AssetSessionSyncEntry,
-  AssetSessionSyncState,
-} from "@/lib/storage/assetSessionSync";
+import type { AssetSessionSyncEntry, AssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
 const tradingViewReadyResponse: ExtensionAssetReadyResponse = {
   cookies: [
@@ -98,9 +95,7 @@ describe("background startup asset sync", () => {
       },
     });
 
-    await expect(
-      testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview"),
-    ).resolves.toEqual({
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
       action: "reload_required",
       fallbackUsed: true,
       lastErrorMessage: null,
@@ -143,18 +138,14 @@ describe("background startup asset sync", () => {
       },
     });
 
-    await expect(
-      testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview"),
-    ).resolves.toEqual({
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
       action: "none",
       fallbackUsed: true,
       lastErrorMessage: "Subscription aktif diperlukan untuk membuka asset ini.",
       status: "failed",
     });
 
-    await expect(
-      testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview"),
-    ).resolves.toEqual({
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
       action: "none",
       fallbackUsed: true,
       lastErrorMessage: "Subscription aktif diperlukan untuk membuka asset ini.",
@@ -198,23 +189,19 @@ async function importStartupAssetSyncTestRuntime({
     prepareAssetAccessSession: vi.fn(prepareAssetAccessSession),
   }));
   vi.doMock("@/lib/storage/assetSessionSync", async (importOriginal) => {
-    const originalAssetSessionSync =
-      await importOriginal<typeof import("@/lib/storage/assetSessionSync")>();
+    const originalAssetSessionSync = await importOriginal<typeof import("@/lib/storage/assetSessionSync")>();
 
     return {
       ...originalAssetSessionSync,
       readAssetSessionSyncState: vi.fn(() => Promise.resolve(assetSessionSyncState)),
       updateAssetSessionSyncEntry: vi.fn(
-        (
-          platform: AssetPlatform,
-          updateEntry: (entry: AssetSessionSyncEntry) => AssetSessionSyncEntry,
-        ) => {
-        assetSessionSyncState = {
-          ...assetSessionSyncState,
-          [platform]: updateEntry(assetSessionSyncState[platform]),
-        };
+        (platform: AssetPlatform, updateEntry: (entry: AssetSessionSyncEntry) => AssetSessionSyncEntry) => {
+          assetSessionSyncState = {
+            ...assetSessionSyncState,
+            [platform]: updateEntry(assetSessionSyncState[platform]),
+          };
 
-        return Promise.resolve(assetSessionSyncState);
+          return Promise.resolve(assetSessionSyncState);
         },
       ),
     };

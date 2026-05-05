@@ -19,8 +19,7 @@ const mobilePublishWrapperSelector = ".mobilePublish-OhqNVIYA";
 const desktopTradeSelector = "#header-toolbar-trade-desktop";
 const quickSearchSelector = "#header-toolbar-quick-search";
 const createAlertSelector = "#header-toolbar-alerts";
-const favoriteIndicatorsSelector =
-  '#header-toolbar-indicators button[data-name="show-favorite-indicators"]';
+const favoriteIndicatorsSelector = '#header-toolbar-indicators button[data-name="show-favorite-indicators"]';
 const presetMenuFavoriteButtonSelector = 'button[data-qa-id="preset-menu-favorite-button"]';
 const presetMenuFavoriteIconSelector =
   'span.favorite-_FRQhM5Y[aria-label="Add to favorites"], span.favorite-_FRQhM5Y[aria-label="Remove from favorites"]';
@@ -30,11 +29,9 @@ const sidebarChatsSelector = 'button[data-name="union_chats"]';
 const sidebarProductsSelector = 'button[data-qa-id="products-button"]';
 const sidebarHelpSelector = 'button[data-name="help-button"]';
 const helpCenterMenuItemSelector = '[aria-label="Help Center"][data-role="menuitem"]';
-const supportRequestsMenuItemSelector =
-  '[aria-label="Support requests"][data-role="menuitem"]';
+const supportRequestsMenuItemSelector = '[aria-label="Support requests"][data-role="menuitem"]';
 const whatsNewMenuItemSelector = '[aria-label="What\'s new"][data-role="menuitem"]';
-const keyboardShortcutsMenuItemSelector =
-  '[aria-label="Keyboard shortcuts"][data-role="menuitem"]';
+const keyboardShortcutsMenuItemSelector = '[aria-label="Keyboard shortcuts"][data-role="menuitem"]';
 const getDesktopAppMenuItemSelector = '[aria-label="Get desktop app"][data-role="menuitem"]';
 const layoutRecentMenuRootSelector = "#layout-recent-root";
 const indicatorRecentMenuRootSelector = "#indicator-recent-root";
@@ -53,11 +50,10 @@ const alertsCreateEditDialogSelector = '[data-qa-id="alerts-create-edit-dialog"]
 const alertPresetsButtonSelector = 'button[data-qa-id="header-alert-presets-menu-button"]';
 const alertNotificationsButtonSelector = 'button[data-qa-id="alert-notifications-button"]';
 const alertSubmitButtonSelector = 'button[data-qa-id="submit"]';
-const indicatorTemplatesDialogSelector =
-  '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
+const indicatorTemplatesDialogSelector = '.wrapper-b8SxMnzX[data-dialog-name="Indicator templates"]';
 const drawingTemplatesMenuSelector = 'div[data-qa-id="menu-inner"].menuBox-XktvVkFF';
-const popupTemplateMenuSelector = '#popup-template-menu';
-const seriesThemePopupTemplateMenuSelector = '#series-theme-popup-template-menu';
+const popupTemplateMenuSelector = "#popup-template-menu";
+const seriesThemePopupTemplateMenuSelector = "#series-theme-popup-template-menu";
 const horizontalLineContextMenuRootSelector = "#horizontal-line-context-menu";
 const chartRightClickContextMenuRootSelector = "#chart-right-click-context-menu";
 const candleRightClickContextMenuRootSelector = "#candle-right-click-context-menu";
@@ -66,8 +62,7 @@ const drawingObjectContextMenuRootSelector = "#drawing-object-context-menu";
 const genericTableMenuRootSelector = "#generic-table-menu";
 const mobileHorizontalLineContextMenuRootSelector = "#mobile-horizontal-line-context-menu";
 const genericMobileDrawerRootSelector = "#generic-mobile-drawer";
-const layoutsDialogSelector =
-  '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
+const layoutsDialogSelector = '.wrapper-b8SxMnzX[data-name="load-layout-dialog"][data-dialog-name="Layouts"]';
 const mobileIndicatorTemplatesCategoryDialogSelector =
   '.wrapper-b8SxMnzX[data-name="indicator-templates-dialog"][data-dialog-name="Indicator templates"]';
 const mobileIndicatorTemplatesMyTemplatesDialogSelector =
@@ -80,27 +75,24 @@ const mobileMyWatchlistsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="My watchlists"]';
 const mobileSearchWatchlistsDialogSelector =
   '.wrapper-b8SxMnzX[data-name="watchlists-dialog"][data-dialog-name="Search"]';
-const desktopWatchlistActiveTitleSelector = '.headerMenuContent-mQBvegEO .titleRow-mQBvegEO';
-const desktopWatchlistSymbolRowSelector = '.watchlist-__KRxuOy .tree-MgF6KBas .wrap-IEe5qpW4';
-const desktopWatchlistRemoveButtonSelector = '.watchlist-__KRxuOy .removeButton-RsFlttSS';
+const desktopWatchlistActiveTitleSelector = ".headerMenuContent-mQBvegEO .titleRow-mQBvegEO";
+const desktopWatchlistSymbolRowSelector = ".watchlist-__KRxuOy .tree-MgF6KBas .wrap-IEe5qpW4";
+const desktopWatchlistRemoveButtonSelector = ".watchlist-__KRxuOy .removeButton-RsFlttSS";
 const desktopActiveWatchlistMenuSelector = 'div.menuBox-XktvVkFF[data-qa-id="menu-inner"]';
 const mobileActiveWatchlistMenuSelector = '[data-name="active-watchlist-menu"]';
 const watchlistAddSymbolButtonSelector = 'button[data-name="add-symbol-button"]';
 const watchlistAdvancedViewButtonSelector = 'button[data-name="advanced-view-button"]';
 const createLimitOrderButtonSelector = '[data-name="createLimitOrder"][data-role="button"]';
-const mobileWatchlistSymbolDrawerSelector = '.drawer-GQU5HVYO.positionBottom-GQU5HVYO';
+const mobileWatchlistSymbolDrawerSelector = ".drawer-GQU5HVYO.positionBottom-GQU5HVYO";
 const dialogInputSelector = '[data-qa-id="ui-lib-Input-input"]';
-const dialogSelectButtonSelector =
-  ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
+const dialogSelectButtonSelector = ".inner-slot-W53jtLjw.interactive-W53jtLjw button.button-PYEOTd6i";
 const dialogSuggestionsSelector = ".suggestions-uszkUMOz";
-const dialogSaveButtonSelector =
-  'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
+const dialogSaveButtonSelector = 'button[data-qa-id="save-btn"], button[data-qa-id="submit-button"]';
 const indicatorTemplatesTabSelector = 'button[role="tab"]';
 const indicatorTemplatesRowSelector = 'div[data-role="list-item"][data-title]';
 const watchlistsRowSelector = 'div[data-role="list-item"][data-title]';
 const watchlistsSectionTitleSelector = ".title-RvmSCAQq";
-const restrictedIndicatorTemplatesTabOverlaySelector =
-  '[data-asset-manager-restricted-tab-overlay="true"]';
+const restrictedIndicatorTemplatesTabOverlaySelector = '[data-asset-manager-restricted-tab-overlay="true"]';
 const restrictedIndicatorTemplatesAccessDeniedMessage =
   "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
 const restrictedActiveWatchlistMenuMessage = "watchlist bukan milik anda";
@@ -155,13 +147,9 @@ describe("TV DOM patches", () => {
     expectSelectorToBeHidden(sidebarAlertsSelector);
     expectSelectorToBeHidden(sidebarChatsSelector);
     expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(true);
-    expect(getButtonBySelector(sidebarProductsSelector).getAttribute("aria-disabled")).toBe(
-      "true",
-    );
+    expect(getButtonBySelector(sidebarProductsSelector).getAttribute("aria-disabled")).toBe("true");
     expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(true);
-    expect(getButtonBySelector(sidebarHelpSelector).getAttribute("aria-disabled")).toBe(
-      "true",
-    );
+    expect(getButtonBySelector(sidebarHelpSelector).getAttribute("aria-disabled")).toBe("true");
     expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeNull();
     expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
     expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeNull();
@@ -304,9 +292,9 @@ describe("TV DOM patches", () => {
     expect(document.documentElement.getAttribute(tvShellStateAttributeName)).toBe("default");
     expect(window.getComputedStyle(getMainAvatarImage()).visibility).toBe("visible");
     expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-pending-private.png");
-    expect(window.getComputedStyle(getMenuItemBySelector(desktopPublishSelector) as Element).display).not.toBe(
-      "none",
-    );
+    expect(
+      window.getComputedStyle(getMenuItemBySelector(desktopPublishSelector) as Element).display,
+    ).not.toBe("none");
 
     disposeTvDomPatches();
   });
@@ -357,15 +345,11 @@ describe("TV DOM patches", () => {
     expect(getMenuItemBySelector(sidebarChatsSelector)).toBeInstanceOf(HTMLElement);
     expect(getButtonBySelector(sidebarProductsSelector).disabled).toBe(false);
     expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(false);
-    expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeInstanceOf(
-      HTMLElement,
-    );
+    expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(
-      HTMLElement,
-    );
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemByTextPrefix("Language")).toBeInstanceOf(HTMLElement);
     expect(getHomeMenuItem().getAttribute("href")).toBe("/");
@@ -434,9 +418,7 @@ describe("TV DOM patches", () => {
     expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(supportRequestsMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(whatsNewMenuItemSelector)).toBeInstanceOf(HTMLElement);
-    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(
-      HTMLElement,
-    );
+    expect(getMenuItemBySelector(keyboardShortcutsMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemBySelector(getDesktopAppMenuItemSelector)).toBeInstanceOf(HTMLElement);
     expect(getMenuItemByTextPrefix("Language")).toBeInstanceOf(HTMLElement);
     expect(getHomeMenuItem().getAttribute("href")).toBe("/");
@@ -464,19 +446,13 @@ describe("TV DOM patches", () => {
     expect(getRootText(layoutRecentMenuRootSelector)).toContain("Open layout");
     expect(getRootText(layoutRecentMenuRootSelector)).not.toContain("Recently used");
 
-    expect(
-      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
-    ).toBeNull();
-    expect(
-      queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector),
-    ).toBeNull();
+    expect(queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector)).toBeNull();
+    expect(queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector)).toBeNull();
     expect(countWithin(indicatorRecentMenuRootSelector, menuDividerSelector)).toBe(1);
     expect(getRootText(indicatorRecentMenuRootSelector)).toContain("Open template");
     expect(getRootText(indicatorRecentMenuRootSelector)).not.toContain("Recently used");
 
-    expect(
-      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
-    ).toBeNull();
+    expect(queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector)).toBeNull();
     expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(2);
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Create new list");
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
@@ -498,25 +474,25 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    expect(
-      queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector),
-    ).toBeInstanceOf(HTMLElement);
-    expect(
-      queryWithin(layoutRecentMenuRootSelector, recentTitleListItemSelector),
-    ).toBeInstanceOf(HTMLElement);
+    expect(queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector)).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(queryWithin(layoutRecentMenuRootSelector, recentTitleListItemSelector)).toBeInstanceOf(
+      HTMLElement,
+    );
     expect(countWithin(layoutRecentMenuRootSelector, menuDividerSelector)).toBe(2);
 
-    expect(
-      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
-    ).toBeInstanceOf(HTMLElement);
-    expect(
-      queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector),
-    ).toBeInstanceOf(HTMLElement);
+    expect(queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector)).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(queryWithin(indicatorRecentMenuRootSelector, recentTitleListItemSelector)).toBeInstanceOf(
+      HTMLElement,
+    );
     expect(countWithin(indicatorRecentMenuRootSelector, menuDividerSelector)).toBe(2);
 
-    expect(
-      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
-    ).toBeInstanceOf(HTMLElement);
+    expect(queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector)).toBeInstanceOf(
+      HTMLElement,
+    );
     expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(3);
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Recently used");
 
@@ -539,12 +515,8 @@ describe("TV DOM patches", () => {
     await flushAsyncWork();
 
     expect(queryWithin(layoutRecentMenuRootSelector, recentLayoutMenuItemSelector)).toBeNull();
-    expect(
-      queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector),
-    ).toBeNull();
-    expect(
-      queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector),
-    ).toBeNull();
+    expect(queryWithin(indicatorRecentMenuRootSelector, recentIndicatorMenuItemSelector)).toBeNull();
+    expect(queryWithin(watchlistsRecentMenuRootSelector, watchlistsRecentTitleSelector)).toBeNull();
     expect(countWithin(watchlistsRecentMenuRootSelector, watchlistsSeparatorSelector)).toBe(2);
     expect(getRootText(watchlistsRecentMenuRootSelector)).toContain("Open list");
 
@@ -580,11 +552,9 @@ describe("TV DOM patches", () => {
       expect(favoriteIcon.getAttribute("title")).toBeNull();
       expect(favoriteIcon.getAttribute("data-tooltip")).toBeNull();
       expect(favoriteIcon.classList.contains("apply-common-tooltip")).toBe(false);
-      expect(
-        favoriteIcon.dispatchEvent(
-          new MouseEvent("click", { bubbles: true, cancelable: true }),
-        ),
-      ).toBe(false);
+      expect(favoriteIcon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+        false,
+      );
     }
 
     disposeTvDomPatches();
@@ -618,11 +588,9 @@ describe("TV DOM patches", () => {
       expect(favoriteIcon.getAttribute("aria-disabled")).toBeNull();
       expect(favoriteIcon.getAttribute("data-tooltip")).toMatch(/favorites/i);
       expect(favoriteIcon.classList.contains("apply-common-tooltip")).toBe(true);
-      expect(
-        favoriteIcon.dispatchEvent(
-          new MouseEvent("click", { bubbles: true, cancelable: true }),
-        ),
-      ).toBe(true);
+      expect(favoriteIcon.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+        true,
+      );
     }
 
     disposeTvDomPatches();
@@ -648,15 +616,15 @@ describe("TV DOM patches", () => {
     expect(getDialogSaveButton(createDialogSelector).disabled).toBe(false);
     expect(getDialogSaveButton(renameDialogSelector).disabled).toBe(false);
     expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(false);
-    expect(
-      getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled"),
-    ).toBe("false");
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled")).toBe(
+      "false",
+    );
     expect(getDialogSelectButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
     expect(getDialogSelectButton(renameDialogSelector).disabled).toBe(true);
     expect(getDialogSuggestions(saveIndicatorTemplateDialogSelector).hidden).toBe(true);
-    expect(
-      getDialogSuggestions(saveIndicatorTemplateDialogSelector).getAttribute("aria-hidden"),
-    ).toBe("true");
+    expect(getDialogSuggestions(saveIndicatorTemplateDialogSelector).getAttribute("aria-hidden")).toBe(
+      "true",
+    );
 
     updateDialogInputValue(createDialogSelector, "50975 custom text");
     expect(getDialogSaveButton(createDialogSelector).disabled).toBe(false);
@@ -666,9 +634,9 @@ describe("TV DOM patches", () => {
 
     updateDialogInputValue(saveIndicatorTemplateDialogSelector, "custom text aja");
     expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).disabled).toBe(true);
-    expect(
-      getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled"),
-    ).toBe("true");
+    expect(getDialogSaveButton(saveIndicatorTemplateDialogSelector).getAttribute("aria-disabled")).toBe(
+      "true",
+    );
 
     disposeTvDomPatches();
   });
@@ -780,9 +748,7 @@ describe("TV DOM patches", () => {
     expect(createLimitOrderButton.style.cursor).toBe("not-allowed");
     expect(createLimitOrderButton.tabIndex).toBe(-1);
     expect(
-      createLimitOrderButton.dispatchEvent(
-        new MouseEvent("click", { bubbles: true, cancelable: true }),
-      ),
+      createLimitOrderButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
     ).toBe(false);
     expect(bubbledClickHandled).toBe(false);
 
@@ -827,11 +793,7 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    expect(getVisibleIndicatorTemplateTitles()).toEqual([
-      "50975 alpha",
-      "50975 beta",
-      "50975 gamma",
-    ]);
+    expect(getVisibleIndicatorTemplateTitles()).toEqual(["50975 alpha", "50975 beta", "50975 gamma"]);
 
     const technicalsTab = getIndicatorTemplatesTab("technicals");
     const financialsTab = getIndicatorTemplatesTab("financials");
@@ -841,9 +803,7 @@ describe("TV DOM patches", () => {
     expect(technicalsTab.style.opacity).toBe("0.5");
     expect(financialsTab.style.opacity).toBe("0.5");
     expect(technicalsTab.tabIndex).toBe(-1);
-    expect(getRestrictedIndicatorTemplatesTabOverlay("technicals")).toBeInstanceOf(
-      HTMLSpanElement,
-    );
+    expect(getRestrictedIndicatorTemplatesTabOverlay("technicals")).toBeInstanceOf(HTMLSpanElement);
 
     let bubbledClickHandled = false;
     technicalsTab.addEventListener("click", () => {
@@ -858,11 +818,7 @@ describe("TV DOM patches", () => {
     expect(alertSpy).toHaveBeenCalledWith(restrictedIndicatorTemplatesAccessDeniedMessage);
     expect(bubbledClickHandled).toBe(false);
     expect(technicalsTab.getAttribute("aria-selected")).toBe("false");
-    expect(getVisibleIndicatorTemplateTitles()).toEqual([
-      "50975 alpha",
-      "50975 beta",
-      "50975 gamma",
-    ]);
+    expect(getVisibleIndicatorTemplateTitles()).toEqual(["50975 alpha", "50975 beta", "50975 gamma"]);
 
     renderIndicatorTemplatesTab("my templates", [
       { title: "template orang lain", description: "EMA 20/50" },
@@ -944,9 +900,7 @@ describe("TV DOM patches", () => {
     await flushAsyncWork();
 
     expect(
-      getVisibleIndicatorTemplateTitlesWithin(
-        mobileIndicatorTemplatesMyTemplatesDialogSelector,
-      ),
+      getVisibleIndicatorTemplateTitlesWithin(mobileIndicatorTemplatesMyTemplatesDialogSelector),
     ).toEqual(["50975 alpha", "50975 beta", "50975 gamma"]);
 
     disposeTvDomPatches();
@@ -975,22 +929,12 @@ describe("TV DOM patches", () => {
       ).getAttribute("aria-disabled"),
     ).toBeNull();
     expect(
-      getIndicatorTemplatesButtonByText(
-        mobileIndicatorTemplatesCategoryDialogSelector,
-        "Technicals",
-      ).style.opacity,
+      getIndicatorTemplatesButtonByText(mobileIndicatorTemplatesCategoryDialogSelector, "Technicals").style
+        .opacity,
     ).toBe("");
     expect(
-      getVisibleIndicatorTemplateTitlesWithin(
-        mobileIndicatorTemplatesMyTemplatesDialogSelector,
-      ),
-    ).toEqual([
-      "50975 alpha",
-      "template orang lain",
-      "50975 beta",
-      "template publik",
-      "50975 gamma",
-    ]);
+      getVisibleIndicatorTemplateTitlesWithin(mobileIndicatorTemplatesMyTemplatesDialogSelector),
+    ).toEqual(["50975 alpha", "template orang lain", "50975 beta", "template publik", "50975 gamma"]);
 
     disposeTvDomPatches();
   });
@@ -1131,8 +1075,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1154,8 +1097,7 @@ describe("TV DOM patches", () => {
         publicId: "88888",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createCompactDrawingTemplatesMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1206,9 +1148,7 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    expect(getVisiblePopupTemplateTitlesWithin(seriesThemePopupTemplateMenuSelector)).toEqual([
-      "50975",
-    ]);
+    expect(getVisiblePopupTemplateTitlesWithin(seriesThemePopupTemplateMenuSelector)).toEqual(["50975"]);
     expect(getVisiblePopupTemplateActionLabelsWithin(seriesThemePopupTemplateMenuSelector)).toEqual([
       "Apply defaults",
       "Save as…",
@@ -1255,8 +1195,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}${createGenericTableMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createHorizontalLineContextMenuMarkup()}${createGenericTableMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1414,8 +1353,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1460,9 +1398,9 @@ describe("TV DOM patches", () => {
     expect(firstSymbolRow.dispatchEvent(new Event("dragstart", { bubbles: true, cancelable: true }))).toBe(
       false,
     );
-    expect(firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
-      false,
-    );
+    expect(
+      firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    ).toBe(false);
     expect(removeClickHandled).toBe(false);
 
     setDesktopWatchlistActiveTitle("50975 dua");
@@ -1484,9 +1422,9 @@ describe("TV DOM patches", () => {
     expect(firstSymbolRow.dispatchEvent(new Event("dragstart", { bubbles: true, cancelable: true }))).toBe(
       true,
     );
-    expect(firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
-      true,
-    );
+    expect(
+      firstRemoveButton.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
+    ).toBe(true);
 
     disposeTvDomPatches();
   });
@@ -1499,8 +1437,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopWatchlistSymbolsMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1538,31 +1475,35 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(
+      getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…"),
+    ).toBeNull();
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename")).toBeInstanceOf(HTMLElement);
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add section")).toBeInstanceOf(HTMLElement);
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Clear list")).toBeInstanceOf(HTMLElement);
-
-    const renameItem = getRequiredActiveWatchlistMenuItem(
-      desktopActiveWatchlistMenuSelector,
-      "Rename",
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename")).toBeInstanceOf(
+      HTMLElement,
     );
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add section")).toBeInstanceOf(
+      HTMLElement,
+    );
+    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Clear list")).toBeInstanceOf(
+      HTMLElement,
+    );
+
+    const renameItem = getRequiredActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename");
 
     expect(renameItem.style.opacity).toBe("0.5");
     expect(renameItem.style.cursor).toBe("not-allowed");
     expect(renameItem.getAttribute("aria-disabled")).toBe("true");
 
-    expect(
-      renameItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
-    ).toBe(false);
+    expect(renameItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      false,
+    );
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
     disposeTvDomPatches();
@@ -1576,20 +1517,18 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createDesktopActiveWatchlistMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(
+      getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…"),
+    ).toBeNull();
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const renameItem = getRequiredActiveWatchlistMenuItem(
-      desktopActiveWatchlistMenuSelector,
-      "Rename",
-    );
+    const renameItem = getRequiredActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Rename");
 
     expect(renameItem.style.opacity).toBe("");
     expect(renameItem.style.cursor).toBe("");
@@ -1606,22 +1545,20 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createLiveDesktopActiveWatchlistMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createDesktopWatchlistActiveTitleMarkup("50975 dua")}${createLiveDesktopActiveWatchlistMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
-    expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(
+      getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Add alert on the list…"),
+    ).toBeNull();
     expect(getActiveWatchlistMenuItem(desktopActiveWatchlistMenuSelector, "Share list")).toBeNull();
     expect(queryWithin(desktopActiveWatchlistMenuSelector, watchlistsRecentTitleSelector)).toBeNull();
     expect(getRootText(desktopActiveWatchlistMenuSelector)).not.toContain("Recently used");
     expect(
-      countWithin(
-        desktopActiveWatchlistMenuSelector,
-        '.newView-mQBvegEO > .background-wJ4EfuBP:empty',
-      ),
+      countWithin(desktopActiveWatchlistMenuSelector, ".newView-mQBvegEO > .background-wJ4EfuBP:empty"),
     ).toBe(0);
     expect(
       countWithin(
@@ -1647,26 +1584,24 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("dua")}${createMobileActiveWatchlistMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("dua")}${createMobileActiveWatchlistMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
-    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(
+      getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…"),
+    ).toBeNull();
     expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const clearListItem = getRequiredActiveWatchlistMenuItem(
-      mobileActiveWatchlistMenuSelector,
-      "Clear list",
-    );
+    const clearListItem = getRequiredActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Clear list");
 
     expect(clearListItem.style.opacity).toBe("0.5");
     expect(clearListItem.style.cursor).toBe("not-allowed");
-    expect(
-      clearListItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
-    ).toBe(false);
+    expect(clearListItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      false,
+    );
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
     disposeTvDomPatches();
@@ -1682,20 +1617,18 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("50975 dua")}${createMobileActiveWatchlistMenuMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistActiveTitleMarkup("50975 dua")}${createMobileActiveWatchlistMenuMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
     await flushAsyncWork();
 
-    expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…")).toBeNull();
+    expect(
+      getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Add alert on the list…"),
+    ).toBeNull();
     expect(getActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Share list")).toBeNull();
 
-    const clearListItem = getRequiredActiveWatchlistMenuItem(
-      mobileActiveWatchlistMenuSelector,
-      "Clear list",
-    );
+    const clearListItem = getRequiredActiveWatchlistMenuItem(mobileActiveWatchlistMenuSelector, "Clear list");
 
     expect(clearListItem.style.opacity).toBe("");
     expect(clearListItem.style.cursor).toBe("");
@@ -1716,8 +1649,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("dua")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("dua")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1735,12 +1667,8 @@ describe("TV DOM patches", () => {
     expect(getMobileWatchlistSymbolDrawerItem((text) => / Supercharts$/.test(text))).toBeNull();
     expect(getMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Add note for "))).toBeNull();
 
-    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) =>
-      text.startsWith("Remove "),
-    );
-    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem(
-      (text) => text === "Add section",
-    );
+    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Remove "));
+    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem((text) => text === "Add section");
 
     expect(removeItem.style.opacity).toBe("0.5");
     expect(removeItem.style.cursor).toBe("not-allowed");
@@ -1748,9 +1676,9 @@ describe("TV DOM patches", () => {
     expect(addSectionItem.style.opacity).toBe("0.5");
     expect(addSectionItem.style.cursor).toBe("not-allowed");
     expect(addSectionItem.getAttribute("aria-disabled")).toBe("true");
-    expect(
-      removeItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })),
-    ).toBe(false);
+    expect(removeItem.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }))).toBe(
+      false,
+    );
     expect(alertSpy).toHaveBeenCalledWith(restrictedActiveWatchlistMenuMessage);
 
     disposeTvDomPatches();
@@ -1766,8 +1694,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("50975 data")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileWatchlistDialogMarkup("50975 data")}${createMobileWatchlistSymbolDrawerMarkup("SPY")}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1780,12 +1707,8 @@ describe("TV DOM patches", () => {
     expect(getMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Flag/Unflag "))).toBeNull();
     expect(getMobileWatchlistSymbolDrawerItem((text) => text === "Unflag all symbols")).toBeNull();
 
-    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) =>
-      text.startsWith("Remove "),
-    );
-    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem(
-      (text) => text === "Add section",
-    );
+    const removeItem = getRequiredMobileWatchlistSymbolDrawerItem((text) => text.startsWith("Remove "));
+    const addSectionItem = getRequiredMobileWatchlistSymbolDrawerItem((text) => text === "Add section");
 
     expect(removeItem.style.opacity).toBe("");
     expect(removeItem.style.cursor).toBe("");
@@ -1807,8 +1730,7 @@ describe("TV DOM patches", () => {
         publicId: "50975",
       }),
     );
-    document.body.innerHTML =
-      `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}${createGenericMobileDrawerMarkup()}`;
+    document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createMobileHorizontalLineContextMenuMarkup()}${createGenericMobileDrawerMarkup()}`;
 
     const disposeTvDomPatches = installTvDomPatches();
 
@@ -1874,10 +1796,7 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    const hotlistsButton = getButtonByTextWithin(
-      mobileWatchlistsCategoryDialogSelector,
-      "Hotlists",
-    );
+    const hotlistsButton = getButtonByTextWithin(mobileWatchlistsCategoryDialogSelector, "Hotlists");
 
     expect(hotlistsButton.getAttribute("aria-disabled")).toBe("true");
     expect(hotlistsButton.style.opacity).toBe("0.5");
@@ -1923,18 +1842,10 @@ describe("TV DOM patches", () => {
     expect(getVisibleWatchlistSectionTitlesWithin(mobileMyWatchlistsDialogSelector)).toEqual([
       "Created lists",
     ]);
-    expect(
-      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "Created lists"),
-    ).toBe("0px");
-    expect(
-      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 cccd"),
-    ).toBe("41px");
-    expect(
-      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 fgfg"),
-    ).toBe("73px");
-    expect(
-      getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 siap"),
-    ).toBe("105px");
+    expect(getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "Created lists")).toBe("0px");
+    expect(getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 cccd")).toBe("41px");
+    expect(getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 fgfg")).toBe("73px");
+    expect(getWatchlistsLayoutItemTopWithin(mobileMyWatchlistsDialogSelector, "50975 siap")).toBe("105px");
 
     disposeTvDomPatches();
   });
@@ -1961,9 +1872,10 @@ describe("TV DOM patches", () => {
       "Volume Gainers",
       "Gap Gainers",
     ]);
-    expect(
-      getVisibleWatchlistSectionTitlesWithin(mobileSearchWatchlistsDialogSelector),
-    ).toEqual(["My watchlists", "Hotlists"]);
+    expect(getVisibleWatchlistSectionTitlesWithin(mobileSearchWatchlistsDialogSelector)).toEqual([
+      "My watchlists",
+      "Hotlists",
+    ]);
 
     disposeTvDomPatches();
   });
@@ -2017,9 +1929,7 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    expect(getMainAvatarImage().src.startsWith("data:image/svg+xml;charset=UTF-8,")).toBe(
-      true,
-    );
+    expect(getMainAvatarImage().src.startsWith("data:image/svg+xml;charset=UTF-8,")).toBe(true);
     expect(getMainAvatarImage().alt).toBe("O");
 
     disposeTvDomPatches();
@@ -2073,9 +1983,7 @@ describe("TV DOM patches", () => {
 
     await flushAsyncWork();
 
-    getLogoutMenuItem().dispatchEvent(
-      new MouseEvent("click", { bubbles: true, cancelable: true }),
-    );
+    getLogoutMenuItem().dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
     await flushAsyncWork();
 
@@ -2155,9 +2063,7 @@ function getDialogInput(rootSelector: string) {
 }
 
 function getDialogSaveButton(rootSelector: string) {
-  const dialogSaveButton = document.querySelector(
-    `${rootSelector} ${dialogSaveButtonSelector}`,
-  );
+  const dialogSaveButton = document.querySelector(`${rootSelector} ${dialogSaveButtonSelector}`);
 
   expect(dialogSaveButton).toBeInstanceOf(HTMLButtonElement);
 
@@ -2165,9 +2071,7 @@ function getDialogSaveButton(rootSelector: string) {
 }
 
 function getDialogSelectButton(rootSelector: string) {
-  const dialogSelectButton = document.querySelector(
-    `${rootSelector} ${dialogSelectButtonSelector}`,
-  );
+  const dialogSelectButton = document.querySelector(`${rootSelector} ${dialogSelectButtonSelector}`);
 
   expect(dialogSelectButton).toBeInstanceOf(HTMLButtonElement);
 
@@ -2175,9 +2079,7 @@ function getDialogSelectButton(rootSelector: string) {
 }
 
 function getDialogSuggestions(rootSelector: string) {
-  const dialogSuggestions = document.querySelector(
-    `${rootSelector} ${dialogSuggestionsSelector}`,
-  );
+  const dialogSuggestions = document.querySelector(`${rootSelector} ${dialogSuggestionsSelector}`);
 
   expect(dialogSuggestions).toBeInstanceOf(HTMLElement);
 
@@ -2369,7 +2271,7 @@ function getVisiblePopupTemplateTitlesWithin(rootSelector: string) {
         !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
         menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement,
     )
-    .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
+    .map((menuItem) => normalizeText(menuItem.querySelector(".label-BOZdoKo9")?.textContent));
 }
 
 function getVisiblePopupTemplateActionLabels() {
@@ -2391,7 +2293,7 @@ function getVisiblePopupTemplateActionLabelsWithin(rootSelector: string) {
         !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
         !(menuItem.querySelector('[data-name="remove-button"]') instanceof HTMLElement),
     )
-    .map((menuItem) => normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent));
+    .map((menuItem) => normalizeText(menuItem.querySelector(".label-BOZdoKo9")?.textContent));
 }
 
 function getPopupTemplateTitle(templateTitle: string) {
@@ -2407,7 +2309,7 @@ function getPopupTemplateTitleWithin(rootSelector: string, templateTitle: string
         menuItem.style.display !== "none" &&
         !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.hidden) &&
         !(menuItem.parentElement instanceof HTMLElement && menuItem.parentElement.style.display === "none") &&
-        normalizeText(menuItem.querySelector('.label-BOZdoKo9')?.textContent) === templateTitle,
+        normalizeText(menuItem.querySelector(".label-BOZdoKo9")?.textContent) === templateTitle,
     ) ?? null
   );
 }
@@ -2420,9 +2322,7 @@ function getVisibleTableMenuLabelsWithin(rootSelector: string) {
   return [...(menuRoot as HTMLElement).querySelectorAll('tr[data-role="menuitem"]')]
     .filter(
       (menuRow): menuRow is HTMLTableRowElement =>
-        menuRow instanceof HTMLTableRowElement &&
-        !menuRow.hidden &&
-        menuRow.style.display !== "none",
+        menuRow instanceof HTMLTableRowElement && !menuRow.hidden && menuRow.style.display !== "none",
     )
     .map((menuRow) => menuRow.querySelector('span[data-label="true"]'))
     .filter((label): label is HTMLSpanElement => label instanceof HTMLSpanElement)
@@ -2536,9 +2436,7 @@ function getWatchlistsLayoutItemTopWithin(rootSelector: string, itemText: string
 }
 
 function getIndicatorTemplatesTab(tabId: "my templates" | "technicals" | "financials") {
-  const tabButton = getIndicatorTemplatesDialogRoot().querySelector(
-    `button[role="tab"][id="${tabId}"]`,
-  );
+  const tabButton = getIndicatorTemplatesDialogRoot().querySelector(`button[role="tab"][id="${tabId}"]`);
 
   expect(tabButton).toBeInstanceOf(HTMLButtonElement);
 
@@ -2546,9 +2444,7 @@ function getIndicatorTemplatesTab(tabId: "my templates" | "technicals" | "financ
 }
 
 function getWatchlistsTab(tabId: "my-watch-lists" | "hot-lists") {
-  const tabButton = document.querySelector(
-    `${desktopWatchlistsDialogSelector} button[role="tab"]#${tabId}`,
-  );
+  const tabButton = document.querySelector(`${desktopWatchlistsDialogSelector} button[role="tab"]#${tabId}`);
 
   expect(tabButton).toBeInstanceOf(HTMLButtonElement);
 
@@ -2560,15 +2456,13 @@ function getButtonByTextWithin(rootSelector: string, buttonText: string) {
 
   expect(dialogRoot).toBeInstanceOf(HTMLElement);
 
-  const button = [...(dialogRoot as HTMLElement).querySelectorAll("button")].find(
-    (candidate) => {
-      if (!(candidate instanceof HTMLButtonElement)) {
-        return false;
-      }
+  const button = [...(dialogRoot as HTMLElement).querySelectorAll("button")].find((candidate) => {
+    if (!(candidate instanceof HTMLButtonElement)) {
+      return false;
+    }
 
-      return normalizeText(candidate.textContent) === buttonText;
-    },
-  );
+    return normalizeText(candidate.textContent) === buttonText;
+  });
 
   expect(button).toBeInstanceOf(HTMLButtonElement);
 
@@ -2579,9 +2473,7 @@ function getIndicatorTemplatesButtonByText(rootSelector: string, buttonText: str
   return getButtonByTextWithin(rootSelector, buttonText);
 }
 
-function getRestrictedIndicatorTemplatesTabOverlay(
-  tabId: "my templates" | "technicals" | "financials",
-) {
+function getRestrictedIndicatorTemplatesTabOverlay(tabId: "my templates" | "technicals" | "financials") {
   return getRestrictedIndicatorTemplatesButtonOverlay(getIndicatorTemplatesTab(tabId));
 }
 
@@ -2612,9 +2504,7 @@ function renderIndicatorTemplatesTab(
   }
 
   (itemsRoot as HTMLElement).innerHTML = rows
-    .map((row, index) =>
-      createIndicatorTemplatesRowMarkup(index + 1, row.title, row.description),
-    )
+    .map((row, index) => createIndicatorTemplatesRowMarkup(index + 1, row.title, row.description))
     .join("");
 }
 
@@ -3643,15 +3533,9 @@ function createDrawingTemplateMenuRowMarkup(title: string) {
   `;
 }
 
-function createContextTableMenuItemMarkup(
-  label: string,
-  shortcut?: string,
-  actionName?: string,
-) {
+function createContextTableMenuItemMarkup(label: string, shortcut?: string, actionName?: string) {
   const actionAttribute = actionName ? ` data-action-name="${actionName}"` : "";
-  const shortcutMarkup = shortcut
-    ? `<span class="shortcut-GJX1EXhk">${shortcut}</span>`
-    : "";
+  const shortcutMarkup = shortcut ? `<span class="shortcut-GJX1EXhk">${shortcut}</span>` : "";
 
   return `
     <tr data-role="menuitem" class="accessible-rm8yeqY4 item-GJX1EXhk interactive-GJX1EXhk normal-GJX1EXhk" tabindex="-1"${actionAttribute}>
@@ -3924,11 +3808,7 @@ function installChromeExtensionMocks(
   const runtimeSendMessage = vi.fn(
     (
       message: { type: string },
-      callback: (response: {
-        ok: boolean;
-        value?: { redirectTo: string };
-        errorMessage?: string;
-      }) => void,
+      callback: (response: { ok: boolean; value?: { redirectTo: string }; errorMessage?: string }) => void,
     ) => {
       if (message.type !== runtimeMessageType.logoutRequested) {
         callback({ ok: false, errorMessage: "Unsupported runtime message." });
@@ -3965,12 +3845,7 @@ function installChromeExtensionMocks(
       },
       onChanged: {
         addListener: vi.fn(
-          (
-            listener: (
-              changes: Record<string, chrome.storage.StorageChange>,
-              areaName: string,
-            ) => void,
-          ) => {
+          (listener: (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => void) => {
             storageChangeListener = listener;
           },
         ),
@@ -4024,9 +3899,7 @@ function normalizeText(textContent: string | null | undefined) {
   return textContent?.replace(/\s+/g, " ").trim() ?? "";
 }
 
-function mockDetectedPlatform(
-  platform: ReturnType<typeof assetPlatforms.detectAssetPlatformFromHostname>,
-) {
+function mockDetectedPlatform(platform: ReturnType<typeof assetPlatforms.detectAssetPlatformFromHostname>) {
   if (vi.isMockFunction(assetPlatforms.detectAssetPlatformFromHostname)) {
     vi.mocked(assetPlatforms.detectAssetPlatformFromHostname).mockReturnValue(platform);
     return;

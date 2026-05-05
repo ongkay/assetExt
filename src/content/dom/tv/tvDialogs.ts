@@ -10,8 +10,8 @@ import {
   dialogSuggestionsSelector,
   renameDialogSelector,
   saveIndicatorTemplateDialogSelector,
-} from './tvSelectors';
-import { disableButton, disableStyledButton, setInputValue } from './tvDomUtils';
+} from "./tvSelectors";
+import { disableButton, disableStyledButton, setInputValue } from "./tvDomUtils";
 
 export function syncRestrictedTvDialogs(publicId: string | null) {
   syncRestrictedTvTextDialogs(publicId);
@@ -29,11 +29,7 @@ function syncRestrictedTvTextDialogs(publicId: string | null) {
 function findRestrictedDialogRoots() {
   const dialogRoots = new Set<HTMLElement>();
 
-  for (const selector of [
-    createDialogSelector,
-    renameDialogSelector,
-    saveIndicatorTemplateDialogSelector,
-  ]) {
+  for (const selector of [createDialogSelector, renameDialogSelector, saveIndicatorTemplateDialogSelector]) {
     const matchedRoots = document.querySelectorAll(selector);
 
     for (const matchedRoot of matchedRoots) {
@@ -88,12 +84,12 @@ function disableRestrictedAlertDialogButtons(dialogRoot: HTMLElement) {
 }
 
 function autofillRestrictedDialogInput(dialogInput: HTMLInputElement, publicId: string | null) {
-  if (!publicId || dialogInput.dataset.assetManagerPublicIdAutofilled === 'true') {
+  if (!publicId || dialogInput.dataset.assetManagerPublicIdAutofilled === "true") {
     return;
   }
 
   setInputValue(dialogInput, `${publicId} `);
-  dialogInput.dataset.assetManagerPublicIdAutofilled = 'true';
+  dialogInput.dataset.assetManagerPublicIdAutofilled = "true";
 }
 
 function bindRestrictedDialogInput(
@@ -101,7 +97,7 @@ function bindRestrictedDialogInput(
   dialogInput: HTMLInputElement,
   publicId: string | null,
 ) {
-  if (dialogInput.dataset.assetManagerPublicIdBound === 'true') {
+  if (dialogInput.dataset.assetManagerPublicIdBound === "true") {
     return;
   }
 
@@ -110,9 +106,9 @@ function bindRestrictedDialogInput(
     syncRestrictedDialogSaveButtons(dialogRoot, publicId);
   };
 
-  dialogInput.dataset.assetManagerPublicIdBound = 'true';
-  dialogInput.addEventListener('input', syncDialogState);
-  dialogInput.addEventListener('change', syncDialogState);
+  dialogInput.dataset.assetManagerPublicIdBound = "true";
+  dialogInput.addEventListener("input", syncDialogState);
+  dialogInput.addEventListener("change", syncDialogState);
 }
 
 function disableRestrictedDialogSelectButton(dialogRoot: HTMLElement) {
@@ -123,9 +119,9 @@ function disableRestrictedDialogSelectButton(dialogRoot: HTMLElement) {
   }
 
   disableButton(dialogSelectButton);
-  dialogSelectButton.removeAttribute('title');
-  dialogSelectButton.removeAttribute('data-tooltip');
-  dialogSelectButton.classList.remove('apply-common-tooltip');
+  dialogSelectButton.removeAttribute("title");
+  dialogSelectButton.removeAttribute("data-tooltip");
+  dialogSelectButton.classList.remove("apply-common-tooltip");
 }
 
 function suppressRestrictedDialogSuggestions(dialogRoot: HTMLElement) {
@@ -134,9 +130,9 @@ function suppressRestrictedDialogSuggestions(dialogRoot: HTMLElement) {
   for (const suggestion of suggestions) {
     if (suggestion instanceof HTMLElement) {
       suggestion.hidden = true;
-      suggestion.setAttribute('aria-hidden', 'true');
-      suggestion.style.display = 'none';
-      suggestion.style.pointerEvents = 'none';
+      suggestion.setAttribute("aria-hidden", "true");
+      suggestion.style.display = "none";
+      suggestion.style.pointerEvents = "none";
     }
   }
 }
@@ -144,7 +140,7 @@ function suppressRestrictedDialogSuggestions(dialogRoot: HTMLElement) {
 function syncRestrictedDialogSaveButtons(dialogRoot: HTMLElement, publicId: string | null) {
   const dialogInput = dialogRoot.querySelector(dialogInputSelector);
   const saveButtons = dialogRoot.querySelectorAll(dialogSaveButtonSelector);
-  const requiredPublicId = publicId?.trim() ?? '';
+  const requiredPublicId = publicId?.trim() ?? "";
   const hasRequiredPublicId =
     dialogInput instanceof HTMLInputElement &&
     requiredPublicId.length > 0 &&
@@ -156,6 +152,6 @@ function syncRestrictedDialogSaveButtons(dialogRoot: HTMLElement, publicId: stri
     }
 
     saveButton.disabled = !hasRequiredPublicId;
-    saveButton.setAttribute('aria-disabled', hasRequiredPublicId ? 'false' : 'true');
+    saveButton.setAttribute("aria-disabled", hasRequiredPublicId ? "false" : "true");
   }
 }

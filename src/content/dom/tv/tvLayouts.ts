@@ -2,8 +2,8 @@ import {
   layoutsDialogSelector,
   layoutsSearchClearButtonSelector,
   layoutsSearchInputSelector,
-} from './tvSelectors';
-import { setInputValue } from './tvDomUtils';
+} from "./tvSelectors";
+import { setInputValue } from "./tvDomUtils";
 
 export function syncRestrictedTvLayouts(publicId: string | null) {
   const dialogRoots = document.querySelectorAll(layoutsDialogSelector);
@@ -18,7 +18,7 @@ export function syncRestrictedTvLayouts(publicId: string | null) {
 }
 
 function syncRestrictedLayoutsDialog(dialogRoot: HTMLElement, publicId: string | null) {
-  const requiredPublicId = publicId?.trim() ?? '';
+  const requiredPublicId = publicId?.trim() ?? "";
   const searchInput = dialogRoot.querySelector(layoutsSearchInputSelector);
 
   if (searchInput instanceof HTMLInputElement) {
@@ -28,16 +28,13 @@ function syncRestrictedLayoutsDialog(dialogRoot: HTMLElement, publicId: string |
   hideRestrictedLayoutsClearButtons(dialogRoot);
 }
 
-function syncRestrictedLayoutsSearchInput(
-  searchInput: HTMLInputElement,
-  requiredPublicId: string,
-) {
+function syncRestrictedLayoutsSearchInput(searchInput: HTMLInputElement, requiredPublicId: string) {
   if (searchInput.value !== requiredPublicId) {
     setInputValue(searchInput, requiredPublicId);
   }
 
   searchInput.readOnly = true;
-  searchInput.setAttribute('aria-readonly', 'true');
+  searchInput.setAttribute("aria-readonly", "true");
 }
 
 function hideRestrictedLayoutsClearButtons(dialogRoot: HTMLElement) {
@@ -49,8 +46,8 @@ function hideRestrictedLayoutsClearButtons(dialogRoot: HTMLElement) {
     }
 
     clearButton.hidden = true;
-    clearButton.setAttribute('aria-hidden', 'true');
-    clearButton.style.display = 'none';
-    clearButton.style.pointerEvents = 'none';
+    clearButton.setAttribute("aria-hidden", "true");
+    clearButton.style.display = "none";
+    clearButton.style.pointerEvents = "none";
   }
 }

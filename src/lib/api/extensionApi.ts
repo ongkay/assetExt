@@ -173,8 +173,7 @@ function isExtensionApiErrorPayload(
   }
 
   return (
-    isExtensionApiErrorCode(responsePayload.error.code) &&
-    typeof responsePayload.error.message === "string"
+    isExtensionApiErrorCode(responsePayload.error.code) && typeof responsePayload.error.message === "string"
   );
 }
 

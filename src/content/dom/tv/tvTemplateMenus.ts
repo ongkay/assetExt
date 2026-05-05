@@ -11,11 +11,11 @@ import {
   popupTemplateThemeItemSelector,
   seriesThemeTemplateActionSelector,
   templatesMenuRootSelector,
-} from './tvSelectors';
-import { getMenuItemContainer, normalizeText } from './tvDomUtils';
+} from "./tvSelectors";
+import { getMenuItemContainer, normalizeText } from "./tvDomUtils";
 
 export function syncRestrictedTvTemplateMenus(publicId: string | null) {
-  const requiredPublicId = publicId?.trim() ?? '';
+  const requiredPublicId = publicId?.trim() ?? "";
   const menuRoots = document.querySelectorAll(drawingTemplatesMenuSelector);
 
   for (const menuRoot of menuRoots) {
@@ -41,10 +41,8 @@ function isDrawingTemplatesMenuRoot(menuRoot: HTMLElement) {
 
   return (
     menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
-    (findMenuItemByNormalizedText(menuRoot, 'Save Drawing Template As…') instanceof
-      HTMLTableRowElement ||
-      findMenuItemByNormalizedText(menuRoot, 'Apply Default Drawing Template') instanceof
-        HTMLTableRowElement)
+    (findMenuItemByNormalizedText(menuRoot, "Save Drawing Template As…") instanceof HTMLTableRowElement ||
+      findMenuItemByNormalizedText(menuRoot, "Apply Default Drawing Template") instanceof HTMLTableRowElement)
   );
 }
 
@@ -56,18 +54,14 @@ function isPopupTemplateMenuRoot(menuRoot: HTMLElement) {
   const hasSeriesThemeTemplateItems =
     menuRoot.querySelector(popupTemplateThemeItemSelector) instanceof HTMLElement;
 
-  if (
-    !hasKnownPopupTemplateContainer &&
-    !hasSeriesThemeTemplateActions &&
-    !hasSeriesThemeTemplateItems
-  ) {
+  if (!hasKnownPopupTemplateContainer && !hasSeriesThemeTemplateActions && !hasSeriesThemeTemplateItems) {
     return false;
   }
 
   return (
     menuRoot.querySelector(drawingTemplateRemoveButtonSelector) instanceof HTMLElement &&
-    (findPopupTemplateMenuItemByNormalizedText(menuRoot, 'Save as…') instanceof HTMLElement ||
-      findPopupTemplateMenuItemByNormalizedText(menuRoot, 'Apply defaults') instanceof HTMLElement)
+    (findPopupTemplateMenuItemByNormalizedText(menuRoot, "Save as…") instanceof HTMLElement ||
+      findPopupTemplateMenuItemByNormalizedText(menuRoot, "Apply defaults") instanceof HTMLElement)
   );
 }
 
@@ -101,10 +95,7 @@ function filterRestrictedDrawingTemplateRows(menuRoot: HTMLElement, requiredPubl
 
     hideTemplateMenuRow(menuRow);
 
-    if (
-      spacerRow instanceof HTMLTableRowElement &&
-      spacerRow.matches(drawingTemplateSpacerRowSelector)
-    ) {
+    if (spacerRow instanceof HTMLTableRowElement && spacerRow.matches(drawingTemplateSpacerRowSelector)) {
       hideTemplateMenuRow(spacerRow);
     }
   }
@@ -170,12 +161,12 @@ function findPopupTemplateMenuItemByNormalizedText(menuRoot: HTMLElement, label:
 
 function hideTemplateMenuRow(menuRow: HTMLTableRowElement) {
   menuRow.hidden = true;
-  menuRow.setAttribute('aria-hidden', 'true');
-  menuRow.style.display = 'none';
+  menuRow.setAttribute("aria-hidden", "true");
+  menuRow.style.display = "none";
 }
 
 function hidePopupTemplateMenuItem(menuItem: HTMLElement) {
   menuItem.hidden = true;
-  menuItem.setAttribute('aria-hidden', 'true');
-  menuItem.style.display = 'none';
+  menuItem.setAttribute("aria-hidden", "true");
+  menuItem.style.display = "none";
 }

@@ -4,10 +4,7 @@ export async function getActiveTabId(): Promise<number | null> {
   return activeTab?.id ?? null;
 }
 
-export async function openOrReloadTab(
-  targetUrl: string,
-  tabId?: number,
-): Promise<chrome.tabs.Tab> {
+export async function openOrReloadTab(targetUrl: string, tabId?: number): Promise<chrome.tabs.Tab> {
   if (tabId) {
     return chrome.tabs.update(tabId, { active: true, url: targetUrl });
   }

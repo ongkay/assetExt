@@ -22,15 +22,10 @@ export function UnauthenticatedPanel({ loginUrl }: UnauthenticatedPanelProps) {
           <ShieldIcon />
         </EmptyMedia>
         <EmptyTitle>Login diperlukan</EmptyTitle>
-        <EmptyDescription>
-          Masuk ke Asset Manager untuk mengaktifkan akses extension.
-        </EmptyDescription>
+        <EmptyDescription>Masuk ke Asset Manager untuk mengaktifkan akses extension.</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
-        <Button
-          nativeButton={false}
-          render={<a href={loginUrl} rel="noreferrer" target="_blank" />}
-        >
+        <Button nativeButton={false} render={<a href={loginUrl} rel="noreferrer" target="_blank" />}>
           <LogInIcon data-icon="inline-start" />
           Login Asset Manager
           <ExternalLinkIcon data-icon="inline-end" />

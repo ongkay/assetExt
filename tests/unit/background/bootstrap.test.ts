@@ -49,10 +49,7 @@ describe("background bootstrap core", () => {
 
   it("does not let an in-flight stale bootstrap sync overwrite a newer explicit snapshot", async () => {
     const bootstrapFetch = createDeferred<ExtensionApiResult<typeof staleSnapshot>>();
-    const testRuntime = await importBootstrapCoreTestRuntime(
-      previousCache,
-      () => bootstrapFetch.promise,
-    );
+    const testRuntime = await importBootstrapCoreTestRuntime(previousCache, () => bootstrapFetch.promise);
 
     await expect(testRuntime.bootstrapCore.readBootstrapState(false)).resolves.toEqual({
       cache: previousCache,
@@ -97,8 +94,7 @@ describe("background bootstrap core", () => {
     );
 
     await testRuntime.bootstrapCore.readBootstrapState(false);
-    const explicitReplace =
-      testRuntime.bootstrapCore.replaceBootstrapCacheFromSnapshot(explicitSnapshot);
+    const explicitReplace = testRuntime.bootstrapCore.replaceBootstrapCacheFromSnapshot(explicitSnapshot);
 
     await vi.waitFor(() => {
       expect(pendingWrites).toHaveLength(1);
@@ -108,9 +104,7 @@ describe("background bootstrap core", () => {
     bootstrapFetch.resolve({ ok: true, status: 200, value: staleSnapshot });
 
     await vi.waitFor(() => {
-      expect(
-        pendingWrites.length === 2 || testRuntime.readBootstrapCache.mock.calls.length >= 2,
-      ).toBe(true);
+      expect(pendingWrites.length === 2 || testRuntime.readBootstrapCache.mock.calls.length >= 2).toBe(true);
     });
 
     pendingWrites[0].resolveWrite();
@@ -159,8 +153,7 @@ describe("background bootstrap core", () => {
       expect(testRuntime.fetchExtensionBootstrap).toHaveBeenCalledTimes(1);
     });
 
-    const explicitReplace =
-      testRuntime.bootstrapCore.replaceBootstrapCacheFromSnapshot(explicitSnapshot);
+    const explicitReplace = testRuntime.bootstrapCore.replaceBootstrapCacheFromSnapshot(explicitSnapshot);
 
     await vi.waitFor(() => {
       expect(pendingWrites).toHaveLength(1);
@@ -170,9 +163,7 @@ describe("background bootstrap core", () => {
     bootstrapFetch.resolve({ ok: true, status: 200, value: staleSnapshot });
 
     await vi.waitFor(() => {
-      expect(
-        pendingWrites.length === 2 || testRuntime.readBootstrapCache.mock.calls.length >= 2,
-      ).toBe(true);
+      expect(pendingWrites.length === 2 || testRuntime.readBootstrapCache.mock.calls.length >= 2).toBe(true);
     });
 
     pendingWrites[0].resolveWrite();
@@ -277,8 +268,7 @@ async function importBootstrapCoreTestRuntime(
     clearAssetSessionSyncState: vi.fn(() => Promise.resolve()),
   }));
   vi.doMock("@/lib/storage/bootstrapCache", async (importOriginal) => {
-    const originalBootstrapCache =
-      await importOriginal<typeof import("@/lib/storage/bootstrapCache")>();
+    const originalBootstrapCache = await importOriginal<typeof import("@/lib/storage/bootstrapCache")>();
 
     return {
       ...originalBootstrapCache,

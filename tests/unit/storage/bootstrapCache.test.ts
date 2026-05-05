@@ -6,10 +6,7 @@ import {
   isBootstrapCacheExpired,
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
-import {
-  isInjectionCooldownActive,
-  markInjectionCooldown,
-} from "@/lib/storage/injectionCooldown";
+import { isInjectionCooldownActive, markInjectionCooldown } from "@/lib/storage/injectionCooldown";
 
 const originalChrome = globalThis.chrome;
 
@@ -29,8 +26,7 @@ function installDelayedChromeStorage(storageValues: ChromeStorageValues) {
     key: string;
     resolve: (storedValues: ChromeStorageValues) => void;
   }> = [];
-  const pendingSetCalls: Array<{ storedValues: ChromeStorageValues; resolve: () => void }> =
-    [];
+  const pendingSetCalls: Array<{ storedValues: ChromeStorageValues; resolve: () => void }> = [];
   let delayedConcurrentMarkReads = false;
 
   globalThis.chrome = {
@@ -49,9 +45,7 @@ function installDelayedChromeStorage(storageValues: ChromeStorageValues) {
           if (concurrentMarkReadsReady) {
             delayedConcurrentMarkReads = true;
             const getCalls = pendingGetCalls.splice(0);
-            getCalls.forEach((getCall) =>
-              getCall.resolve({ [getCall.key]: storageValues[getCall.key] }),
-            );
+            getCalls.forEach((getCall) => getCall.resolve({ [getCall.key]: storageValues[getCall.key] }));
           }
 
           return getDeferred.promise;
@@ -63,12 +57,10 @@ function installDelayedChromeStorage(storageValues: ChromeStorageValues) {
 
           if (concurrentMarkWritesReady) {
             const setCalls = pendingSetCalls.splice(0).sort((firstCall, secondCall) => {
-              const firstCallHasTradingView = JSON.stringify(firstCall.storedValues).includes(
+              const firstCallHasTradingView = JSON.stringify(firstCall.storedValues).includes("tradingview");
+              const secondCallHasTradingView = JSON.stringify(secondCall.storedValues).includes(
                 "tradingview",
               );
-              const secondCallHasTradingView = JSON.stringify(
-                secondCall.storedValues,
-              ).includes("tradingview");
 
               if (firstCallHasTradingView === secondCallHasTradingView) {
                 return 0;
@@ -106,12 +98,8 @@ describe("bootstrap cache", () => {
       },
     };
 
-    expect(isBootstrapCacheExpired(bootstrapCacheRecord, 1000 + bootstrapCacheTtlMs)).toBe(
-      false,
-    );
-    expect(isBootstrapCacheExpired(bootstrapCacheRecord, 1001 + bootstrapCacheTtlMs)).toBe(
-      true,
-    );
+    expect(isBootstrapCacheExpired(bootstrapCacheRecord, 1000 + bootstrapCacheTtlMs)).toBe(false);
+    expect(isBootstrapCacheExpired(bootstrapCacheRecord, 1001 + bootstrapCacheTtlMs)).toBe(true);
   });
 
   it("creates invalid unauthenticated cache for logout fallback", () => {
@@ -130,10 +118,7 @@ describe("injection cooldown storage", () => {
   it("preserves cooldowns when different platforms are marked concurrently", async () => {
     installDelayedChromeStorage({});
 
-    await Promise.all([
-      markInjectionCooldown("tradingview", 1000),
-      markInjectionCooldown("fxreplay", 1000),
-    ]);
+    await Promise.all([markInjectionCooldown("tradingview", 1000), markInjectionCooldown("fxreplay", 1000)]);
 
     await expect(isInjectionCooldownActive("tradingview", 1001)).resolves.toBe(true);
     await expect(isInjectionCooldownActive("fxreplay", 1001)).resolves.toBe(true);

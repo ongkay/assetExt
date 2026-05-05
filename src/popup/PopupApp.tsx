@@ -51,41 +51,37 @@ export function PopupApp() {
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isPending);
 
-  const requestAssetAccess = useCallback(
-    async (platform: AssetPlatform, mode?: ExtensionMode) => {
-      setAccessingPlatform(platform);
-      setAssetAccessErrorMessage(null);
+  const requestAssetAccess = useCallback(async (platform: AssetPlatform, mode?: ExtensionMode) => {
+    setAccessingPlatform(platform);
+    setAssetAccessErrorMessage(null);
 
-      const assetResult = await sendRuntimeMessage<ExtensionAssetResponse>({
-        mode,
-        platform,
-        type: runtimeMessageType.assetAccessRequested,
-      });
+    const assetResult = await sendRuntimeMessage<ExtensionAssetResponse>({
+      mode,
+      platform,
+      type: runtimeMessageType.assetAccessRequested,
+    });
 
-      setAccessingPlatform(null);
+    setAccessingPlatform(null);
 
-      if (!assetResult.value) {
-        setAssetAccessErrorMessage(
-          assetResult.errorMessage ??
-            "Asset belum bisa dibuka. Coba refresh lalu akses ulang.",
-        );
-        return;
-      }
+    if (!assetResult.value) {
+      setAssetAccessErrorMessage(
+        assetResult.errorMessage ?? "Asset belum bisa dibuka. Coba refresh lalu akses ulang.",
+      );
+      return;
+    }
 
-      const assetResponse = assetResult.value;
+    const assetResponse = assetResult.value;
 
-      if (assetResponse.status === "selection_required") {
-        setAssetAccessErrorMessage("Mode akses belum bisa ditentukan otomatis.");
-        return;
-      }
+    if (assetResponse.status === "selection_required") {
+      setAssetAccessErrorMessage("Mode akses belum bisa ditentukan otomatis.");
+      return;
+    }
 
-      if (assetResponse.status === "forbidden") {
-        setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
-        return;
-      }
-    },
-    [],
-  );
+    if (assetResponse.status === "forbidden") {
+      setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
+      return;
+    }
+  }, []);
 
   useEffect(() => {
     void requestBootstrap();
@@ -120,9 +116,7 @@ export function PopupApp() {
     setIsRedeeming(false);
 
     if (!redeemResult.value) {
-      setRedeemErrorMessage(
-        redeemResult.errorMessage ?? "CD Key gagal diproses. Coba lagi beberapa saat.",
-      );
+      setRedeemErrorMessage(redeemResult.errorMessage ?? "CD Key gagal diproses. Coba lagi beberapa saat.");
       return;
     }
 
@@ -160,9 +154,7 @@ export function PopupApp() {
   if (snapshot.auth.status === "unauthenticated") {
     return (
       <PopupShell isThemeReady={isThemeReady}>
-        <UnauthenticatedPanel
-          loginUrl={getAbsoluteApiUrl(apiBaseUrl, snapshot.auth.loginUrl)}
-        />
+        <UnauthenticatedPanel loginUrl={getAbsoluteApiUrl(apiBaseUrl, snapshot.auth.loginUrl)} />
       </PopupShell>
     );
   }
@@ -239,11 +231,7 @@ export function PopupApp() {
         ) : null}
 
         {assetAccessErrorMessage ? (
-          <StatusNotice
-            message={assetAccessErrorMessage}
-            title="Akses asset gagal"
-            tone="danger"
-          />
+          <StatusNotice message={assetAccessErrorMessage} title="Akses asset gagal" tone="danger" />
         ) : null}
 
         {packages.length > 0 ? (
@@ -339,9 +327,7 @@ type RuntimeMessageResult<TValue> = {
   value: TValue | null;
 };
 
-async function sendRuntimeMessage<TValue>(
-  message: RuntimeMessage,
-): Promise<RuntimeMessageResult<TValue>> {
+async function sendRuntimeMessage<TValue>(message: RuntimeMessage): Promise<RuntimeMessageResult<TValue>> {
   if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
     return { errorMessage: "Runtime extension tidak tersedia.", value: null };
   }

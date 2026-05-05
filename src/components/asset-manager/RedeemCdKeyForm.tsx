@@ -12,11 +12,7 @@ type RedeemCdKeyFormProps = {
   onRedeemCdKey: (cdKeyCode: string) => void | Promise<void>;
 };
 
-export function RedeemCdKeyForm({
-  errorMessage,
-  isRedeeming = false,
-  onRedeemCdKey,
-}: RedeemCdKeyFormProps) {
+export function RedeemCdKeyForm({ errorMessage, isRedeeming = false, onRedeemCdKey }: RedeemCdKeyFormProps) {
   const [cdKeyCode, setCdKeyCode] = useState("");
   const isSubmitDisabled = isRedeeming || cdKeyCode.trim().length === 0;
 
@@ -56,11 +52,7 @@ export function RedeemCdKeyForm({
           </FieldDescription>
         </Field>
         <Button disabled={isSubmitDisabled} type="submit">
-          {isRedeeming ? (
-            <Spinner data-icon="inline-start" />
-          ) : (
-            <SendIcon data-icon="inline-start" />
-          )}
+          {isRedeeming ? <Spinner data-icon="inline-start" /> : <SendIcon data-icon="inline-start" />}
           Redeem CD Key
         </Button>
       </FieldGroup>
