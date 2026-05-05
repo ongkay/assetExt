@@ -34,9 +34,9 @@ function getPlatformIcon(platform: string) {
 function getPlatformDescription(platform: string, defaultDesc: string) {
   switch (platform) {
     case "fxtester":
-      return "Software simulasi trading forex profesional.";
+      return "Akses simulasi backtesting tools";
     case "tradingview":
-      return "Platform charting dan analisis pasar global.";
+      return "Akses Tradingview Premium";
     case "fxreplay":
       return "Simulator trading dengan data historis akurat.";
     default:
