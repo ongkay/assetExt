@@ -258,11 +258,16 @@ export function PopupApp() {
         ) : null}
 
         {hasActiveSubscription ? (
-          <AssetAccessList
-            assets={assets}
-            isAccessingPlatform={accessingPlatform}
-            onAccessAsset={handleAccessAsset}
-          />
+          <div className="flex flex-col gap-2 mt-1">
+            <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase px-1">
+              Your Assets
+            </span>
+            <AssetAccessList
+              assets={assets}
+              isAccessingPlatform={accessingPlatform}
+              onAccessAsset={handleAccessAsset}
+            />
+          </div>
         ) : null}
 
         <div className="grid grid-cols-2 gap-2 pt-2">

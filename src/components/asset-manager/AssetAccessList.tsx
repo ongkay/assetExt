@@ -1,10 +1,8 @@
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon, CandlestickChartIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -19,6 +17,32 @@ type AssetAccessListProps = {
   isAccessingPlatform?: AssetPlatform | null;
   onAccessAsset: (asset: ExtensionAssetSummary) => void | Promise<void>;
 };
+
+function getPlatformIcon(platform: string) {
+  switch (platform) {
+    case "fxtester":
+      return <CandlestickChartIcon className="size-5 text-primary dark:text-blue-400" />;
+    case "tradingview":
+      return <TrendingUpIcon className="size-5 text-primary dark:text-blue-400" />;
+    case "fxreplay":
+      return <BarChart3Icon className="size-5 text-primary dark:text-blue-400" />;
+    default:
+      return <BarChart3Icon className="size-5 text-primary dark:text-blue-400" />;
+  }
+}
+
+function getPlatformDescription(platform: string, defaultDesc: string) {
+  switch (platform) {
+    case "fxtester":
+      return "Software simulasi trading forex profesional.";
+    case "tradingview":
+      return "Platform charting dan analisis pasar global.";
+    case "fxreplay":
+      return "Simulator trading dengan data historis akurat.";
+    default:
+      return defaultDesc;
+  }
+}
 
 export function AssetAccessList({
   assets,
@@ -46,46 +70,38 @@ export function AssetAccessList({
           <Card
             key={asset.platform}
             size="sm"
-            className="group relative overflow-hidden border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md"
+            className="group relative overflow-hidden border-border/60 bg-card shadow-sm p-4 flex flex-col gap-3"
           >
             <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-primary/5 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative z-10 pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <CardTitle className="text-base font-semibold">
-                    {platformConfig.label}
-                  </CardTitle>
-                  <CardDescription className="truncate text-xs">
-                    {platformConfig.targetUrl}
-                  </CardDescription>
-                </div>
-                <Badge
-                  variant={hasAnyAccess ? "default" : "secondary"}
-                  className={
-                    hasAnyAccess
-                      ? "shadow-[0_0_10px_rgba(var(--color-primary),0.2)] transition-transform duration-300 group-hover:scale-105"
-                      : ""
-                  }
-                >
-                  {hasAnyAccess ? "Tersedia" : "Terkunci"}
-                </Badge>
+            <div className="relative z-10 flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 dark:bg-blue-500/20 text-primary dark:text-blue-400">
+                {getPlatformIcon(asset.platform)}
               </div>
-            </CardHeader>
-            <CardContent className="relative z-10">
+              <div className="flex min-w-0 flex-col gap-0.5 justify-center mt-0.5">
+                <div className="text-sm font-bold text-foreground">
+                  {platformConfig.label}
+                </div>
+                <div className="text-[12px] text-muted-foreground leading-snug pr-2">
+                  {getPlatformDescription(asset.platform, platformConfig.targetUrl)}
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10">
               <Button
-                className="w-full transition-transform active:scale-[0.98]"
+                className="w-full transition-transform active:scale-[0.98] bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
                 disabled={!hasAnyAccess || Boolean(isAccessingPlatform)}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
               >
                 {isAccessingPlatform === asset.platform ? (
                   <Spinner data-icon="inline-start" />
-                ) : (
-                  <ExternalLinkIcon data-icon="inline-start" />
-                )}
+                ) : null}
                 Akses {platformConfig.label}
+                {isAccessingPlatform !== asset.platform ? (
+                  <ExternalLinkIcon data-icon="inline-end" className="ml-1 opacity-80" />
+                ) : null}
               </Button>
-            </CardContent>
+            </div>
           </Card>
         );
       })}
