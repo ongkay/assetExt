@@ -4,6 +4,7 @@ import { postExtensionHeartbeat } from "@/lib/api/extensionApi";
 import { getOrCreateDeviceId } from "@/lib/storage/deviceIdentity";
 
 import { createExtensionApiConfig } from "./bootstrap";
+import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 
 const heartbeatAlarmName = "assetManager.heartbeat";
 const legacyHeartbeatAlarmPrefix = `${heartbeatAlarmName}.`;
@@ -155,6 +156,7 @@ function isLegacyHeartbeatAlarmName(alarmName: string): boolean {
 }
 
 async function sendHeartbeat(): Promise<void> {
+  await ensureProductionOriginHeaderRuleReady();
   const heartbeatResult = await postExtensionHeartbeat(
     createExtensionApiConfig(),
     await getOrCreateDeviceId(),

@@ -1,5 +1,6 @@
 export const defaultExtensionApiBaseUrl = "http://localhost:3000";
-export const isDev = true;
+// export const isDev = import.meta.env.DEV;
+export const isDev = false;
 
 export type ExtensionApiConfig = {
   apiBaseUrl: string;

@@ -12,6 +12,7 @@ import { markInjectionCooldown } from "@/lib/storage/injectionCooldown";
 import { createExtensionApiConfig } from "./bootstrap";
 import { clearAssetPlatformCookies, injectExtensionCookies } from "./cookies";
 import { startHeartbeat } from "./heartbeat";
+import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 import { openOrReloadTab } from "./tabs";
 
 export type RunAssetAccessOptions = {
@@ -74,6 +75,7 @@ async function requestAssetResponse(
   platform: AssetPlatform,
   mode?: ExtensionMode,
 ): Promise<ExtensionAssetResponse> {
+  await ensureProductionOriginHeaderRuleReady();
   const assetResult = await fetchExtensionAsset(createExtensionApiConfig(), platform, mode);
 
   if (!assetResult.ok) {

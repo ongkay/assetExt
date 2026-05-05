@@ -1,9 +1,26 @@
 import { getExtensionApiBaseUrl, isDev } from "@/lib/api/extensionApiConfig";
 
 const productionOriginRuleId = 1001;
+let isProductionOriginHeaderRuleReady = false;
+let productionOriginHeaderRuleReadyPromise: Promise<void> | null = null;
+
+export function ensureProductionOriginHeaderRuleReady(): Promise<void> {
+  if (isDev || isProductionOriginHeaderRuleReady) {
+    return Promise.resolve();
+  }
+
+  if (!productionOriginHeaderRuleReadyPromise) {
+    productionOriginHeaderRuleReadyPromise = syncProductionOriginHeaderRule().finally(() => {
+      productionOriginHeaderRuleReadyPromise = null;
+    });
+  }
+
+  return productionOriginHeaderRuleReadyPromise;
+}
 
 export async function syncProductionOriginHeaderRule(): Promise<void> {
   if (!chrome.declarativeNetRequest?.updateDynamicRules) {
+    isProductionOriginHeaderRuleReady = false;
     return;
   }
 
@@ -11,6 +28,7 @@ export async function syncProductionOriginHeaderRule(): Promise<void> {
     await chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: [productionOriginRuleId],
     });
+    isProductionOriginHeaderRuleReady = false;
     return;
   }
 
@@ -18,6 +36,7 @@ export async function syncProductionOriginHeaderRule(): Promise<void> {
     addRules: [createProductionOriginRule()],
     removeRuleIds: [productionOriginRuleId],
   });
+  isProductionOriginHeaderRuleReady = true;
 }
 
 function createProductionOriginRule(): chrome.declarativeNetRequest.Rule {

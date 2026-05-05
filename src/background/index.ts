@@ -20,14 +20,14 @@ import {
 } from "./core/bootstrap";
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
-import { syncProductionOriginHeaderRule } from "./core/productionOrigin";
+import { ensureProductionOriginHeaderRuleReady } from "./core/productionOrigin";
 import {
   ensureAssetSessionForPage,
   ensureStartupAssetSync,
   markAssetSessionSyncSuccess,
 } from "./core/startupAssetSync";
 
-void syncProductionOriginHeaderRule().catch(() => undefined);
+void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
 chrome.runtime.onInstalled.addListener(() => {
   void ensureStartupAssetSync().catch(() => undefined);
 });
@@ -69,6 +69,7 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.redeemCdKeyRequested: {
+      await ensureProductionOriginHeaderRuleReady();
       const redeemResult = await redeemExtensionCdKey(createExtensionApiConfig(), message.code);
 
       if (!redeemResult.ok) {

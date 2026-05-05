@@ -51,6 +51,42 @@ describe("production origin header rule", () => {
     });
   });
 
+  it("reuses the same production Origin sync while the first install is in flight", async () => {
+    vi.doMock("@/lib/api/extensionApiConfig", () => ({
+      getExtensionApiBaseUrl: () => "http://localhost:3000",
+      isDev: false,
+    }));
+
+    let releaseSync!: () => void;
+    const pendingSync = new Promise<void>((resolve) => {
+      releaseSync = resolve;
+    });
+    const updateDynamicRules = vi.fn(() => pendingSync);
+
+    vi.stubGlobal("chrome", {
+      declarativeNetRequest: {
+        HeaderOperation: { SET: "set" },
+        ResourceType: { XMLHTTPREQUEST: "xmlhttprequest" },
+        RuleActionType: { MODIFY_HEADERS: "modifyHeaders" },
+        updateDynamicRules,
+      },
+      runtime: { id: "runtime-id" },
+    });
+
+    const { ensureProductionOriginHeaderRuleReady } = await import("@/background/core/productionOrigin");
+
+    const firstSync = ensureProductionOriginHeaderRuleReady();
+    const secondSync = ensureProductionOriginHeaderRuleReady();
+
+    expect(updateDynamicRules).toHaveBeenCalledTimes(1);
+
+    releaseSync();
+    await Promise.all([firstSync, secondSync]);
+    await ensureProductionOriginHeaderRuleReady();
+
+    expect(updateDynamicRules).toHaveBeenCalledTimes(1);
+  });
+
   it("removes the dynamic Origin rule when dev header mode is active", async () => {
     vi.doMock("@/lib/api/extensionApiConfig", () => ({
       getExtensionApiBaseUrl: () => "http://localhost:3000",

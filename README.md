@@ -12,6 +12,14 @@ pnpm install
 pnpm dev
 ```
 
+## Configuration
+
+- Server allowlist untuk endpoint `/api/ext/*` dibaca dari root project `.env.local` melalui `EXTENSION_ALLOWED_IDS` dan `EXTENSION_ALLOWED_ORIGINS`.
+- Jika allowlist berubah, restart app utama agar env terbaca ulang.
+- Base URL API untuk extension dibaca dari env Vite `VITE_EXT_API_BASE_URL` di folder `extasset`.
+- Jika `VITE_EXT_API_BASE_URL` tidak diisi, extension fallback ke `http://localhost:3000`.
+- Setelah mengubah env extension, build ulang lalu reload unpacked extension dari `dist`.
+
 ## Load in Chrome
 
 1. Open `chrome://extensions`

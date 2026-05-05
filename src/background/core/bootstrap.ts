@@ -14,6 +14,7 @@ import {
 import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
 import { clearAllAssetPlatformCookies } from "./cookies";
+import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 
 let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
 let bootstrapWriteRevision = 0;
@@ -54,6 +55,7 @@ export async function replaceBootstrapCacheFromSnapshot(
 }
 
 export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse> {
+  await ensureProductionOriginHeaderRuleReady();
   const extensionApiConfig = createExtensionApiConfig();
   const logoutResult = await postExtensionLogout(extensionApiConfig);
 
@@ -101,6 +103,7 @@ async function fetchAndWriteBootstrapCache(
   writeRevisionAtSyncStart: number,
 ): Promise<BootstrapCacheRecord> {
   try {
+    await ensureProductionOriginHeaderRuleReady();
     const bootstrapResult = await fetchExtensionBootstrap(createExtensionApiConfig());
 
     if (bootstrapResult.ok) {
