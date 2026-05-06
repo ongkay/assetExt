@@ -3,30 +3,23 @@ import { describe, expect, it } from "vitest";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 
 describe("automatic asset mode", () => {
-  it("prefers private access when the asset has private and share access", () => {
+  it("returns the effective private mode from bootstrap", () => {
     expect(
       getAutomaticAssetMode({
-        hasPrivateAccess: true,
-        hasShareAccess: true,
+        mode: "private",
       }),
     ).toBe("private");
   });
 
-  it("uses share access when private access is unavailable", () => {
+  it("returns the effective share mode from bootstrap", () => {
     expect(
       getAutomaticAssetMode({
-        hasPrivateAccess: false,
-        hasShareAccess: true,
+        mode: "share",
       }),
     ).toBe("share");
   });
 
-  it("returns null when the asset has no usable access", () => {
-    expect(
-      getAutomaticAssetMode({
-        hasPrivateAccess: false,
-        hasShareAccess: false,
-      }),
-    ).toBeNull();
+  it("does not alter the share mode when a private upgrade is pending", () => {
+    expect(getAutomaticAssetMode({ mode: "share" })).toBe("share");
   });
 });

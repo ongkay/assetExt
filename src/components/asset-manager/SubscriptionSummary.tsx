@@ -17,7 +17,7 @@ type SubscriptionSummaryProps = {
 export function SubscriptionSummary({ subscription }: SubscriptionSummaryProps) {
   const statusLabel = getSubscriptionStatusLabel(subscription.status);
   const isActive = isSubscriptionActive(subscription.status);
-  const isRenewalWarning = isRenewalWarningActive(subscription.countdownSeconds);
+  const isRenewalWarning = isRenewalWarningActive(subscription.endAt);
 
   return (
     <div className="flex flex-col gap-2">

@@ -1,5 +1,6 @@
 import { ExternalLinkIcon, CandlestickChartIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -19,8 +20,6 @@ function getPlatformIcon(platform: string) {
       return <CandlestickChartIcon className="size-5 text-primary dark:text-blue-400" />;
     case "tradingview":
       return <TrendingUpIcon className="size-5 text-primary dark:text-blue-400" />;
-    case "fxreplay":
-      return <BarChart3Icon className="size-5 text-primary dark:text-blue-400" />;
     default:
       return <BarChart3Icon className="size-5 text-primary dark:text-blue-400" />;
   }
@@ -32,8 +31,6 @@ function getPlatformDescription(platform: string, defaultDesc: string) {
       return "Akses simulasi backtesting tools";
     case "tradingview":
       return "Akses Tradingview Premium";
-    case "fxreplay":
-      return "Simulator trading dengan data historis akurat.";
     default:
       return defaultDesc;
   }
@@ -61,7 +58,8 @@ export function AssetAccessList({ assets, isAccessingPlatform = null, onAccessAs
     <div className="flex flex-col gap-3">
       {sortedAssets.map((asset) => {
         const platformConfig = getAssetPlatformConfig(asset.platform);
-        const hasAnyAccess = asset.hasPrivateAccess || asset.hasShareAccess;
+        const modeLabel = asset.mode === "private" ? "Private" : "Share";
+        const modeHint = asset.nextMode === "private" ? "Sementara share, akan beralih ke Private." : null;
 
         return (
           <Card
@@ -75,16 +73,21 @@ export function AssetAccessList({ assets, isAccessingPlatform = null, onAccessAs
                 {getPlatformIcon(asset.platform)}
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 justify-center mt-0.5">
-                <div className="text-sm font-bold text-foreground">{platformConfig.label}</div>
+                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+                  <span>{platformConfig.label}</span>
+                  <Badge className="rounded-full px-2 py-0 text-[10px]" variant="secondary">
+                    {modeLabel}
+                  </Badge>
+                </div>
                 <div className="text-[12px] text-muted-foreground leading-snug pr-2">
-                  {getPlatformDescription(asset.platform, platformConfig.targetUrl)}
+                  {modeHint ?? getPlatformDescription(asset.platform, platformConfig.targetUrl)}
                 </div>
               </div>
             </div>
             <div className="relative z-10">
               <Button
                 className="w-full relative overflow-hidden bg-linear-to-r! from-blue-600! to-indigo-600! hover:from-blue-500! hover:to-indigo-500! text-white! font-medium shadow-md shadow-blue-500/20 border-0! transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/40 active:scale-[0.98] active:translate-y-0 group/btn"
-                disabled={!hasAnyAccess || Boolean(isAccessingPlatform)}
+                disabled={Boolean(isAccessingPlatform)}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
               >

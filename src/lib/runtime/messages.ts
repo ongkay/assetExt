@@ -1,5 +1,5 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import type { ExtensionAssetResponse, ExtensionBootstrap, ExtensionMode } from "@/lib/api/extensionApiTypes";
+import type { ExtensionAssetResponse, ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 export const runtimeMessageType = {
@@ -7,7 +7,6 @@ export const runtimeMessageType = {
   bootstrapRefreshRequested: "BOOTSTRAP_REFRESH_REQUESTED",
   assetAccessRequested: "ASSET_ACCESS_REQUESTED",
   assetSessionEnsureRequested: "ASSET_SESSION_ENSURE_REQUESTED",
-  assetModeSelected: "ASSET_MODE_SELECTED",
   redeemCdKeyRequested: "REDEEM_CD_KEY_REQUESTED",
   logoutRequested: "LOGOUT_REQUESTED",
   heartbeatStarted: "HEARTBEAT_STARTED",
@@ -24,7 +23,6 @@ export type BootstrapRefreshRequestedMessage = {
 };
 
 export type AssetAccessRequestedMessage = {
-  mode?: ExtensionMode;
   platform: AssetPlatform;
   tabId?: number;
   type: (typeof runtimeMessageType)["assetAccessRequested"];
@@ -33,12 +31,6 @@ export type AssetAccessRequestedMessage = {
 export type AssetSessionEnsureRequestedMessage = {
   platform: AssetPlatform;
   type: (typeof runtimeMessageType)["assetSessionEnsureRequested"];
-};
-
-export type AssetModeSelectedMessage = {
-  mode: ExtensionMode;
-  requestId: string;
-  type: (typeof runtimeMessageType)["assetModeSelected"];
 };
 
 export type RedeemCdKeyRequestedMessage = {
@@ -81,7 +73,6 @@ export type RuntimeMessage =
   | BootstrapRefreshRequestedMessage
   | AssetAccessRequestedMessage
   | AssetSessionEnsureRequestedMessage
-  | AssetModeSelectedMessage
   | RedeemCdKeyRequestedMessage
   | LogoutRequestedMessage
   | HeartbeatStartedMessage

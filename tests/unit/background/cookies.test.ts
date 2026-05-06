@@ -40,7 +40,7 @@ describe("background cookie helpers", () => {
   it("uses https cookie API URLs while preserving insecure cookie attributes", () => {
     expect(
       toChromeCookieDetails({
-        domain: "fxreplay.com",
+        domain: "forextester.com",
         hostOnly: true,
         name: "token",
         path: "/app",
@@ -56,7 +56,7 @@ describe("background cookie helpers", () => {
       sameSite: undefined,
       secure: false,
       storeId: undefined,
-      url: "https://fxreplay.com/app",
+      url: "https://forextester.com/app",
       value: "def",
     });
   });
@@ -78,8 +78,6 @@ describe("background cookie helpers", () => {
       .fn()
       .mockResolvedValueOnce([{ domain: ".tradingview.com", name: "tv", path: "/", storeId: "0" }])
       .mockResolvedValueOnce([{ domain: "tradingview.com", name: "tv2", path: "/", storeId: "0" }])
-      .mockResolvedValueOnce([{ domain: ".fxreplay.com", name: "fx", path: "/", storeId: "0" }])
-      .mockResolvedValueOnce([{ domain: "fxreplay.com", name: "fx2", path: "/", storeId: "0" }])
       .mockResolvedValueOnce([{ domain: ".forextester.com", name: "ft", path: "/", storeId: "0" }])
       .mockResolvedValueOnce([{ domain: "forextester.com", name: "ft2", path: "/", storeId: "0" }]);
     const remove = vi.fn(() => Promise.resolve(null));
@@ -93,13 +91,11 @@ describe("background cookie helpers", () => {
 
     await clearAllAssetPlatformCookies();
 
-    expect(getAll).toHaveBeenCalledTimes(6);
-    expect(remove).toHaveBeenCalledTimes(6);
+    expect(getAll).toHaveBeenCalledTimes(4);
+    expect(remove).toHaveBeenCalledTimes(4);
     expect(getAll.mock.calls.map(([details]) => details.domain)).toEqual([
       ".tradingview.com",
       "tradingview.com",
-      ".fxreplay.com",
-      "fxreplay.com",
       ".forextester.com",
       "forextester.com",
     ]);

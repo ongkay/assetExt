@@ -95,7 +95,6 @@ async function handleRuntimeMessage(
 
     case runtimeMessageType.assetAccessRequested: {
       const assetResponse = await runAssetAccess({
-        mode: message.mode,
         platform: message.platform,
         shouldNavigate: true,
         tabId: message.tabId,

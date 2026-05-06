@@ -105,16 +105,18 @@ Authenticated active/processed response:
 {
   "assets": [
     {
-      "hasPrivateAccess": false,
-      "hasShareAccess": true,
+      "mode": "private",
       "platform": "tradingview"
+    },
+    {
+      "mode": "share",
+      "platform": "fxtester"
     }
   ],
   "auth": {
     "status": "authenticated"
   },
   "subscription": {
-    "countdownSeconds": 534680,
     "endAt": "2026-05-01T09:45:22.805+00:00",
     "packageName": "Paket 3",
     "status": "active"
@@ -122,7 +124,6 @@ Authenticated active/processed response:
   "user": {
     "avatarUrl": null,
     "email": "seed.active.browser@assetnext.dev",
-    "id": "91000000-0000-4000-8000-000000000002",
     "publicId": "MEM-BRW-01",
     "username": "seed-active-browser"
   },
@@ -152,7 +153,6 @@ Authenticated non-active response:
     "enabled": true
   },
   "subscription": {
-    "countdownSeconds": 0,
     "endAt": null,
     "packageName": null,
     "status": "none"
@@ -160,7 +160,6 @@ Authenticated non-active response:
   "user": {
     "avatarUrl": null,
     "email": "seed.active.browser@assetnext.dev",
-    "id": "91000000-0000-4000-8000-000000000002",
     "publicId": "MEM-BRW-01",
     "username": "seed-active-browser"
   },
@@ -184,22 +183,9 @@ Query:
 
 | Param | Wajib | Keterangan |
 | --- | --- | --- |
-| `platform` | Ya | `tradingview`, `fxreplay`, `fxtester` |
-| `mode` | Opsional | `private` atau `share` |
+| `platform` | Ya | `tradingview`, `fxtester` |
 
-Selection response saat user punya `private` dan `share` sekaligus:
-
-```json
-{
-  "availableModes": ["private", "share"],
-  "defaultMode": "private",
-  "platform": "tradingview",
-  "selectionTimeoutSeconds": 10,
-  "status": "selection_required"
-}
-```
-
-Ready response:
+Response saat mode platform sudah di-resolve oleh server:
 
 ```json
 {
@@ -227,6 +213,7 @@ Ready response:
 
 Notes:
 
+- Mode asset final ditentukan server. Client tidak perlu lagi memilih antara `private` atau `share`.
 - `cookies` dikirim pass-through dari setiap object cookie di `asset_json`.
 - Server hanya membuang field `id` jika field itu ada pada cookie source.
 - Selain `id`, field lain tidak dipangkas dan tidak ditambahi fallback/default baru oleh server.
@@ -334,7 +321,7 @@ Notes:
 2. If `auth.status = "unauthenticated"`, redirect/open `loginUrl`.
 3. If `version.status = "update_required"`, block all feature flow and show update CTA.
 4. If authenticated and access exists, call `GET /api/ext/asset?platform=...`.
-5. If `selection_required`, show chooser and default to `private` after 10 seconds.
+5. If asset access is ready, use the returned server-resolved mode directly.
 6. Start heartbeat loop with `POST /api/ext/heartbeat`.
 7. On user logout, call `POST /api/ext/logout`.
 

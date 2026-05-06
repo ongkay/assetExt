@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, LogOutIcon, MailIcon, MoonIcon, SunIcon, UserIcon } from "lucide-react";
+import { ArrowLeftIcon, LogOutIcon, MailIcon, MoonIcon, SunIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -55,10 +55,6 @@ export function ProfilePanel({
       </CardHeader>
       <CardContent className="relative z-10 flex flex-col gap-5">
         <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <UserIcon className="size-4" />
-            <span className="font-medium text-foreground">{user.id}</span>
-          </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <MailIcon className="size-4" />
             <span className="font-medium text-foreground">{user.email}</span>

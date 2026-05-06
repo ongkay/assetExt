@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatCountdownParts,
   formatDateForPopup,
   getSubscriptionStatusLabel,
   isRenewalWarningActive,
@@ -9,19 +8,13 @@ import {
 
 describe("subscription helpers", () => {
   it("detects active renewal warnings within the threshold", () => {
-    expect(isRenewalWarningActive(259_200)).toBe(true);
-    expect(isRenewalWarningActive(259_201)).toBe(false);
-    expect(isRenewalWarningActive(0)).toBe(false);
-  });
-
-  it("formats countdown seconds into padded parts and label", () => {
-    expect(formatCountdownParts(176_461)).toEqual({
-      days: 2,
-      hours: 1,
-      minutes: 1,
-      seconds: 1,
-      label: "02d 01h 01m 01s",
-    });
+    expect(isRenewalWarningActive("2099-01-04T00:00:00.000Z", new Date("2099-01-01T00:00:00.000Z"))).toBe(
+      true,
+    );
+    expect(isRenewalWarningActive("2099-01-05T00:00:01.000Z", new Date("2099-01-01T00:00:00.000Z"))).toBe(
+      false,
+    );
+    expect(isRenewalWarningActive(null, new Date("2099-01-01T00:00:00.000Z"))).toBe(false);
   });
 
   it("returns status labels", () => {

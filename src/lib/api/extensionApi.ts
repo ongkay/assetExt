@@ -8,7 +8,6 @@ import type {
   ExtensionBootstrap,
   ExtensionHeartbeatResponse,
   ExtensionLogoutResponse,
-  ExtensionMode,
   ExtensionRedeemSuccess,
 } from "@/lib/api/extensionApiTypes";
 
@@ -32,13 +31,8 @@ export function fetchExtensionBootstrap(
 export function fetchExtensionAsset(
   config: ExtensionApiConfig,
   platform: AssetPlatform,
-  mode?: ExtensionMode,
 ): Promise<ExtensionApiResult<ExtensionAssetResponse>> {
   const searchParams = new URLSearchParams({ platform });
-
-  if (mode) {
-    searchParams.set("mode", mode);
-  }
 
   return requestExtensionApi(config, `/api/ext/asset?${searchParams.toString()}`, {
     method: "GET",

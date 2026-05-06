@@ -380,7 +380,7 @@ Interaksi yang dipilih:
       v
 [Fetch /api/ext/asset?platform=tradingview]
       |
-      +--> jika selection_required -> chooser
+      +--> mode akses ditentukan server, tanpa chooser manual
       |
       v
 [Inject all returned cookies by domain]

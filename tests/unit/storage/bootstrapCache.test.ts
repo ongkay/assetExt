@@ -118,9 +118,9 @@ describe("injection cooldown storage", () => {
   it("preserves cooldowns when different platforms are marked concurrently", async () => {
     installDelayedChromeStorage({});
 
-    await Promise.all([markInjectionCooldown("tradingview", 1000), markInjectionCooldown("fxreplay", 1000)]);
+    await Promise.all([markInjectionCooldown("tradingview", 1000), markInjectionCooldown("fxtester", 1000)]);
 
     await expect(isInjectionCooldownActive("tradingview", 1001)).resolves.toBe(true);
-    await expect(isInjectionCooldownActive("fxreplay", 1001)).resolves.toBe(true);
+    await expect(isInjectionCooldownActive("fxtester", 1001)).resolves.toBe(true);
   });
 });

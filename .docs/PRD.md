@@ -22,7 +22,7 @@ Fitur ini mengatur tampilan antarmuka (UI) extension saat ikon di-klik, berdasar
     * **Info Subscriber:**  Status: `Active` atau `Processed`.
         * Jika `Processed`: Tampilkan peringatan *"Pesanan sedang diproses oleh admin, mohon tunggu."*
     * **Detail Paket:** Nama Paket, Tanggal Kedaluwarsa, dan Countdown `d:h:m:s`.
-    * **Renewal Warning:** Jika `countdownSeconds <= 259200` atau sisa waktu tinggal 3 hari, tampilkan warning message agar user segera memperpanjang paket.
+    * **Renewal Warning:** Jika `endAt` tinggal kurang dari atau sama dengan 3 hari, tampilkan warning message agar user segera memperpanjang paket.
     * **Renewal Actions:** Saat renewal warning aktif, tampilkan button `Pilih Paket` dan `Redeem CDKey` dengan perilaku toggle panel yang sama seperti **State 3**.
 * **Akses Asset (AccessKey):**
     * Tombol dinamis berdasarkan data server (contoh: TradingView, FXReplay, FXTester).
@@ -90,6 +90,6 @@ Fitur ini berjalan secara otomatis di latar belakang (*background script/content
 | **Storage**       | Menyimpan timestamp refresh terakhir (untuk cooldown 5 menit).                                      |
 | **Cookie Logic**  | `Clear All` -> `Inject New` -> `Redirect/Reload`.                                                   |
 | **Versi**         | Pembedaan antara *Optional Update* (State 2) dan *Mandatory Update* (State 4).                      |
-| **Redirect Aset** | TradingView (`www.tradingview.com/chart`), FXReplay (`fxreplay.com`), FXTester (`forextester.com`). |
+| **Redirect Aset** | TradingView (`www.tradingview.com/chart`), FXTester (`forextester.com`). |
 
 ---

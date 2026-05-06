@@ -17,7 +17,6 @@ import type {
   ExtensionAssetResponse,
   ExtensionAssetSummary,
   ExtensionBootstrap,
-  ExtensionMode,
 } from "@/lib/api/extensionApiTypes";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
@@ -54,12 +53,11 @@ export function PopupApp() {
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isRefreshing);
 
-  const requestAssetAccess = useCallback(async (platform: AssetPlatform, mode?: ExtensionMode) => {
+  const requestAssetAccess = useCallback(async (platform: AssetPlatform) => {
     setAccessingPlatform(platform);
     setAssetAccessErrorMessage(null);
 
     const assetResult = await sendRuntimeMessage<ExtensionAssetResponse>({
-      mode,
       platform,
       type: runtimeMessageType.assetAccessRequested,
     });
@@ -74,11 +72,6 @@ export function PopupApp() {
     }
 
     const assetResponse = assetResult.value;
-
-    if (assetResponse.status === "selection_required") {
-      setAssetAccessErrorMessage("Mode akses belum bisa ditentukan otomatis.");
-      return;
-    }
 
     if (assetResponse.status === "forbidden") {
       setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
@@ -125,11 +118,11 @@ export function PopupApp() {
     const mode = getAutomaticAssetMode(asset);
 
     if (!mode) {
-      setAssetAccessErrorMessage("Asset ini belum memiliki akses private atau share.");
+      setAssetAccessErrorMessage("Asset belum memiliki mode akses yang siap dipakai.");
       return;
     }
 
-    void requestAssetAccess(asset.platform, mode);
+    void requestAssetAccess(asset.platform);
   };
 
   const handleRedeemCdKey = async (cdKeyCode: string) => {

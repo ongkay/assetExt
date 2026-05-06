@@ -150,15 +150,14 @@ describe("extension API client", () => {
 
   it("exports plan-aligned API response type names and shapes", () => {
     const assetSummary: ExtensionAssetSummary = {
-      hasPrivateAccess: false,
-      hasShareAccess: true,
+      mode: "share",
+      nextMode: "private",
       platform: "tradingview",
     };
     const bootstrap: ExtensionBootstrap = {
       assets: [assetSummary],
       auth: { status: "authenticated" },
       subscription: {
-        countdownSeconds: 100,
         endAt: null,
         packageName: null,
         status: "active",
@@ -166,7 +165,6 @@ describe("extension API client", () => {
       user: {
         avatarUrl: null,
         email: "user@example.com",
-        id: "user-id",
         publicId: "MEM-001",
         username: "user-name",
       },

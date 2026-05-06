@@ -8,14 +8,12 @@ import {
 
 describe("asset platform mapping", () => {
   it("defines supported asset platforms", () => {
-    expect(assetPlatforms).toEqual(["tradingview", "fxreplay", "fxtester"]);
+    expect(assetPlatforms).toEqual(["tradingview", "fxtester"]);
   });
 
   it("detects platforms from supported hostnames", () => {
     expect(detectAssetPlatformFromHostname("www.tradingview.com")).toBe("tradingview");
     expect(detectAssetPlatformFromHostname("id.tradingview.com")).toBe("tradingview");
-    expect(detectAssetPlatformFromHostname("fxreplay.com")).toBe("fxreplay");
-    expect(detectAssetPlatformFromHostname("app.fxreplay.com")).toBe("fxreplay");
     expect(detectAssetPlatformFromHostname("forextester.com")).toBe("fxtester");
     expect(detectAssetPlatformFromHostname("www.forextester.com")).toBe("fxtester");
   });

@@ -1,14 +1,7 @@
 export const renewalWarningThresholdSeconds = 259_200;
+const renewalWarningThresholdMs = renewalWarningThresholdSeconds * 1_000;
 
 export type SubscriptionStatus = "active" | "processed" | "expired" | "canceled" | "none";
-
-export type CountdownParts = {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  label: string;
-};
 
 const subscriptionStatusLabels: Record<SubscriptionStatus, string> = {
   active: "Active",
@@ -26,27 +19,14 @@ export function isSubscriptionActive(status: SubscriptionStatus): boolean {
   return status === "active" || status === "processed";
 }
 
-export function isRenewalWarningActive(countdownSeconds: number): boolean {
-  return countdownSeconds > 0 && countdownSeconds <= renewalWarningThresholdSeconds;
-}
+export function isRenewalWarningActive(endAt: string | null, now = new Date()): boolean {
+  if (!endAt) {
+    return false;
+  }
 
-export function formatCountdownParts(countdownSeconds: number): CountdownParts {
-  const normalizedCountdownSeconds = Math.max(0, Math.floor(countdownSeconds));
-  const days = Math.floor(normalizedCountdownSeconds / 86_400);
-  const hours = Math.floor((normalizedCountdownSeconds % 86_400) / 3_600);
-  const minutes = Math.floor((normalizedCountdownSeconds % 3_600) / 60);
-  const seconds = normalizedCountdownSeconds % 60;
-  const label = `${padCountdownPart(days)}d ${padCountdownPart(hours)}h ${padCountdownPart(
-    minutes,
-  )}m ${padCountdownPart(seconds)}s`;
+  const endAtTime = new Date(endAt).getTime();
 
-  return {
-    days,
-    hours,
-    minutes,
-    seconds,
-    label,
-  };
+  return endAtTime > now.getTime() && endAtTime - now.getTime() <= renewalWarningThresholdMs;
 }
 
 export function formatDateForPopup(dateIso: string | null): string {
@@ -59,8 +39,4 @@ export function formatDateForPopup(dateIso: string | null): string {
     month: "short",
     year: "numeric",
   }).format(new Date(dateIso));
-}
-
-function padCountdownPart(countdownPart: number): string {
-  return countdownPart.toString().padStart(2, "0");
 }

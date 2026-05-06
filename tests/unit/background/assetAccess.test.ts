@@ -35,7 +35,7 @@ describe("background asset access", () => {
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(456, "tradingview");
   });
 
-  it("uses automatic private mode from bootstrap data when no mode is provided", async () => {
+  it("requests the asset payload without sending an explicit mode", async () => {
     const testRuntime = await importAssetAccessTestRuntime({ openedTabId: 456 });
 
     await expect(
@@ -48,47 +48,16 @@ describe("background asset access", () => {
     expect(testRuntime.fetchExtensionAsset).toHaveBeenCalledWith(
       { baseUrl: "http://localhost:3000" },
       "tradingview",
-      "private",
     );
   });
 
-  it("uses automatic share mode from bootstrap data when private access is unavailable", async () => {
-    const testRuntime = await importAssetAccessTestRuntime({
-      assets: [
-        {
-          hasPrivateAccess: false,
-          hasShareAccess: true,
-          platform: "tradingview",
-        },
-      ],
-      openedTabId: 456,
-    });
-
-    await expect(
-      testRuntime.assetAccess.runAssetAccess({
-        platform: "tradingview",
-        shouldNavigate: true,
-      }),
-    ).resolves.toEqual(readyAssetResponse);
-
-    expect(testRuntime.fetchExtensionAsset).toHaveBeenCalledWith(
-      { baseUrl: "http://localhost:3000" },
-      "tradingview",
-      "share",
-    );
-  });
-
-  it("resolves backend selection responses automatically without returning a chooser state", async () => {
-    const selectionResponse = {
-      availableModes: ["private", "share"] as const,
-      defaultMode: "share" as const,
-      platform: "tradingview" as const,
-      selectionTimeoutSeconds: 5,
-      status: "selection_required" as const,
+  it("returns backend forbidden responses without retrying another mode", async () => {
+    const forbiddenResponse = {
+      reason: "subscription_required" as const,
+      status: "forbidden" as const,
     };
     const testRuntime = await importAssetAccessTestRuntime({
-      assets: [],
-      assetResponses: [selectionResponse, readyAssetResponse],
+      assetResponses: [forbiddenResponse],
       openedTabId: 456,
     });
 
@@ -97,20 +66,9 @@ describe("background asset access", () => {
         platform: "tradingview",
         shouldNavigate: true,
       }),
-    ).resolves.toEqual(readyAssetResponse);
+    ).resolves.toEqual(forbiddenResponse);
 
-    expect(testRuntime.fetchExtensionAsset).toHaveBeenNthCalledWith(
-      1,
-      { baseUrl: "http://localhost:3000" },
-      "tradingview",
-      undefined,
-    );
-    expect(testRuntime.fetchExtensionAsset).toHaveBeenNthCalledWith(
-      2,
-      { baseUrl: "http://localhost:3000" },
-      "tradingview",
-      "private",
-    );
+    expect(testRuntime.fetchExtensionAsset).toHaveBeenCalledTimes(1);
   });
 
   it("starts heartbeat with the content tab id for auto access without navigation", async () => {
@@ -130,30 +88,11 @@ describe("background asset access", () => {
 });
 
 async function importAssetAccessTestRuntime({
-  assets = [
-    {
-      hasPrivateAccess: true,
-      hasShareAccess: true,
-      platform: "tradingview" as const,
-    },
-  ],
   assetResponses = [readyAssetResponse],
   openedTabId,
 }: {
-  assets?: Array<{
-    hasPrivateAccess: boolean;
-    hasShareAccess: boolean;
-    platform: "tradingview" | "fxreplay" | "fxtester";
-  }>;
   assetResponses?: Array<
-    | ExtensionAssetReadyResponse
-    | {
-        availableModes: readonly ["private", "share"];
-        defaultMode: "private" | "share";
-        platform: "tradingview";
-        selectionTimeoutSeconds: number;
-        status: "selection_required";
-      }
+    ExtensionAssetReadyResponse | { reason: "subscription_required"; status: "forbidden" }
   >;
   openedTabId: number;
 }) {
@@ -176,19 +115,6 @@ async function importAssetAccessTestRuntime({
   }));
   vi.doMock("@/lib/storage/injectionCooldown", () => ({
     markInjectionCooldown: vi.fn(() => Promise.resolve()),
-  }));
-  vi.doMock("@/lib/storage/bootstrapCache", () => ({
-    readBootstrapCache: vi.fn(() =>
-      Promise.resolve({
-        fetchedAt: 1_000,
-        isValid: true,
-        snapshot: {
-          assets,
-          auth: { status: "authenticated" },
-          version: { status: "supported" },
-        },
-      }),
-    ),
   }));
   vi.doMock("@/background/core/tabs", () => ({
     openOrReloadTab: vi.fn(() => Promise.resolve({ id: openedTabId })),

@@ -159,8 +159,6 @@ Ganti isi `manifest.json` menjadi:
     "http://localhost:3000/*",
     "https://www.tradingview.com/*",
     "https://*.tradingview.com/*",
-    "https://fxreplay.com/*",
-    "https://*.fxreplay.com/*",
     "https://forextester.com/*",
     "https://*.forextester.com/*",
     "https://tv.checkout.com/*",
@@ -175,8 +173,6 @@ Ganti isi `manifest.json` menjadi:
       "matches": [
         "https://www.tradingview.com/*",
         "https://*.tradingview.com/*",
-        "https://fxreplay.com/*",
-        "https://*.fxreplay.com/*",
         "https://forextester.com/*",
         "https://*.forextester.com/*"
       ],
@@ -247,14 +243,12 @@ import {
 
 describe("asset platform mapping", () => {
   it("menyediakan tiga platform dari PRD", () => {
-    expect(assetPlatforms).toEqual(["tradingview", "fxreplay", "fxtester"]);
+    expect(assetPlatforms).toEqual(["tradingview", "fxtester"]);
   });
 
   it("mendeteksi hostname platform", () => {
     expect(detectAssetPlatformFromHostname("www.tradingview.com")).toBe("tradingview");
     expect(detectAssetPlatformFromHostname("id.tradingview.com")).toBe("tradingview");
-    expect(detectAssetPlatformFromHostname("fxreplay.com")).toBe("fxreplay");
-    expect(detectAssetPlatformFromHostname("app.fxreplay.com")).toBe("fxreplay");
     expect(detectAssetPlatformFromHostname("forextester.com")).toBe("fxtester");
     expect(detectAssetPlatformFromHostname("www.forextester.com")).toBe("fxtester");
   });
@@ -288,7 +282,7 @@ Expected: FAIL karena `@/lib/asset-access/platforms` belum ada.
 Buat `src/lib/asset-access/platforms.ts`:
 
 ```ts
-export const assetPlatforms = ["tradingview", "fxreplay", "fxtester"] as const;
+export const assetPlatforms = ["tradingview", "fxtester"] as const;
 
 export type AssetPlatform = (typeof assetPlatforms)[number];
 
@@ -307,13 +301,6 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
     targetUrl: "https://www.tradingview.com/chart/",
     hostPatterns: ["tradingview.com"],
     cookieDomains: [".tradingview.com", "tradingview.com"],
-  },
-  fxreplay: {
-    platform: "fxreplay",
-    label: "FXReplay",
-    targetUrl: "https://fxreplay.com/",
-    hostPatterns: ["fxreplay.com"],
-    cookieDomains: [".fxreplay.com", "fxreplay.com"],
   },
   fxtester: {
     platform: "fxtester",

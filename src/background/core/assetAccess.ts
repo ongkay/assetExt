@@ -1,12 +1,6 @@
 import { getAssetPlatformConfig, type AssetPlatform } from "@/lib/asset-access/platforms";
-import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import { fetchExtensionAsset } from "@/lib/api/extensionApi";
-import type {
-  ExtensionAssetReadyResponse,
-  ExtensionAssetResponse,
-  ExtensionMode,
-} from "@/lib/api/extensionApiTypes";
-import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import type { ExtensionAssetReadyResponse, ExtensionAssetResponse } from "@/lib/api/extensionApiTypes";
 import { markInjectionCooldown } from "@/lib/storage/injectionCooldown";
 
 import { createExtensionApiConfig } from "./bootstrap";
@@ -16,14 +10,12 @@ import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 import { openOrReloadTab } from "./tabs";
 
 export type RunAssetAccessOptions = {
-  mode?: ExtensionMode;
   platform: AssetPlatform;
   shouldNavigate: boolean;
   tabId?: number;
 };
 
 type PrepareAssetAccessSessionOptions = {
-  mode?: ExtensionMode;
   platform: AssetPlatform;
 };
 
@@ -52,15 +44,7 @@ export async function runAssetAccess(options: RunAssetAccessOptions): Promise<Ex
 export async function prepareAssetAccessSession(
   options: PrepareAssetAccessSessionOptions,
 ): Promise<ExtensionAssetResponse> {
-  const mode = options.mode ?? (await readAutomaticAssetMode(options.platform));
-  let assetResponse = await requestAssetResponse(options.platform, mode ?? undefined);
-
-  if (assetResponse.status === "selection_required") {
-    assetResponse = await requestAssetResponse(
-      options.platform,
-      getAutomaticModeFromSelection(assetResponse),
-    );
-  }
+  const assetResponse = await requestAssetResponse(options.platform);
 
   if (assetResponse.status !== "ready") {
     return assetResponse;
@@ -71,12 +55,9 @@ export async function prepareAssetAccessSession(
   return assetResponse;
 }
 
-async function requestAssetResponse(
-  platform: AssetPlatform,
-  mode?: ExtensionMode,
-): Promise<ExtensionAssetResponse> {
+async function requestAssetResponse(platform: AssetPlatform): Promise<ExtensionAssetResponse> {
   await ensureProductionOriginHeaderRuleReady();
-  const assetResult = await fetchExtensionAsset(createExtensionApiConfig(), platform, mode);
+  const assetResult = await fetchExtensionAsset(createExtensionApiConfig(), platform);
 
   if (!assetResult.ok) {
     throw new Error(assetResult.error.message);
@@ -92,21 +73,4 @@ async function applyReadyAssetCookies(
   await clearAssetPlatformCookies(platform);
   await injectExtensionCookies(assetResponse.cookies);
   await markInjectionCooldown(platform);
-}
-
-function getAutomaticModeFromSelection(
-  assetResponse: Extract<ExtensionAssetResponse, { status: "selection_required" }>,
-): ExtensionMode {
-  return assetResponse.availableModes.includes("private") ? "private" : assetResponse.defaultMode;
-}
-
-async function readAutomaticAssetMode(platform: AssetPlatform): Promise<ExtensionMode | null> {
-  const bootstrapCache = await readBootstrapCache();
-  const asset = bootstrapCache?.snapshot.assets?.find((assetSummary) => assetSummary.platform === platform);
-
-  if (!asset) {
-    return null;
-  }
-
-  return getAutomaticAssetMode(asset);
 }

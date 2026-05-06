@@ -27,7 +27,6 @@ export function createAssetSessionSyncEntry(): AssetSessionSyncEntry {
 export function createEmptyAssetSessionSyncState(): AssetSessionSyncState {
   return {
     tradingview: createAssetSessionSyncEntry(),
-    fxreplay: createAssetSessionSyncEntry(),
     fxtester: createAssetSessionSyncEntry(),
   };
 }

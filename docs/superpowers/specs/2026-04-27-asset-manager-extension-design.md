@@ -78,8 +78,6 @@ Domain target awal:
 - `http://localhost:3000/*`
 - `https://www.tradingview.com/*`
 - `https://*.tradingview.com/*`
-- `https://fxreplay.com/*`
-- `https://*.fxreplay.com/*`
 - `https://forextester.com/*`
 - `https://*.forextester.com/*`
 

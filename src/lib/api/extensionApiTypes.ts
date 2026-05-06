@@ -30,14 +30,13 @@ export type ExtensionAuthState =
 export type ExtensionUser = {
   avatarUrl: string | null;
   email: string;
-  id: string;
   publicId: string;
   username: string;
 };
 
 export type ExtensionAssetSummary = {
-  hasPrivateAccess: boolean;
-  hasShareAccess: boolean;
+  mode: ExtensionMode;
+  nextMode?: "private";
   platform: AssetPlatform;
 };
 
@@ -50,7 +49,6 @@ export type ExtensionPackage = {
 };
 
 export type ExtensionSubscription = {
-  countdownSeconds: number;
   endAt: string | null;
   packageName: string | null;
   status: SubscriptionStatus;
@@ -86,14 +84,6 @@ export type ExtensionCookiePayload = {
   value: string;
 };
 
-export type ExtensionAssetSelectionResponse = {
-  availableModes: ExtensionMode[];
-  defaultMode: ExtensionMode;
-  platform: AssetPlatform;
-  selectionTimeoutSeconds: number;
-  status: "selection_required";
-};
-
 export type ExtensionAssetReadyResponse = {
   cookies: ExtensionCookiePayload[];
   mode: ExtensionMode;
@@ -107,10 +97,7 @@ export type ExtensionAssetForbiddenResponse = {
   status: "forbidden";
 };
 
-export type ExtensionAssetResponse =
-  | ExtensionAssetSelectionResponse
-  | ExtensionAssetReadyResponse
-  | ExtensionAssetForbiddenResponse;
+export type ExtensionAssetResponse = ExtensionAssetReadyResponse | ExtensionAssetForbiddenResponse;
 
 export type ExtensionHeartbeatResponse = {
   ok: true;

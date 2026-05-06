@@ -173,7 +173,7 @@ describe("TV DOM patches", () => {
         hasPrivateAccess: false,
       }),
     );
-    mockDetectedPlatform("fxreplay");
+    mockDetectedPlatform("fxtester");
     renderTradingViewPage();
 
     const disposeTvDomPatches = installTvDomPatches();
@@ -2573,8 +2573,7 @@ function createBootstrapCacheRecordWithUser(
   return createBootstrapCacheRecord({
     assets: [
       {
-        hasPrivateAccess: userOverrides.hasPrivateAccess ?? false,
-        hasShareAccess: true,
+        mode: userOverrides.hasPrivateAccess ? "private" : "share",
         platform: "tradingview",
       },
     ],
@@ -2582,7 +2581,6 @@ function createBootstrapCacheRecordWithUser(
     user: {
       avatarUrl: userOverrides.avatarUrl,
       email: userOverrides.email ?? "ongkay@example.com",
-      id: userOverrides.id ?? "user-1",
       publicId: userOverrides.publicId ?? "public-user-1",
       username: userOverrides.username ?? "ongkaytrade",
     },

@@ -1,6 +1,5 @@
-import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import { assetPlatforms, type AssetPlatform } from "@/lib/asset-access/platforms";
-import type { ExtensionAssetResponse, ExtensionMode } from "@/lib/api/extensionApiTypes";
+import type { ExtensionAssetResponse } from "@/lib/api/extensionApiTypes";
 import {
   readAssetSessionSyncState,
   updateAssetSessionSyncEntry,
@@ -112,21 +111,20 @@ async function runStartupAssetSync(): Promise<void> {
 
     for (const platform of assetPlatforms) {
       const assetSummary = bootstrapCache.snapshot.assets?.find((asset) => asset.platform === platform);
-      const automaticMode = assetSummary ? getAutomaticAssetMode(assetSummary) : null;
 
-      if (!automaticMode) {
+      if (!assetSummary) {
         await markAssetSessionSyncSkipped(platform);
         continue;
       }
 
-      await syncStartupAssetPlatform(platform, automaticMode);
+      await syncStartupAssetPlatform(platform);
     }
   } catch (error) {
     await markAllAssetSessionSyncFailures(getErrorMessage(error));
   }
 }
 
-async function syncStartupAssetPlatform(platform: AssetPlatform, mode: ExtensionMode): Promise<void> {
+async function syncStartupAssetPlatform(platform: AssetPlatform): Promise<void> {
   await updateAssetSessionSyncEntry(platform, (entry) => ({
     ...entry,
     lastErrorMessage: null,
@@ -134,7 +132,7 @@ async function syncStartupAssetPlatform(platform: AssetPlatform, mode: Extension
   }));
 
   try {
-    const assetResponse = await prepareAssetAccessSession({ mode, platform });
+    const assetResponse = await prepareAssetAccessSession({ platform });
 
     if (assetResponse.status !== "ready") {
       await markAssetSessionSyncFailure(platform, getAssetSessionFailureMessage(assetResponse));
@@ -179,11 +177,7 @@ function createEnsureResult(
   };
 }
 
-function getAssetSessionFailureMessage(assetResponse: ExtensionAssetResponse): string {
-  if (assetResponse.status === "selection_required") {
-    return "Mode akses belum bisa ditentukan otomatis.";
-  }
-
+function getAssetSessionFailureMessage(_assetResponse: ExtensionAssetResponse): string {
   return "Subscription aktif diperlukan untuk membuka asset ini.";
 }
 

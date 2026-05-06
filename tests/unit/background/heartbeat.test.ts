@@ -19,10 +19,9 @@ function createTab(id: number, url: string): chrome.tabs.Tab {
 
 const assetTabs = [
   createTab(101, "https://www.tradingview.com/chart/"),
-  createTab(102, "https://fxreplay.com/"),
-  createTab(103, "https://forextester.com/"),
+  createTab(102, "https://forextester.com/"),
   createTab(104, "https://www.tradingview.com/chart/abc"),
-  createTab(105, "https://fxreplay.com/backtest"),
+  createTab(105, "https://www.forextester.com/dashboard"),
 ];
 
 type HeartbeatTestRuntime = {

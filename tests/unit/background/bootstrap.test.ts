@@ -234,7 +234,6 @@ describe("background bootstrap core", () => {
       assets: [],
       packages: [],
       subscription: {
-        countdownSeconds: 0,
         endAt: null,
         packageName: null,
         status: "none" as const,
@@ -242,7 +241,6 @@ describe("background bootstrap core", () => {
       user: {
         avatarUrl: null,
         email: "user@example.com",
-        id: "user-id",
         publicId: "PUB-001",
         username: "user",
       },

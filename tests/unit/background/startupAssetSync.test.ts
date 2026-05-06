@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  ExtensionAssetReadyResponse,
-  ExtensionAssetResponse,
-  ExtensionMode,
-} from "@/lib/api/extensionApiTypes";
+import type { ExtensionAssetReadyResponse, ExtensionAssetResponse } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import type { AssetSessionSyncEntry, AssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
@@ -31,68 +27,57 @@ describe("background startup asset sync", () => {
     const testRuntime = await importStartupAssetSyncTestRuntime({
       assets: [
         {
-          hasPrivateAccess: true,
-          hasShareAccess: true,
+          mode: "private",
           platform: "tradingview",
         },
         {
-          hasPrivateAccess: false,
-          hasShareAccess: true,
-          platform: "fxreplay",
-        },
-        {
-          hasPrivateAccess: false,
-          hasShareAccess: false,
+          mode: "share",
           platform: "fxtester",
         },
       ],
-      prepareAssetAccessSession: ({ mode, platform }) => {
+      prepareAssetAccessSession: ({ platform }) => {
         if (platform === "tradingview") {
-          expect(mode).toBe("private");
           return Promise.resolve(tradingViewReadyResponse);
         }
 
         return Promise.resolve({
           ...tradingViewReadyResponse,
-          cookies: [{ domain: ".fxreplay.com", name: "sessionid", value: "fxr-session" }],
+          cookies: [{ domain: ".forextester.com", name: "sessionid", value: "ft-session" }],
           mode: "share",
-          platform: "fxreplay",
+          platform: "fxtester",
         });
       },
     });
 
     await testRuntime.startupAssetSync.ensureStartupAssetSync();
 
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, {
-      mode: "private",
-      platform: "tradingview",
-    });
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, {
-      mode: "share",
-      platform: "fxreplay",
-    });
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, { platform: "tradingview" });
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, { platform: "fxtester" });
     expect(testRuntime.prepareAssetAccessSession).toHaveBeenCalledTimes(2);
     expect(testRuntime.getAssetSessionSyncEntry("tradingview").status).toBe("success");
-    expect(testRuntime.getAssetSessionSyncEntry("fxreplay").status).toBe("success");
-    expect(testRuntime.getAssetSessionSyncEntry("fxtester").status).toBe("skipped");
+    expect(testRuntime.getAssetSessionSyncEntry("fxtester").status).toBe("success");
   });
 
   it("uses a one-time fallback and requests a single reload when startup sync misses the platform", async () => {
     const testRuntime = await importStartupAssetSyncTestRuntime({
       assets: [
         {
-          hasPrivateAccess: true,
-          hasShareAccess: true,
+          mode: "private",
           platform: "tradingview",
         },
       ],
-      prepareAssetAccessSession: ({ mode, platform }) => {
-        if (platform === "tradingview" && mode === "private") {
-          return Promise.reject(new Error("Startup sync gagal"));
-        }
+      prepareAssetAccessSession: (() => {
+        let hasFailedOnce = false;
 
-        return Promise.resolve(tradingViewReadyResponse);
-      },
+        return ({ platform }) => {
+          if (platform === "tradingview" && !hasFailedOnce) {
+            hasFailedOnce = true;
+            return Promise.reject(new Error("Startup sync gagal"));
+          }
+
+          return Promise.resolve(tradingViewReadyResponse);
+        };
+      })(),
     });
 
     await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
@@ -102,13 +87,8 @@ describe("background startup asset sync", () => {
       status: "success",
     });
 
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, {
-      mode: "private",
-      platform: "tradingview",
-    });
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, {
-      platform: "tradingview",
-    });
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, { platform: "tradingview" });
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, { platform: "tradingview" });
     expect(testRuntime.getAssetSessionSyncEntry("tradingview")).toEqual({
       fallbackUsed: true,
       lastErrorMessage: null,
@@ -121,21 +101,25 @@ describe("background startup asset sync", () => {
     const testRuntime = await importStartupAssetSyncTestRuntime({
       assets: [
         {
-          hasPrivateAccess: true,
-          hasShareAccess: true,
+          mode: "private",
           platform: "tradingview",
         },
       ],
-      prepareAssetAccessSession: ({ mode, platform }) => {
-        if (platform === "tradingview" && mode === "private") {
-          return Promise.reject(new Error("Startup sync gagal"));
-        }
+      prepareAssetAccessSession: (() => {
+        let hasFailedOnce = false;
 
-        return Promise.resolve({
-          reason: "subscription_required",
-          status: "forbidden",
-        } satisfies Extract<ExtensionAssetResponse, { status: "forbidden" }>);
-      },
+        return ({ platform }) => {
+          if (platform === "tradingview" && !hasFailedOnce) {
+            hasFailedOnce = true;
+            return Promise.reject(new Error("Startup sync gagal"));
+          }
+
+          return Promise.resolve({
+            reason: "subscription_required",
+            status: "forbidden",
+          } satisfies Extract<ExtensionAssetResponse, { status: "forbidden" }>);
+        };
+      })(),
     });
 
     await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
@@ -161,13 +145,12 @@ async function importStartupAssetSyncTestRuntime({
   prepareAssetAccessSession,
 }: {
   assets: Array<{
-    hasPrivateAccess: boolean;
-    hasShareAccess: boolean;
-    platform: "tradingview" | "fxreplay" | "fxtester";
+    mode: "private" | "share";
+    nextMode?: "private";
+    platform: "tradingview" | "fxtester";
   }>;
   prepareAssetAccessSession: (options: {
-    mode?: ExtensionMode;
-    platform: "tradingview" | "fxreplay" | "fxtester";
+    platform: "tradingview" | "fxtester";
   }) => Promise<ExtensionAssetResponse>;
 }) {
   let assetSessionSyncState = createEmptyAssetSessionSyncState();
@@ -222,7 +205,6 @@ async function importStartupAssetSyncTestRuntime({
 function createEmptyAssetSessionSyncState(): AssetSessionSyncState {
   return {
     tradingview: createEmptyAssetSessionSyncEntry(),
-    fxreplay: createEmptyAssetSessionSyncEntry(),
     fxtester: createEmptyAssetSessionSyncEntry(),
   };
 }

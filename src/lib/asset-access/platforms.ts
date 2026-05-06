@@ -1,4 +1,4 @@
-export const assetPlatforms = ["tradingview", "fxreplay", "fxtester"] as const;
+export const assetPlatforms = ["tradingview", "fxtester"] as const;
 
 export type AssetPlatform = (typeof assetPlatforms)[number];
 
@@ -17,13 +17,6 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
     targetUrl: "https://www.tradingview.com/chart/",
     hostPatterns: ["tradingview.com"],
     cookieDomains: [".tradingview.com", "tradingview.com"],
-  },
-  fxreplay: {
-    platform: "fxreplay",
-    label: "FXReplay",
-    targetUrl: "https://fxreplay.com/",
-    hostPatterns: ["fxreplay.com"],
-    cookieDomains: [".fxreplay.com", "fxreplay.com"],
   },
   fxtester: {
     platform: "fxtester",

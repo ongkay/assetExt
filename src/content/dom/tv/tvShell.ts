@@ -159,7 +159,7 @@ export function createTvOverrideState(bootstrapCacheRecord: BootstrapCacheRecord
   return {
     avatarAlt: user ? getAvatarLabel(user.username, user.email, user.publicId) : null,
     avatarSrc: user ? getAvatarSource(user.avatarUrl, user.publicId, user.username, user.email) : null,
-    menuMode: tradingViewAsset?.hasPrivateAccess === true ? "default" : "restricted",
+    menuMode: tradingViewAsset?.mode === "private" ? "default" : "restricted",
     publicId: user?.publicId?.trim() || null,
   };
 }
