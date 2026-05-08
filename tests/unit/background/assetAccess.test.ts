@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ExtensionAssetReadyResponse } from "@/lib/api/extensionApiTypes";
+import type { AssetSessionSyncEntry } from "@/lib/storage/assetSessionSync";
 
 const readyAssetResponse: ExtensionAssetReadyResponse = {
   cookies: [
@@ -12,7 +13,9 @@ const readyAssetResponse: ExtensionAssetReadyResponse = {
   ],
   mode: "private",
   platform: "tradingview",
+  revision: "extr1_ready",
   status: "ready",
+  updatedAt: "2026-05-08T10:00:00.000Z",
 };
 
 describe("background asset access", () => {
@@ -33,6 +36,14 @@ describe("background asset access", () => {
 
     expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith("https://www.tradingview.com/chart/", undefined);
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(456, "tradingview");
+    expect(testRuntime.getAssetSessionSyncEntry()).toMatchObject({
+      lastErrorMessage: null,
+      revision: "extr1_ready",
+      skipNextPageSync: false,
+      skipNextPageSyncTabIds: [],
+      status: "success",
+      updatedAt: "2026-05-08T10:00:00.000Z",
+    });
   });
 
   it("requests the asset payload without sending an explicit mode", async () => {
@@ -46,7 +57,7 @@ describe("background asset access", () => {
     ).resolves.toEqual(readyAssetResponse);
 
     expect(testRuntime.fetchExtensionAsset).toHaveBeenCalledWith(
-      { baseUrl: "http://localhost:3000" },
+      { apiBaseUrl: "http://localhost:3000" },
       "tradingview",
     );
   });
@@ -96,8 +107,19 @@ async function importAssetAccessTestRuntime({
   >;
   openedTabId: number;
 }) {
+  let assetSessionSyncEntry: AssetSessionSyncEntry = {
+    lastErrorMessage: null,
+    lastSyncedAt: null,
+    revision: null,
+    skipNextPageSync: false,
+    skipNextPageSyncTabIds: [],
+    status: "idle",
+    updatedAt: null,
+  };
+
   vi.doMock("@/background/core/bootstrap", () => ({
-    createExtensionApiConfig: vi.fn(() => ({ baseUrl: "http://localhost:3000" })),
+    createExtensionApiConfig: vi.fn(() => ({ apiBaseUrl: "http://localhost:3000" })),
+    getExtensionSessionLifecycleRevision: vi.fn(() => 0),
   }));
   vi.doMock("@/background/core/productionOrigin", () => ({
     ensureProductionOriginHeaderRuleReady: vi.fn(() => Promise.resolve()),
@@ -116,6 +138,18 @@ async function importAssetAccessTestRuntime({
   vi.doMock("@/lib/storage/injectionCooldown", () => ({
     markInjectionCooldown: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/lib/storage/assetSessionSync", () => ({
+    updateAssetSessionSyncEntry: vi.fn(
+      (
+        _platform: "tradingview" | "fxtester",
+        updateEntry: (entry: AssetSessionSyncEntry) => AssetSessionSyncEntry,
+      ) => {
+        assetSessionSyncEntry = updateEntry(assetSessionSyncEntry);
+
+        return Promise.resolve({ tradingview: assetSessionSyncEntry, fxtester: assetSessionSyncEntry });
+      },
+    ),
+  }));
   vi.doMock("@/background/core/tabs", () => ({
     openOrReloadTab: vi.fn(() => Promise.resolve({ id: openedTabId })),
   }));
@@ -131,6 +165,9 @@ async function importAssetAccessTestRuntime({
   return {
     assetAccess,
     fetchExtensionAsset: vi.mocked(extensionApi.fetchExtensionAsset),
+    getAssetSessionSyncEntry() {
+      return assetSessionSyncEntry;
+    },
     openOrReloadTab: vi.mocked(tabs.openOrReloadTab),
     startHeartbeat: vi.mocked(heartbeat.startHeartbeat),
   };

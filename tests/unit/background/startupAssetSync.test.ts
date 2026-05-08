@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ExtensionAssetReadyResponse, ExtensionAssetResponse } from "@/lib/api/extensionApiTypes";
+import type { ExtensionAssetReadyResponse, ExtensionAssetSyncResponse } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
+import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 import type { AssetSessionSyncEntry, AssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
-const tradingViewReadyResponse: ExtensionAssetReadyResponse = {
+const readyAssetResponse: ExtensionAssetReadyResponse = {
   cookies: [
     {
       domain: ".tradingview.com",
@@ -14,7 +15,9 @@ const tradingViewReadyResponse: ExtensionAssetReadyResponse = {
   ],
   mode: "private",
   platform: "tradingview",
+  revision: "extr1_ready",
   status: "ready",
+  updatedAt: "2026-05-08T10:00:00.000Z",
 };
 
 describe("background startup asset sync", () => {
@@ -23,168 +26,257 @@ describe("background startup asset sync", () => {
     vi.unstubAllGlobals();
   });
 
-  it("syncs all platforms with automatic access and skips unavailable platforms", async () => {
-    const testRuntime = await importStartupAssetSyncTestRuntime({
-      assets: [
-        {
-          mode: "private",
-          platform: "tradingview",
-        },
-        {
-          mode: "share",
-          platform: "fxtester",
-        },
-      ],
-      prepareAssetAccessSession: ({ platform }) => {
-        if (platform === "tradingview") {
-          return Promise.resolve(tradingViewReadyResponse);
-        }
+  it("does nothing when bootstrap cache is missing", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({ bootstrapCache: null });
 
-        return Promise.resolve({
-          ...tradingViewReadyResponse,
-          cookies: [{ domain: ".forextester.com", name: "sessionid", value: "ft-session" }],
-          mode: "share",
-          platform: "fxtester",
-        });
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
+      action: "none",
+      message: null,
+      redirectTo: null,
+      shouldStartHeartbeat: false,
+    });
+
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
+    expect(testRuntime.prepareAssetAccessSession).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when bootstrap cache is unauthenticated", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      bootstrapCache: {
+        fetchedAt: 1_000,
+        isValid: false,
+        snapshot: {
+          auth: { loginUrl: "/login", status: "unauthenticated" },
+          version: { status: "supported" },
+        },
       },
     });
 
-    await testRuntime.startupAssetSync.ensureStartupAssetSync();
-
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, { platform: "tradingview" });
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, { platform: "fxtester" });
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenCalledTimes(2);
-    expect(testRuntime.getAssetSessionSyncEntry("tradingview").status).toBe("success");
-    expect(testRuntime.getAssetSessionSyncEntry("fxtester").status).toBe("success");
-  });
-
-  it("uses a one-time fallback and requests a single reload when startup sync misses the platform", async () => {
-    const testRuntime = await importStartupAssetSyncTestRuntime({
-      assets: [
-        {
-          mode: "private",
-          platform: "tradingview",
-        },
-      ],
-      prepareAssetAccessSession: (() => {
-        let hasFailedOnce = false;
-
-        return ({ platform }) => {
-          if (platform === "tradingview" && !hasFailedOnce) {
-            hasFailedOnce = true;
-            return Promise.reject(new Error("Startup sync gagal"));
-          }
-
-          return Promise.resolve(tradingViewReadyResponse);
-        };
-      })(),
-    });
-
     await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
-      action: "reload_required",
-      fallbackUsed: true,
-      lastErrorMessage: null,
-      status: "success",
+      action: "none",
+      message: null,
+      redirectTo: null,
+      shouldStartHeartbeat: false,
     });
 
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(1, { platform: "tradingview" });
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenNthCalledWith(2, { platform: "tradingview" });
-    expect(testRuntime.getAssetSessionSyncEntry("tradingview")).toEqual({
-      fallbackUsed: true,
-      lastErrorMessage: null,
-      lastSyncedAt: expect.any(Number) as number,
-      status: "success",
-    });
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
   });
 
-  it("does not retry fallback more than once for the same platform in one browser session", async () => {
+  it("skips sync once after extension-triggered reload", async () => {
     const testRuntime = await importStartupAssetSyncTestRuntime({
-      assets: [
+      assetSessionSyncState: {
+        fxtester: createEmptyAssetSessionSyncEntry(),
+        tradingview: {
+          ...createEmptyAssetSessionSyncEntry(),
+          revision: "extr1_saved",
+          skipNextPageSync: true,
+          skipNextPageSyncTabIds: [321],
+          status: "success",
+          updatedAt: "2026-05-08T09:00:00.000Z",
+        },
+      },
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview", 321)).resolves.toEqual(
+      {
+        action: "none",
+        message: null,
+        redirectTo: null,
+        shouldStartHeartbeat: true,
+      },
+    );
+
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
+    expect(testRuntime.getAssetSessionSyncEntry("tradingview").skipNextPageSync).toBe(false);
+  });
+
+  it("keeps page untouched when backend revision is current", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      assetSessionSyncState: {
+        fxtester: createEmptyAssetSessionSyncEntry(),
+        tradingview: {
+          ...createEmptyAssetSessionSyncEntry(),
+          revision: "extr1_saved",
+          status: "success",
+        },
+      },
+      assetSyncResponses: [
         {
           mode: "private",
           platform: "tradingview",
+          revision: "extr1_saved",
+          status: "current",
+          updatedAt: "2026-05-08T10:00:00.000Z",
         },
       ],
-      prepareAssetAccessSession: (() => {
-        let hasFailedOnce = false;
-
-        return ({ platform }) => {
-          if (platform === "tradingview" && !hasFailedOnce) {
-            hasFailedOnce = true;
-            return Promise.reject(new Error("Startup sync gagal"));
-          }
-
-          return Promise.resolve({
-            reason: "subscription_required",
-            status: "forbidden",
-          } satisfies Extract<ExtensionAssetResponse, { status: "forbidden" }>);
-        };
-      })(),
     });
 
     await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
       action: "none",
-      fallbackUsed: true,
-      lastErrorMessage: "Subscription aktif diperlukan untuk membuka asset ini.",
-      status: "failed",
+      message: null,
+      redirectTo: null,
+      shouldStartHeartbeat: true,
+    });
+
+    expect(testRuntime.fetchAssetSessionSync).toHaveBeenCalledWith("tradingview", "extr1_saved");
+    expect(testRuntime.prepareAssetAccessSession).not.toHaveBeenCalled();
+    expect(testRuntime.getAssetSessionSyncEntry("tradingview")).toMatchObject({
+      revision: "extr1_saved",
+      skipNextPageSync: false,
+      skipNextPageSyncTabIds: [],
+      status: "success",
+      updatedAt: "2026-05-08T10:00:00.000Z",
+    });
+  });
+
+  it("clears existing platform cookies when sync reports subscription forbidden", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      assetSyncResponses: [
+        {
+          reason: "subscription_required",
+          status: "forbidden",
+        },
+      ],
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview", 123)).resolves.toEqual(
+      {
+        action: "none",
+        message: null,
+        redirectTo: null,
+        shouldStartHeartbeat: false,
+      },
+    );
+
+    expect(testRuntime.clearAssetPlatformCookies).toHaveBeenCalledWith("tradingview");
+  });
+
+  it("fetches fresh asset cookies and requests reload when revision is stale", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      assetSessionSyncState: {
+        fxtester: createEmptyAssetSessionSyncEntry(),
+        tradingview: {
+          ...createEmptyAssetSessionSyncEntry(),
+          revision: "extr1_old",
+          status: "success",
+        },
+      },
+      assetSyncResponses: [
+        {
+          mode: "private",
+          platform: "tradingview",
+          reason: "revision_mismatch",
+          revision: "extr1_new",
+          status: "stale",
+          updatedAt: "2026-05-08T10:00:00.000Z",
+        },
+      ],
+      preparedAssetResponses: [readyAssetResponse],
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview", 654)).resolves.toEqual(
+      {
+        action: "none",
+        message: null,
+        redirectTo: null,
+        shouldStartHeartbeat: false,
+      },
+    );
+
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenCalledWith({
+      platform: "tradingview",
+    });
+    expect(testRuntime.getAssetSessionSyncEntry("tradingview")).toMatchObject({
+      skipNextPageSync: true,
+      skipNextPageSyncTabIds: [654],
+    });
+  });
+
+  it("redirects to login and clears local session when backend returns unauthenticated", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      assetSyncError: createExtensionApiRequestError("EXT_UNAUTHENTICATED", "Session expired."),
+      unauthenticatedRedirectTo: "http://localhost:3000/login",
     });
 
     await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
-      action: "none",
-      fallbackUsed: true,
-      lastErrorMessage: "Subscription aktif diperlukan untuk membuka asset ini.",
-      status: "failed",
+      action: "redirect_login",
+      message: null,
+      redirectTo: "http://localhost:3000/login",
+      shouldStartHeartbeat: false,
     });
 
-    expect(testRuntime.prepareAssetAccessSession).toHaveBeenCalledTimes(2);
+    expect(testRuntime.markExtensionSessionUnauthenticated).toHaveBeenCalledTimes(1);
   });
 });
 
 async function importStartupAssetSyncTestRuntime({
-  assets,
-  prepareAssetAccessSession,
+  assetSessionSyncState = createEmptyAssetSessionSyncState(),
+  assetSyncError = null,
+  assetSyncResponses = [],
+  bootstrapCache = createAuthenticatedBootstrapCache(),
+  preparedAssetResponses = [readyAssetResponse],
+  unauthenticatedRedirectTo = "http://localhost:3000/login",
 }: {
-  assets: Array<{
-    mode: "private" | "share";
-    nextMode?: "private";
-    platform: "tradingview" | "fxtester";
-  }>;
-  prepareAssetAccessSession: (options: {
-    platform: "tradingview" | "fxtester";
-  }) => Promise<ExtensionAssetResponse>;
+  assetSessionSyncState?: AssetSessionSyncState;
+  assetSyncError?: Error | null;
+  assetSyncResponses?: ExtensionAssetSyncResponse[];
+  bootstrapCache?: BootstrapCacheRecord | null;
+  preparedAssetResponses?: ExtensionAssetReadyResponse[];
+  unauthenticatedRedirectTo?: string;
 }) {
-  let assetSessionSyncState = createEmptyAssetSessionSyncState();
+  let currentAssetSessionSyncState = assetSessionSyncState;
 
-  vi.doMock("@/background/core/bootstrap", () => ({
-    forceRefreshBootstrapCache: vi.fn(() =>
-      Promise.resolve({
-        fetchedAt: 1_000,
-        isValid: true,
-        snapshot: {
-          assets,
-          auth: { status: "authenticated" },
-          version: { status: "supported" },
-        },
-      }),
-    ),
+  vi.doMock("@/lib/storage/bootstrapCache", () => ({
+    readBootstrapCache: vi.fn(() => Promise.resolve(bootstrapCache)),
   }));
-  vi.doMock("@/background/core/assetAccess", () => ({
-    prepareAssetAccessSession: vi.fn(prepareAssetAccessSession),
+  vi.doMock("@/background/core/assetAccess", () => {
+    class MockExtensionApiRequestError extends Error {
+      readonly code: string;
+
+      constructor(code: string, message: string) {
+        super(message);
+        this.code = code;
+      }
+    }
+
+    return {
+      ExtensionApiRequestError: MockExtensionApiRequestError,
+      fetchAssetSessionSync: vi.fn((platform: AssetPlatform, revision: string | null) => {
+        if (assetSyncError) {
+          return Promise.reject(assetSyncError);
+        }
+
+        const nextResponse = assetSyncResponses.shift() ?? createCurrentAssetSyncResponse(platform, revision);
+
+        return Promise.resolve(nextResponse);
+      }),
+      prepareAssetAccessSession: vi.fn(() => {
+        const nextResponse = preparedAssetResponses.shift() ?? readyAssetResponse;
+
+        return Promise.resolve(nextResponse);
+      }),
+    };
+  });
+  vi.doMock("@/background/core/bootstrap", () => ({
+    markExtensionSessionUnauthenticated: vi.fn(() => Promise.resolve(unauthenticatedRedirectTo)),
+  }));
+  vi.doMock("@/background/core/cookies", () => ({
+    clearAssetPlatformCookies: vi.fn(() => Promise.resolve()),
   }));
   vi.doMock("@/lib/storage/assetSessionSync", async (importOriginal) => {
     const originalAssetSessionSync = await importOriginal<typeof import("@/lib/storage/assetSessionSync")>();
 
     return {
       ...originalAssetSessionSync,
-      readAssetSessionSyncState: vi.fn(() => Promise.resolve(assetSessionSyncState)),
+      readAssetSessionSyncState: vi.fn(() => Promise.resolve(currentAssetSessionSyncState)),
       updateAssetSessionSyncEntry: vi.fn(
         (platform: AssetPlatform, updateEntry: (entry: AssetSessionSyncEntry) => AssetSessionSyncEntry) => {
-          assetSessionSyncState = {
-            ...assetSessionSyncState,
-            [platform]: updateEntry(assetSessionSyncState[platform]),
+          currentAssetSessionSyncState = {
+            ...currentAssetSessionSyncState,
+            [platform]: updateEntry(currentAssetSessionSyncState[platform]),
           };
 
-          return Promise.resolve(assetSessionSyncState);
+          return Promise.resolve(currentAssetSessionSyncState);
         },
       ),
     };
@@ -192,13 +284,42 @@ async function importStartupAssetSyncTestRuntime({
 
   const startupAssetSync = await import("@/background/core/startupAssetSync");
   const assetAccess = await import("@/background/core/assetAccess");
+  const bootstrap = await import("@/background/core/bootstrap");
+  const cookies = await import("@/background/core/cookies");
 
   return {
+    clearAssetPlatformCookies: vi.mocked(cookies.clearAssetPlatformCookies),
+    fetchAssetSessionSync: vi.mocked(assetAccess.fetchAssetSessionSync),
     getAssetSessionSyncEntry(platform: keyof AssetSessionSyncState): AssetSessionSyncEntry {
-      return assetSessionSyncState[platform];
+      return currentAssetSessionSyncState[platform];
     },
+    markExtensionSessionUnauthenticated: vi.mocked(bootstrap.markExtensionSessionUnauthenticated),
     prepareAssetAccessSession: vi.mocked(assetAccess.prepareAssetAccessSession),
     startupAssetSync,
+  };
+}
+
+function createCurrentAssetSyncResponse(
+  platform: AssetPlatform,
+  revision: string | null,
+): Extract<ExtensionAssetSyncResponse, { status: "current" }> {
+  return {
+    mode: "private",
+    platform,
+    revision: revision ?? "extr1_current",
+    status: "current",
+    updatedAt: "2026-05-08T10:00:00.000Z",
+  };
+}
+
+function createAuthenticatedBootstrapCache(): BootstrapCacheRecord {
+  return {
+    fetchedAt: 1_000,
+    isValid: true,
+    snapshot: {
+      auth: { status: "authenticated" },
+      version: { status: "supported" },
+    },
   };
 }
 
@@ -211,9 +332,16 @@ function createEmptyAssetSessionSyncState(): AssetSessionSyncState {
 
 function createEmptyAssetSessionSyncEntry(): AssetSessionSyncEntry {
   return {
-    fallbackUsed: false,
     lastErrorMessage: null,
     lastSyncedAt: null,
+    revision: null,
+    skipNextPageSync: false,
+    skipNextPageSyncTabIds: [],
     status: "idle",
+    updatedAt: null,
   };
+}
+
+function createExtensionApiRequestError(code: string, message: string): Error {
+  return Object.assign(new Error(message), { code });
 }

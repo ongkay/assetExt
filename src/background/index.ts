@@ -11,9 +11,11 @@ import {
   type RuntimeResponse,
 } from "@/lib/runtime/messages";
 
+import { ExtensionApiRequestError } from "./core/assetAccess";
 import {
   createExtensionApiConfig,
   forceRefreshBootstrapCache,
+  markExtensionSessionUnauthenticated,
   logoutExtensionSession,
   readBootstrapState,
   replaceBootstrapCacheFromSnapshot,
@@ -21,19 +23,10 @@ import {
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./core/productionOrigin";
-import {
-  ensureAssetSessionForPage,
-  ensureStartupAssetSync,
-  markAssetSessionSyncSuccess,
-} from "./core/startupAssetSync";
+import { ensureAssetSessionForPage } from "./core/startupAssetSync";
+import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 
 void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
-chrome.runtime.onInstalled.addListener(() => {
-  void ensureStartupAssetSync().catch(() => undefined);
-});
-chrome.runtime.onStartup.addListener(() => {
-  void ensureStartupAssetSync().catch(() => undefined);
-});
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)
@@ -94,24 +87,28 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.assetAccessRequested: {
-      const assetResponse = await runAssetAccess({
-        platform: message.platform,
-        shouldNavigate: true,
-        tabId: message.tabId,
-      });
+      try {
+        const assetResponse = await runAssetAccess({
+          platform: message.platform,
+          shouldNavigate: true,
+          tabId: message.tabId,
+        });
 
-      if (assetResponse.status === "ready") {
-        await markAssetSessionSyncSuccess(message.platform);
+        return {
+          ok: true,
+          value: assetResponse,
+        } satisfies AssetAccessRuntimeResponse;
+      } catch (error) {
+        if (error instanceof ExtensionApiRequestError && error.code === "EXT_UNAUTHENTICATED") {
+          await markExtensionSessionUnauthenticated();
+        }
+
+        throw error;
       }
-
-      return {
-        ok: true,
-        value: assetResponse,
-      } satisfies AssetAccessRuntimeResponse;
     }
 
     case runtimeMessageType.assetSessionEnsureRequested: {
-      const assetSessionEnsureResult = await ensureAssetSessionForPage(message.platform);
+      const assetSessionEnsureResult = await ensureAssetSessionForPage(message.platform, sender.tab?.id);
 
       return {
         ok: true,
@@ -121,8 +118,9 @@ async function handleRuntimeMessage(
 
     case runtimeMessageType.heartbeatStarted: {
       const tabId = message.tabId ?? sender.tab?.id;
+      const bootstrapCache = await readBootstrapCache();
 
-      if (tabId) {
+      if (tabId && bootstrapCache?.isValid && bootstrapCache.snapshot.auth.status === "authenticated") {
         await startHeartbeat(tabId, message.platform);
       }
 

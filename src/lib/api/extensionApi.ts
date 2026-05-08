@@ -5,6 +5,7 @@ import type {
   ExtensionApiErrorCode,
   ExtensionApiResult,
   ExtensionAssetResponse,
+  ExtensionAssetSyncResponse,
   ExtensionBootstrap,
   ExtensionHeartbeatResponse,
   ExtensionLogoutResponse,
@@ -35,6 +36,22 @@ export function fetchExtensionAsset(
   const searchParams = new URLSearchParams({ platform });
 
   return requestExtensionApi(config, `/api/ext/asset?${searchParams.toString()}`, {
+    method: "GET",
+  });
+}
+
+export function fetchExtensionAssetSync(
+  config: ExtensionApiConfig,
+  platform: AssetPlatform,
+  revision?: string | null,
+): Promise<ExtensionApiResult<ExtensionAssetSyncResponse>> {
+  const searchParams = new URLSearchParams({ platform });
+
+  if (revision) {
+    searchParams.set("revision", revision);
+  }
+
+  return requestExtensionApi(config, `/api/ext/asset/sync?${searchParams.toString()}`, {
     method: "GET",
   });
 }

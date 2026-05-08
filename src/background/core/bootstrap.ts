@@ -14,10 +14,12 @@ import {
 import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
 import { clearAllAssetPlatformCookies } from "./cookies";
+import { stopAllHeartbeats } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 
 let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
 let bootstrapWriteRevision = 0;
+let extensionSessionLifecycleRevision = 0;
 let latestExplicitBootstrapCache: BootstrapCacheRecord | null = null;
 
 export async function readBootstrapState(forceRefresh: boolean) {
@@ -65,14 +67,30 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
 
   latestExplicitBootstrapCache = null;
   bootstrapWriteRevision += 1;
+  extensionSessionLifecycleRevision += 1;
   await clearBootstrapCache();
   await clearAssetSessionSyncState();
   await clearAllAssetPlatformCookies();
+  await stopAllHeartbeats();
 
   return {
     ...logoutResult.value,
     redirectTo: new URL(logoutResult.value.redirectTo, extensionApiConfig.apiBaseUrl).toString(),
   };
+}
+
+export async function markExtensionSessionUnauthenticated(loginUrl?: string | null): Promise<string> {
+  const redirectTo = createAbsoluteExtensionLoginUrl(loginUrl);
+
+  latestExplicitBootstrapCache = null;
+  bootstrapWriteRevision += 1;
+  extensionSessionLifecycleRevision += 1;
+  await writeBootstrapCache(createInvalidUnauthenticatedBootstrapCache(redirectTo));
+  await clearAssetSessionSyncState();
+  await clearAllAssetPlatformCookies();
+  await stopAllHeartbeats();
+
+  return redirectTo;
 }
 
 export function createExtensionApiConfig(): ExtensionApiConfig {
@@ -82,6 +100,14 @@ export function createExtensionApiConfig(): ExtensionApiConfig {
     extensionVersion: chrome.runtime.getManifest().version,
     isDev,
   };
+}
+
+export function createAbsoluteExtensionLoginUrl(loginUrl?: string | null): string {
+  return new URL(loginUrl?.trim() || "/login", getExtensionApiBaseUrl()).toString();
+}
+
+export function getExtensionSessionLifecycleRevision(): number {
+  return extensionSessionLifecycleRevision;
 }
 
 async function syncBootstrapCache(previousCache: BootstrapCacheRecord | null): Promise<BootstrapCacheRecord> {
@@ -151,6 +177,8 @@ async function writeBootstrapCacheIfSyncIsCurrent(
     if (latestExplicitBootstrapCache) {
       return latestExplicitBootstrapCache;
     }
+
+    return nextCache;
   }
 
   await writeBootstrapCache(nextCache);

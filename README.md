@@ -83,8 +83,8 @@ Replace the files in `public/icons/` with your own icon set:
 
 1. Login ke web app local `http://localhost:3000` memakai akun seed di `.docs/dev-seed.md`.
 2. Buka popup extension untuk melihat bootstrap state, subscription, package, dan asset access.
-3. Klik asset untuk clear cookie, fetch payload `/api/ext/asset`, inject cookie, dan membuka domain target.
-4. Buka domain aset langsung untuk menjalankan auto sync dengan cooldown 5 menit.
+3. Klik asset untuk clear cookie, fetch payload `/api/ext/asset`, inject cookie, menyimpan `revision`, lalu membuka domain target.
+4. Buka atau reload domain aset langsung untuk menjalankan revision sync lewat `/api/ext/asset/sync` sebelum fallback fetch cookie baru.
 5. Gunakan tombol Refresh untuk forced bootstrap sync dan Redeem CDKey untuk memperbarui paket.
 
 ## Customization

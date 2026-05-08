@@ -284,7 +284,23 @@ describe("background bootstrap core", () => {
     expect(testRuntime.clearBootstrapCache).toHaveBeenCalledTimes(1);
     expect(testRuntime.clearAssetSessionSyncState).toHaveBeenCalledTimes(1);
     expect(testRuntime.clearAllAssetPlatformCookies).toHaveBeenCalledTimes(1);
+    expect(testRuntime.stopAllHeartbeats).toHaveBeenCalledTimes(1);
     expect(testRuntime.writeBootstrapCache).not.toHaveBeenCalled();
+  });
+
+  it("marks extension session unauthenticated and stops heartbeat", async () => {
+    const testRuntime = await importBootstrapCoreTestRuntime(previousCache, () =>
+      Promise.resolve({ ok: true, status: 200, value: staleSnapshot }),
+    );
+
+    await expect(testRuntime.bootstrapCore.markExtensionSessionUnauthenticated("/login")).resolves.toBe(
+      "http://localhost:3000/login",
+    );
+
+    expect(testRuntime.writeBootstrapCache).toHaveBeenCalledTimes(1);
+    expect(testRuntime.clearAssetSessionSyncState).toHaveBeenCalledTimes(1);
+    expect(testRuntime.clearAllAssetPlatformCookies).toHaveBeenCalledTimes(1);
+    expect(testRuntime.stopAllHeartbeats).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -315,6 +331,9 @@ async function importBootstrapCoreTestRuntime(
   vi.doMock("@/background/core/cookies", () => ({
     clearAllAssetPlatformCookies: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/background/core/heartbeat", () => ({
+    stopAllHeartbeats: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/storage/assetSessionSync", () => ({
     clearAssetSessionSyncState: vi.fn(() => Promise.resolve()),
   }));
@@ -341,6 +360,7 @@ async function importBootstrapCoreTestRuntime(
 
   const bootstrapCore = await import("@/background/core/bootstrap");
   const backgroundCookies = await import("@/background/core/cookies");
+  const heartbeat = await import("@/background/core/heartbeat");
   const assetSessionSync = await import("@/lib/storage/assetSessionSync");
   const bootstrapCache = await import("@/lib/storage/bootstrapCache");
   const extensionApi = await import("@/lib/api/extensionApi");
@@ -354,6 +374,7 @@ async function importBootstrapCoreTestRuntime(
     clearBootstrapCache: vi.mocked(bootstrapCache.clearBootstrapCache),
     getCurrentCache: () => currentCache,
     readBootstrapCache: vi.mocked(bootstrapCache.readBootstrapCache),
+    stopAllHeartbeats: vi.mocked(heartbeat.stopAllHeartbeats),
     writeBootstrapCache: vi.mocked(bootstrapCache.writeBootstrapCache),
   };
 }

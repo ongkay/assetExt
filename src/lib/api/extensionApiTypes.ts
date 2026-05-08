@@ -89,7 +89,9 @@ export type ExtensionAssetReadyResponse = {
   mode: ExtensionMode;
   platform: AssetPlatform;
   proxy?: string;
+  revision: string;
   status: "ready";
+  updatedAt: string;
 };
 
 export type ExtensionAssetForbiddenResponse = {
@@ -98,6 +100,28 @@ export type ExtensionAssetForbiddenResponse = {
 };
 
 export type ExtensionAssetResponse = ExtensionAssetReadyResponse | ExtensionAssetForbiddenResponse;
+
+export type ExtensionAssetSyncCurrentResponse = {
+  mode: ExtensionMode;
+  platform: AssetPlatform;
+  revision: string;
+  status: "current";
+  updatedAt: string;
+};
+
+export type ExtensionAssetSyncStaleResponse = {
+  mode: ExtensionMode;
+  platform: AssetPlatform;
+  reason: "missing_revision" | "revision_mismatch";
+  revision: string;
+  status: "stale";
+  updatedAt: string;
+};
+
+export type ExtensionAssetSyncResponse =
+  | ExtensionAssetSyncCurrentResponse
+  | ExtensionAssetSyncStaleResponse
+  | ExtensionAssetForbiddenResponse;
 
 export type ExtensionHeartbeatResponse = {
   ok: true;

@@ -11,6 +11,7 @@ const legacyHeartbeatAlarmPrefix = `${heartbeatAlarmName}.`;
 const heartbeatIntervalMinutes = 5;
 const heartbeatImmediateThrottleMs = heartbeatIntervalMinutes * 60 * 1_000;
 let globalHeartbeatStartPromise: Promise<void> | null = null;
+let heartbeatLifecycleRevision = 0;
 let lastImmediateHeartbeatAt = 0;
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -37,7 +38,9 @@ export async function startHeartbeat(tabId: number, _platform: AssetPlatform): P
     return;
   }
 
-  globalHeartbeatStartPromise = startGlobalHeartbeat().finally(() => {
+  const heartbeatRevisionAtStart = heartbeatLifecycleRevision;
+
+  globalHeartbeatStartPromise = startGlobalHeartbeat(heartbeatRevisionAtStart).finally(() => {
     globalHeartbeatStartPromise = null;
   });
 
@@ -48,9 +51,22 @@ export function stopHeartbeat(_tabId: number): void {
   void stopGlobalHeartbeatIfNoAssetTabs();
 }
 
+export async function stopAllHeartbeats(): Promise<void> {
+  heartbeatLifecycleRevision += 1;
+  globalHeartbeatStartPromise = null;
+  lastImmediateHeartbeatAt = 0;
+  await clearGlobalHeartbeatAlarm();
+}
+
 async function handleHeartbeatAlarm(alarm: chrome.alarms.Alarm): Promise<void> {
+  const heartbeatRevisionAtStart = heartbeatLifecycleRevision;
+
   if (isLegacyHeartbeatAlarmName(alarm.name)) {
     await chrome.alarms.clear(alarm.name);
+    return;
+  }
+
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
     return;
   }
 
@@ -59,18 +75,39 @@ async function handleHeartbeatAlarm(alarm: chrome.alarms.Alarm): Promise<void> {
     return;
   }
 
-  await sendHeartbeat();
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
+    return;
+  }
+
+  await sendHeartbeat(heartbeatRevisionAtStart);
 }
 
-async function startGlobalHeartbeat(): Promise<void> {
+async function startGlobalHeartbeat(heartbeatRevisionAtStart: number): Promise<void> {
   await cleanupLegacyHeartbeatAlarms();
 
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
+    return;
+  }
+
   if (shouldSendImmediateHeartbeat()) {
-    await sendHeartbeat();
+    await sendHeartbeat(heartbeatRevisionAtStart);
+
+    if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
+      return;
+    }
+
     lastImmediateHeartbeatAt = Date.now();
   }
 
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
+    return;
+  }
+
   if (await chrome.alarms.get(heartbeatAlarmName)) {
+    return;
+  }
+
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
     return;
   }
 
@@ -155,8 +192,13 @@ function isLegacyHeartbeatAlarmName(alarmName: string): boolean {
   return alarmName.startsWith(legacyHeartbeatAlarmPrefix);
 }
 
-async function sendHeartbeat(): Promise<void> {
+async function sendHeartbeat(heartbeatRevisionAtStart = heartbeatLifecycleRevision): Promise<void> {
   await ensureProductionOriginHeaderRuleReady();
+
+  if (heartbeatRevisionAtStart !== heartbeatLifecycleRevision) {
+    return;
+  }
+
   const heartbeatResult = await postExtensionHeartbeat(
     createExtensionApiConfig(),
     await getOrCreateDeviceId(),

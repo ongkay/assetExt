@@ -18,6 +18,8 @@ type ContentAppProps = {
 
 type AccessOverlayState = "idle" | "loading" | "success" | "error";
 
+const fallbackReloadMessage = "update data terbaru";
+
 export function ContentApp({ themeRoot }: ContentAppProps) {
   const { isReady } = useThemePreference(themeRoot);
   const [message, setMessage] = useState("");
@@ -37,12 +39,39 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
       return;
     }
 
-    let shouldIgnoreReload = false;
+    if (typeof chrome === "undefined" || !chrome.runtime?.onMessage) {
+      return;
+    }
 
-    void sendRuntimeMessage<null>({
-      platform,
-      type: runtimeMessageType.heartbeatStarted,
-    });
+    const handleOverlayStateChanged: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (
+      message,
+    ) => {
+      if (message.type !== runtimeMessageType.overlayStateChanged) {
+        return;
+      }
+
+      if (message.redirectTo) {
+        window.location.assign(message.redirectTo);
+        return;
+      }
+
+      setMessage(message.message);
+      setState(message.state === "loading" ? "loading" : "idle");
+    };
+
+    chrome.runtime.onMessage.addListener(handleOverlayStateChanged);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleOverlayStateChanged);
+    };
+  }, [platform]);
+
+  useEffect(() => {
+    if (!platform) {
+      return;
+    }
+
+    let shouldIgnoreReload = false;
 
     async function ensureAssetSession(platform: AssetPlatform) {
       const ensureResult = await sendRuntimeMessage<AssetSessionEnsureResult>({
@@ -50,11 +79,30 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
         type: runtimeMessageType.assetSessionEnsureRequested,
       });
 
-      if (shouldIgnoreReload || ensureResult.value?.action !== "reload_required") {
+      if (shouldIgnoreReload || !ensureResult.value) {
         return;
       }
 
-      setMessage("Akses aktif. Halaman akan dimuat ulang.");
+      if (ensureResult.value.action === "redirect_login") {
+        if (ensureResult.value.redirectTo) {
+          window.location.assign(ensureResult.value.redirectTo);
+        }
+
+        return;
+      }
+
+      if (ensureResult.value.action !== "reload_required") {
+        if (ensureResult.value.shouldStartHeartbeat) {
+          await sendRuntimeMessage<null>({
+            platform,
+            type: runtimeMessageType.heartbeatStarted,
+          });
+        }
+
+        return;
+      }
+
+      setMessage(ensureResult.value.message ?? fallbackReloadMessage);
       setState("loading");
 
       window.setTimeout(() => {
@@ -68,6 +116,10 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
 
     return () => {
       shouldIgnoreReload = true;
+
+      void sendRuntimeMessage<null>({
+        type: runtimeMessageType.heartbeatStopped,
+      });
     };
   }, [platform]);
 

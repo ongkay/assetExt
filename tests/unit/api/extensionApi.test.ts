@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
-import { fetchExtensionBootstrap, redeemExtensionCdKey } from "@/lib/api/extensionApi";
+import {
+  fetchExtensionAssetSync,
+  fetchExtensionBootstrap,
+  redeemExtensionCdKey,
+} from "@/lib/api/extensionApi";
 import type {
   ExtensionAssetResponse,
   ExtensionAssetSummary,
+  ExtensionAssetSyncResponse,
   ExtensionBootstrap,
   ExtensionCookiePayload,
   ExtensionCookieSameSite,
@@ -148,6 +153,28 @@ describe("extension API client", () => {
     });
   });
 
+  it("sends asset sync request with optional revision query", async () => {
+    const fetchMock: FetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          mode: "share",
+          platform: "tradingview",
+          revision: "extr1_current",
+          status: "current",
+          updatedAt: "2026-05-08T10:00:00.000Z",
+        } satisfies ExtensionAssetSyncResponse),
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await fetchExtensionAssetSync(extensionApiConfig, "tradingview", "extr1_local");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:3000/api/ext/asset/sync?platform=tradingview&revision=extr1_local",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
   it("exports plan-aligned API response type names and shapes", () => {
     const assetSummary: ExtensionAssetSummary = {
       mode: "share",
@@ -180,7 +207,9 @@ describe("extension API client", () => {
       cookies: [cookiePayload],
       mode: "share",
       platform: "tradingview",
+      revision: "extr1_asset",
       status: "ready",
+      updatedAt: "2026-05-08T10:00:00.000Z",
     };
     const redeemSuccess: ExtensionRedeemSuccess = {
       bootstrap,

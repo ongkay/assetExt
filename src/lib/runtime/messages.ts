@@ -56,16 +56,17 @@ export type HeartbeatStoppedMessage = {
 export type OverlayStateChangedMessage = {
   assetResponse?: ExtensionAssetResponse;
   message: string;
+  redirectTo?: string;
   requestId?: string;
   state: "idle" | "loading" | "chooser" | "success" | "error";
   type: (typeof runtimeMessageType)["overlayStateChanged"];
 };
 
 export type AssetSessionEnsureResult = {
-  action: "none" | "reload_required";
-  fallbackUsed: boolean;
-  lastErrorMessage: string | null;
-  status: "idle" | "running" | "success" | "failed" | "skipped";
+  action: "none" | "reload_required" | "redirect_login";
+  message: string | null;
+  redirectTo: string | null;
+  shouldStartHeartbeat: boolean;
 };
 
 export type RuntimeMessage =
