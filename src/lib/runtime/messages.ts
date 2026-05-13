@@ -1,5 +1,6 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import type { ExtensionAssetResponse, ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
+import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 export const runtimeMessageType = {
@@ -7,6 +8,7 @@ export const runtimeMessageType = {
   bootstrapRefreshRequested: "BOOTSTRAP_REFRESH_REQUESTED",
   assetAccessRequested: "ASSET_ACCESS_REQUESTED",
   assetSessionEnsureRequested: "ASSET_SESSION_ENSURE_REQUESTED",
+  proxyConflictRefreshRequested: "PROXY_CONFLICT_REFRESH_REQUESTED",
   redeemCdKeyRequested: "REDEEM_CD_KEY_REQUESTED",
   logoutRequested: "LOGOUT_REQUESTED",
   heartbeatStarted: "HEARTBEAT_STARTED",
@@ -31,6 +33,10 @@ export type AssetAccessRequestedMessage = {
 export type AssetSessionEnsureRequestedMessage = {
   platform: AssetPlatform;
   type: (typeof runtimeMessageType)["assetSessionEnsureRequested"];
+};
+
+export type ProxyConflictRefreshRequestedMessage = {
+  type: (typeof runtimeMessageType)["proxyConflictRefreshRequested"];
 };
 
 export type RedeemCdKeyRequestedMessage = {
@@ -63,7 +69,7 @@ export type OverlayStateChangedMessage = {
 };
 
 export type AssetSessionEnsureResult = {
-  action: "none" | "reload_required" | "redirect_login";
+  action: "none" | "proxy_blocked" | "reload_required" | "redirect_login";
   message: string | null;
   redirectTo: string | null;
   shouldStartHeartbeat: boolean;
@@ -74,6 +80,7 @@ export type RuntimeMessage =
   | BootstrapRefreshRequestedMessage
   | AssetAccessRequestedMessage
   | AssetSessionEnsureRequestedMessage
+  | ProxyConflictRefreshRequestedMessage
   | RedeemCdKeyRequestedMessage
   | LogoutRequestedMessage
   | HeartbeatStartedMessage
@@ -101,5 +108,6 @@ export type BootstrapRuntimeResponse = RuntimeResponse<BootstrapRuntimeValue>;
 export type BootstrapRefreshRuntimeResponse = RuntimeResponse<BootstrapCacheRecord>;
 export type AssetAccessRuntimeResponse = RuntimeResponse<ExtensionAssetResponse>;
 export type AssetSessionEnsureRuntimeResponse = RuntimeResponse<AssetSessionEnsureResult>;
+export type ProxyConflictRefreshRuntimeResponse = RuntimeResponse<AssetProxyState>;
 export type RedeemCdKeyRuntimeResponse = RuntimeResponse<ExtensionBootstrap>;
 export type LogoutRuntimeResponse = RuntimeResponse<{ redirectTo: string }>;

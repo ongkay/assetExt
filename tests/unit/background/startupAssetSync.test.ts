@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ExtensionAssetReadyResponse, ExtensionAssetSyncResponse } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
+import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 import type { AssetSessionSyncEntry, AssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
@@ -129,6 +130,47 @@ describe("background startup asset sync", () => {
     });
   });
 
+  it("refreshes asset session immediately when proxy state has not been established yet", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      assetProxyState: {
+        conflict: {
+          detectedAt: null,
+          extensions: [],
+          isActive: false,
+          levelOfControl: null,
+          message: null,
+        },
+        platforms: {
+          tradingview: { proxy: null, updatedAt: null },
+          fxtester: { proxy: null, updatedAt: "2026-05-08T10:00:00.000Z" },
+        },
+      },
+      assetSessionSyncState: {
+        fxtester: createEmptyAssetSessionSyncEntry(),
+        tradingview: {
+          ...createEmptyAssetSessionSyncEntry(),
+          revision: "extr1_saved",
+          status: "success",
+        },
+      },
+      preparedAssetResponses: [readyAssetResponse],
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview", 777)).resolves.toEqual(
+      {
+        action: "none",
+        message: null,
+        redirectTo: null,
+        shouldStartHeartbeat: false,
+      },
+    );
+
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
+    expect(testRuntime.prepareAssetAccessSession).toHaveBeenCalledWith({
+      platform: "tradingview",
+    });
+  });
+
   it("clears existing platform cookies when sync reports subscription forbidden", async () => {
     const testRuntime = await importStartupAssetSyncTestRuntime({
       assetSyncResponses: [
@@ -207,10 +249,27 @@ describe("background startup asset sync", () => {
 
     expect(testRuntime.markExtensionSessionUnauthenticated).toHaveBeenCalledTimes(1);
   });
+
+  it("redirects to the blocked page when proxy control is in conflict", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      proxyAccessError: new Error("Proxy conflict"),
+      proxyBlockedPageUrl: "chrome-extension://runtime-id/proxy-blocked.html",
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
+      action: "proxy_blocked",
+      message: "Proxy conflict",
+      redirectTo: "chrome-extension://runtime-id/proxy-blocked.html",
+      shouldStartHeartbeat: false,
+    });
+  });
 });
 
 async function importStartupAssetSyncTestRuntime({
   assetSessionSyncState = createEmptyAssetSessionSyncState(),
+  assetProxyState = createKnownAssetProxyState(),
+  proxyAccessError = null,
+  proxyBlockedPageUrl = "chrome-extension://runtime-id/proxy-blocked.html",
   assetSyncError = null,
   assetSyncResponses = [],
   bootstrapCache = createAuthenticatedBootstrapCache(),
@@ -218,6 +277,9 @@ async function importStartupAssetSyncTestRuntime({
   unauthenticatedRedirectTo = "http://localhost:3000/login",
 }: {
   assetSessionSyncState?: AssetSessionSyncState;
+  assetProxyState?: AssetProxyState;
+  proxyAccessError?: Error | null;
+  proxyBlockedPageUrl?: string;
   assetSyncError?: Error | null;
   assetSyncResponses?: ExtensionAssetSyncResponse[];
   bootstrapCache?: BootstrapCacheRecord | null;
@@ -228,6 +290,9 @@ async function importStartupAssetSyncTestRuntime({
 
   vi.doMock("@/lib/storage/bootstrapCache", () => ({
     readBootstrapCache: vi.fn(() => Promise.resolve(bootstrapCache)),
+  }));
+  vi.doMock("@/lib/storage/assetProxyState", () => ({
+    readAssetProxyState: vi.fn(() => Promise.resolve(assetProxyState)),
   }));
   vi.doMock("@/background/core/assetAccess", () => {
     class MockExtensionApiRequestError extends Error {
@@ -263,6 +328,26 @@ async function importStartupAssetSyncTestRuntime({
   vi.doMock("@/background/core/cookies", () => ({
     clearAssetPlatformCookies: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/background/core/proxy", () => {
+    class MockProxyConflictError extends Error {
+      constructor(message: string) {
+        super(message);
+      }
+    }
+
+    return {
+      ProxyConflictError: MockProxyConflictError,
+      clearAssetPlatformProxy: vi.fn(() => Promise.resolve()),
+      ensureProxyAccessAvailable: vi.fn(() => {
+        if (proxyAccessError) {
+          return Promise.reject(new MockProxyConflictError(proxyAccessError.message));
+        }
+
+        return Promise.resolve();
+      }),
+      getProxyBlockedPageUrl: vi.fn(() => proxyBlockedPageUrl),
+    };
+  });
   vi.doMock("@/lib/storage/assetSessionSync", async (importOriginal) => {
     const originalAssetSessionSync = await importOriginal<typeof import("@/lib/storage/assetSessionSync")>();
 
@@ -327,6 +412,28 @@ function createEmptyAssetSessionSyncState(): AssetSessionSyncState {
   return {
     tradingview: createEmptyAssetSessionSyncEntry(),
     fxtester: createEmptyAssetSessionSyncEntry(),
+  };
+}
+
+function createKnownAssetProxyState(): AssetProxyState {
+  return {
+    conflict: {
+      detectedAt: null,
+      extensions: [],
+      isActive: false,
+      levelOfControl: null,
+      message: null,
+    },
+    platforms: {
+      tradingview: {
+        proxy: null,
+        updatedAt: "2026-05-08T10:00:00.000Z",
+      },
+      fxtester: {
+        proxy: null,
+        updatedAt: "2026-05-08T10:00:00.000Z",
+      },
+    },
   };
 }
 

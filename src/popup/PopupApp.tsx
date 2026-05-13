@@ -4,12 +4,14 @@ import { LogOutIcon, RefreshCcwIcon } from "lucide-react";
 import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
 import { BootstrapSkeleton } from "@/components/asset-manager/BootstrapSkeleton";
 import { ExtensionHeader } from "@/components/asset-manager/ExtensionHeader";
+import { ProxyConflictExtensionList } from "@/components/asset-manager/ProxyConflictExtensionList";
 import { ProfilePanel } from "@/components/asset-manager/ProfilePanel";
 import { RenewalActions } from "@/components/asset-manager/RenewalActions";
 import { StatusNotice } from "@/components/asset-manager/StatusNotice";
 import { SubscriptionSummary } from "@/components/asset-manager/SubscriptionSummary";
 import { UnauthenticatedPanel } from "@/components/asset-manager/UnauthenticatedPanel";
 import { VersionGatePanel } from "@/components/asset-manager/VersionGatePanel";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
@@ -18,20 +20,19 @@ import type {
   ExtensionAssetSummary,
   ExtensionBootstrap,
 } from "@/lib/api/extensionApiTypes";
+import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { isSubscriptionActive } from "@/lib/asset-access/subscription";
-import {
-  runtimeMessageType,
-  type BootstrapRuntimeValue,
-  type RuntimeMessage,
-  type RuntimeResponse,
-} from "@/lib/runtime/messages";
+import { disableManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
+import { runtimeMessageType, type BootstrapRuntimeValue } from "@/lib/runtime/messages";
+import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
 import {
   bootstrapCacheStorageKey,
   createBootstrapCacheRecord,
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
+import { assetProxyStateStorageKey, readAssetProxyState } from "@/lib/storage/assetProxyState";
 import { useThemePreference } from "@/lib/useThemePreference";
 
 import { PopupShell } from "./ui/PopupShell";
@@ -43,15 +44,19 @@ export function PopupApp() {
   const { isReady: isThemeReady, theme, setTheme } = useThemePreference(themeTarget);
   const apiBaseUrl = getExtensionApiBaseUrl();
   const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
+  const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
   const [popupView, setPopupView] = useState<PopupView>("main");
   const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
   const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
+  const [disablingProxyExtensionId, setDisablingProxyExtensionId] = useState<string | null>(null);
+  const [proxyConflictActionErrorMessage, setProxyConflictActionErrorMessage] = useState<string | null>(null);
   const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isRefreshing);
+  const proxyConflictMessage = assetProxyState?.conflict.isActive ? assetProxyState.conflict.message : null;
 
   const requestAssetAccess = useCallback(async (platform: AssetPlatform) => {
     setAccessingPlatform(platform);
@@ -81,6 +86,7 @@ export function PopupApp() {
 
   useEffect(() => {
     void requestBootstrap();
+    void requestAssetProxyState();
   }, []);
 
   useEffect(() => {
@@ -93,14 +99,20 @@ export function PopupApp() {
         return;
       }
 
-      if (!(bootstrapCacheStorageKey in changes)) {
-        return;
+      if (bootstrapCacheStorageKey in changes) {
+        const nextCache = changes[bootstrapCacheStorageKey]?.newValue as BootstrapCacheRecord | undefined;
+
+        setBootstrapValue({ cache: nextCache ?? null, isSyncing: false });
+        setIsRefreshing(false);
       }
 
-      const nextCache = changes[bootstrapCacheStorageKey]?.newValue as BootstrapCacheRecord | undefined;
+      if (assetProxyStateStorageKey in changes) {
+        const nextAssetProxyState = changes[assetProxyStateStorageKey]?.newValue as
+          | AssetProxyState
+          | undefined;
 
-      setBootstrapValue({ cache: nextCache ?? null, isSyncing: false });
-      setIsRefreshing(false);
+        setAssetProxyState(nextAssetProxyState ?? null);
+      }
     };
 
     chrome.storage.onChanged.addListener(listener);
@@ -110,11 +122,23 @@ export function PopupApp() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!assetProxyState?.conflict.isActive) {
+      setDisablingProxyExtensionId(null);
+      setProxyConflictActionErrorMessage(null);
+    }
+  }, [assetProxyState?.conflict.isActive]);
+
   const handleRefreshBootstrap = () => {
     void refreshBootstrap();
   };
 
   const handleAccessAsset = (asset: ExtensionAssetSummary) => {
+    if (proxyConflictMessage) {
+      setAssetAccessErrorMessage(proxyConflictMessage);
+      return;
+    }
+
     const mode = getAutomaticAssetMode(asset);
 
     if (!mode) {
@@ -142,6 +166,29 @@ export function PopupApp() {
     }
 
     updateBootstrapCache(createBootstrapCacheRecord(redeemResult.value));
+  };
+
+  const handleDisableProxyExtension = async (extensionId: string) => {
+    setDisablingProxyExtensionId(extensionId);
+    setProxyConflictActionErrorMessage(null);
+
+    try {
+      await disableManagedExtension(extensionId);
+
+      const refreshResult = await sendRuntimeMessage<AssetProxyState>({
+        type: runtimeMessageType.proxyConflictRefreshRequested,
+      });
+
+      if (!refreshResult.value) {
+        throw new Error(refreshResult.errorMessage ?? "Status konflik proxy belum bisa diperbarui.");
+      }
+
+      setAssetProxyState(refreshResult.value);
+    } catch (error) {
+      setProxyConflictActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setDisablingProxyExtensionId(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -175,7 +222,10 @@ export function PopupApp() {
   if (snapshot.auth.status === "unauthenticated") {
     return (
       <PopupShell isThemeReady={isThemeReady}>
-        <UnauthenticatedPanel loginUrl={getAbsoluteApiUrl(apiBaseUrl, snapshot.auth.loginUrl)} />
+        <div className="flex flex-col gap-4">
+          {proxyConflictMessage ? renderProxyConflictPanel() : null}
+          <UnauthenticatedPanel loginUrl={getAbsoluteApiUrl(apiBaseUrl, snapshot.auth.loginUrl)} />
+        </div>
       </PopupShell>
     );
   }
@@ -255,6 +305,8 @@ export function PopupApp() {
           <StatusNotice message={assetAccessErrorMessage} title="Akses asset gagal" tone="danger" />
         ) : null}
 
+        {proxyConflictMessage ? renderProxyConflictPanel() : null}
+
         {packages.length > 0 ? (
           <RenewalActions
             apiBaseUrl={apiBaseUrl}
@@ -270,6 +322,7 @@ export function PopupApp() {
           <div className="flex flex-col gap-2 mt-1">
             <AssetAccessList
               assets={assets}
+              isAccessBlocked={Boolean(proxyConflictMessage)}
               isAccessingPlatform={accessingPlatform}
               onAccessAsset={handleAccessAsset}
             />
@@ -345,48 +398,72 @@ export function PopupApp() {
   function updateBootstrapCache(cache: BootstrapCacheRecord) {
     setBootstrapValue({ cache, isSyncing: false });
   }
-}
 
-type RuntimeMessageResult<TValue> = {
-  errorMessage: string | null;
-  value: TValue | null;
-};
+  async function requestAssetProxyState() {
+    const nextAssetProxyState = await readAssetProxyState();
 
-async function sendRuntimeMessage<TValue>(message: RuntimeMessage): Promise<RuntimeMessageResult<TValue>> {
-  if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
-    return { errorMessage: "Runtime extension tidak tersedia.", value: null };
+    setAssetProxyState(nextAssetProxyState);
   }
 
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response: RuntimeResponse<TValue> | undefined) => {
-      if (chrome.runtime.lastError) {
-        resolve({
-          errorMessage: chrome.runtime.lastError.message ?? null,
-          value: null,
-        });
-        return;
-      }
+  function renderProxyConflictPanel() {
+    const conflictExtensions = assetProxyState?.conflict.extensions ?? [];
 
-      if (!response) {
-        resolve({ errorMessage: null, value: null });
-        return;
-      }
+    return (
+      <div className="flex flex-col gap-3">
+        <StatusNotice
+          message={proxyConflictMessage ?? "Proxy lain aktif."}
+          title="Proxy lain aktif"
+          tone="danger"
+        />
 
-      if (!response.ok) {
-        resolve({
-          errorMessage: response.errorMessage,
-          value: null,
-        });
-        return;
-      }
+        <section className="rounded-[24px] border border-red-500/16 bg-linear-to-b from-red-500/[0.08] via-red-500/[0.03] to-background p-3.5 shadow-sm shadow-red-500/5">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-semibold text-foreground">Extension terdeteksi</h2>
+                  {conflictExtensions.length > 0 ? (
+                    <Badge
+                      className="border-red-500/15 bg-red-500/10 text-red-600 dark:text-red-300"
+                      variant="secondary"
+                    >
+                      {conflictExtensions.length} aktif
+                    </Badge>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Nonaktifkan proxy lain untuk lanjut.
+                </p>
+              </div>
+            </div>
 
-      resolve({ errorMessage: null, value: response.value });
-    });
-  });
+            {proxyConflictActionErrorMessage ? (
+              <StatusNotice message={proxyConflictActionErrorMessage} title="Aksi gagal" tone="warning" />
+            ) : null}
+
+            <ProxyConflictExtensionList
+              compact
+              conflictExtensions={conflictExtensions}
+              disablingExtensionId={disablingProxyExtensionId}
+              onDisableExtension={handleDisableProxyExtension}
+            />
+          </div>
+        </section>
+      </div>
+    );
+  }
 }
 
 function getAbsoluteApiUrl(apiBaseUrl: string, path: string): string {
   return new URL(path, apiBaseUrl).toString();
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Permintaan gagal diproses.";
 }
 
 function getExtensionVersion(): string {

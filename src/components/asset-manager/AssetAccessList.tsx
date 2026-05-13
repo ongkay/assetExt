@@ -10,6 +10,7 @@ import { getAssetPlatformConfig } from "@/lib/asset-access/platforms";
 
 type AssetAccessListProps = {
   assets: ExtensionAssetSummary[];
+  isAccessBlocked?: boolean;
   isAccessingPlatform?: AssetPlatform | null;
   onAccessAsset: (asset: ExtensionAssetSummary) => void | Promise<void>;
 };
@@ -36,7 +37,12 @@ function getPlatformDescription(platform: string, defaultDesc: string) {
   }
 }
 
-export function AssetAccessList({ assets, isAccessingPlatform = null, onAccessAsset }: AssetAccessListProps) {
+export function AssetAccessList({
+  assets,
+  isAccessBlocked = false,
+  isAccessingPlatform = null,
+  onAccessAsset,
+}: AssetAccessListProps) {
   if (assets.length === 0) {
     return (
       <Card size="sm">
@@ -87,7 +93,7 @@ export function AssetAccessList({ assets, isAccessingPlatform = null, onAccessAs
             <div className="relative z-10">
               <Button
                 className="w-full relative overflow-hidden bg-linear-to-r! from-blue-600! to-indigo-600! hover:from-blue-500! hover:to-indigo-500! text-white! font-medium shadow-md shadow-blue-500/20 border-0! transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/40 active:scale-[0.98] active:translate-y-0 group/btn"
-                disabled={Boolean(isAccessingPlatform)}
+                disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
               >

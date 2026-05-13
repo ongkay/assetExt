@@ -13,6 +13,7 @@ import { createExtensionApiConfig, getExtensionSessionLifecycleRevision } from "
 import { clearAssetPlatformCookies, injectExtensionCookies } from "./cookies";
 import { startHeartbeat } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
+import { clearAssetPlatformProxy, ensureProxyAccessAvailable, syncAssetPlatformProxy } from "./proxy";
 import { openOrReloadTab } from "./tabs";
 
 export type RunAssetAccessOptions = {
@@ -39,11 +40,13 @@ export class ExtensionApiRequestError extends Error {
 
 export async function runAssetAccess(options: RunAssetAccessOptions): Promise<ExtensionAssetResponse> {
   const sessionRevisionAtStart = getExtensionSessionLifecycleRevision();
+  await ensureProxyAccessAvailable();
   const assetResponse = await prepareAssetAccessSession(options);
 
   assertActiveExtensionSession(sessionRevisionAtStart);
 
   if (assetResponse.status !== "ready") {
+    await clearAssetPlatformProxy(options.platform);
     return assetResponse;
   }
 
@@ -101,6 +104,7 @@ export async function fetchAssetSessionSync(
 }
 
 async function requestAssetResponse(platform: AssetPlatform): Promise<ExtensionAssetResponse> {
+  await ensureProxyAccessAvailable();
   await ensureProductionOriginHeaderRuleReady();
   const assetResult = await fetchExtensionAsset(createExtensionApiConfig(), platform);
 
@@ -115,6 +119,7 @@ async function applyReadyAssetCookies(
   platform: AssetPlatform,
   assetResponse: ExtensionAssetReadyResponse,
 ): Promise<void> {
+  await syncAssetPlatformProxy(platform, assetResponse.proxy, assetResponse.updatedAt);
   await clearAssetPlatformCookies(platform);
   await injectExtensionCookies(assetResponse.cookies);
   await markInjectionCooldown(platform);

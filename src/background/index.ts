@@ -6,6 +6,7 @@ import {
   type BootstrapRefreshRuntimeResponse,
   type BootstrapRuntimeResponse,
   type LogoutRuntimeResponse,
+  type ProxyConflictRefreshRuntimeResponse,
   type RedeemCdKeyRuntimeResponse,
   type RuntimeMessage,
   type RuntimeResponse,
@@ -23,10 +24,12 @@ import {
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./core/productionOrigin";
+import { ensureProxyControllerReady, refreshProxyConflictState } from "./core/proxy";
 import { ensureAssetSessionForPage } from "./core/startupAssetSync";
 import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 
 void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
+void ensureProxyControllerReady().catch(() => undefined);
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)
@@ -114,6 +117,15 @@ async function handleRuntimeMessage(
         ok: true,
         value: assetSessionEnsureResult,
       } satisfies AssetSessionEnsureRuntimeResponse;
+    }
+
+    case runtimeMessageType.proxyConflictRefreshRequested: {
+      const assetProxyState = await refreshProxyConflictState();
+
+      return {
+        ok: true,
+        value: assetProxyState,
+      } satisfies ProxyConflictRefreshRuntimeResponse;
     }
 
     case runtimeMessageType.heartbeatStarted: {

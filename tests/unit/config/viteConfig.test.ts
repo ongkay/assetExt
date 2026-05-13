@@ -32,4 +32,10 @@ describe("Vite dev server config", () => {
       protocol: "ws",
     });
   });
+
+  it("builds the proxy blocked page as an extension entry", () => {
+    const buildInput = viteConfig.build?.rollupOptions?.input as Record<string, string> | undefined;
+
+    expect(buildInput?.proxyBlocked).toContain("proxy-blocked.html");
+  });
 });

@@ -25,6 +25,7 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, "popup.html"),
         options: resolve(__dirname, "options.html"),
+        proxyBlocked: resolve(__dirname, "proxy-blocked.html"),
       },
     },
   },

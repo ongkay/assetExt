@@ -16,6 +16,7 @@ import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 import { clearAllAssetPlatformCookies } from "./cookies";
 import { stopAllHeartbeats } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
+import { clearManagedProxyState } from "./proxy";
 
 let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
 let bootstrapWriteRevision = 0;
@@ -70,6 +71,7 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
   extensionSessionLifecycleRevision += 1;
   await clearBootstrapCache();
   await clearAssetSessionSyncState();
+  await clearManagedProxyState();
   await clearAllAssetPlatformCookies();
   await stopAllHeartbeats();
 
@@ -87,6 +89,7 @@ export async function markExtensionSessionUnauthenticated(loginUrl?: string | nu
   extensionSessionLifecycleRevision += 1;
   await writeBootstrapCache(createInvalidUnauthenticatedBootstrapCache(redirectTo));
   await clearAssetSessionSyncState();
+  await clearManagedProxyState();
   await clearAllAssetPlatformCookies();
   await stopAllHeartbeats();
 

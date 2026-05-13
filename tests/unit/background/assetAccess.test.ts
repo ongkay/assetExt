@@ -35,6 +35,9 @@ describe("background asset access", () => {
     ).resolves.toEqual(readyAssetResponse);
 
     expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith("https://www.tradingview.com/chart/", undefined);
+    expect(testRuntime.syncAssetPlatformProxy.mock.invocationCallOrder[0]).toBeLessThan(
+      testRuntime.openOrReloadTab.mock.invocationCallOrder[0],
+    );
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(456, "tradingview");
     expect(testRuntime.getAssetSessionSyncEntry()).toMatchObject({
       lastErrorMessage: null,
@@ -124,6 +127,11 @@ async function importAssetAccessTestRuntime({
   vi.doMock("@/background/core/productionOrigin", () => ({
     ensureProductionOriginHeaderRuleReady: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/background/core/proxy", () => ({
+    clearAssetPlatformProxy: vi.fn(() => Promise.resolve()),
+    ensureProxyAccessAvailable: vi.fn(() => Promise.resolve()),
+    syncAssetPlatformProxy: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/api/extensionApi", () => ({
     fetchExtensionAsset: vi.fn(() => {
       const nextAssetResponse = assetResponses.shift() ?? readyAssetResponse;
@@ -161,14 +169,18 @@ async function importAssetAccessTestRuntime({
   const extensionApi = await import("@/lib/api/extensionApi");
   const tabs = await import("@/background/core/tabs");
   const heartbeat = await import("@/background/core/heartbeat");
+  const proxy = await import("@/background/core/proxy");
 
   return {
     assetAccess,
+    clearAssetPlatformProxy: vi.mocked(proxy.clearAssetPlatformProxy),
+    ensureProxyAccessAvailable: vi.mocked(proxy.ensureProxyAccessAvailable),
     fetchExtensionAsset: vi.mocked(extensionApi.fetchExtensionAsset),
     getAssetSessionSyncEntry() {
       return assetSessionSyncEntry;
     },
     openOrReloadTab: vi.mocked(tabs.openOrReloadTab),
     startHeartbeat: vi.mocked(heartbeat.startHeartbeat),
+    syncAssetPlatformProxy: vi.mocked(proxy.syncAssetPlatformProxy),
   };
 }

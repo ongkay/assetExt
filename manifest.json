@@ -22,15 +22,44 @@
     "page": "options.html",
     "open_in_tab": true
   },
-  "permissions": ["alarms", "cookies", "declarativeNetRequestWithHostAccess", "storage", "tabs"],
+  "permissions": [
+    "alarms",
+    "cookies",
+    "declarativeNetRequestWithHostAccess",
+    "management",
+    "proxy",
+    "storage",
+    "tabs",
+    "webRequest",
+    "webRequestAuthProvider"
+  ],
   "host_permissions": [
     "http://localhost:3000/*",
     "https://www.tradingview.com/*",
     "https://*.tradingview.com/*",
+    "https://whoer.net/*",
+    "https://*.whoer.net/*",
     "https://forextester.com/*",
     "https://*.forextester.com/*",
+    "https://browserscan.net/*",
+    "https://*.browserscan.net/*",
     "https://tv.checkout.com/*",
     "https://*.tv.checkout.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["proxy-blocked.html", "assets/*"],
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://*.tradingview.com/*",
+        "https://whoer.net/*",
+        "https://*.whoer.net/*",
+        "https://forextester.com/*",
+        "https://*.forextester.com/*",
+        "https://browserscan.net/*",
+        "https://*.browserscan.net/*"
+      ]
+    }
   ],
   "background": {
     "service_worker": "src/background/index.ts",
@@ -41,8 +70,12 @@
       "matches": [
         "https://www.tradingview.com/*",
         "https://*.tradingview.com/*",
+        "https://whoer.net/*",
+        "https://*.whoer.net/*",
         "https://forextester.com/*",
-        "https://*.forextester.com/*"
+        "https://*.forextester.com/*",
+        "https://browserscan.net/*",
+        "https://*.browserscan.net/*"
       ],
       "js": ["src/content/index.tsx"],
       "run_at": "document_start"

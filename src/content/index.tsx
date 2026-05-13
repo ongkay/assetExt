@@ -6,7 +6,10 @@ import { mountContentRoot } from "./dom/mountContentRoot";
 import { installTvShellBootstrapState } from "./dom/tv/tvShell";
 import { ContentApp } from "./ContentApp";
 
-if (detectAssetPlatformFromHostname(window.location.hostname) === "tradingview") {
+if (
+  isTradingViewWebsite(window.location.hostname) &&
+  detectAssetPlatformFromHostname(window.location.hostname) === "tradingview"
+) {
   installTvShellBootstrapState();
 }
 
@@ -17,3 +20,9 @@ createRoot(mountPoint).render(
     <ContentApp themeRoot={themeRoot} />
   </StrictMode>,
 );
+
+function isTradingViewWebsite(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase();
+
+  return normalizedHostname === "tradingview.com" || normalizedHostname.endsWith(".tradingview.com");
+}

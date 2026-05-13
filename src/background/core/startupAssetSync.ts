@@ -1,6 +1,7 @@
 import { detectAssetPlatformFromHostname, type AssetPlatform } from "@/lib/asset-access/platforms";
 import { runtimeMessageType, type OverlayStateChangedMessage } from "@/lib/runtime/messages";
 import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import { readAssetProxyState } from "@/lib/storage/assetProxyState";
 import {
   readAssetSessionSyncState,
   updateAssetSessionSyncEntry,
@@ -10,8 +11,14 @@ import {
 import { ExtensionApiRequestError, fetchAssetSessionSync, prepareAssetAccessSession } from "./assetAccess";
 import { markExtensionSessionUnauthenticated } from "./bootstrap";
 import { clearAssetPlatformCookies } from "./cookies";
+import {
+  ProxyConflictError,
+  clearAssetPlatformProxy,
+  ensureProxyAccessAvailable,
+  getProxyBlockedPageUrl,
+} from "./proxy";
 
-export type AssetSessionEnsureAction = "none" | "reload_required" | "redirect_login";
+export type AssetSessionEnsureAction = "none" | "proxy_blocked" | "reload_required" | "redirect_login";
 
 export type AssetSessionEnsureResult = {
   action: AssetSessionEnsureAction;
@@ -66,6 +73,16 @@ async function runAssetSessionEnsureForPage(
   platform: AssetPlatform,
   tabId?: number,
 ): Promise<AssetSessionEnsureResult> {
+  try {
+    await ensureProxyAccessAvailable();
+  } catch (error) {
+    if (error instanceof ProxyConflictError) {
+      return createEnsureResult("proxy_blocked", error.message, getProxyBlockedPageUrl());
+    }
+
+    throw error;
+  }
+
   const bootstrapCache = await readBootstrapCache();
 
   if (!bootstrapCache || !bootstrapCache.isValid || bootstrapCache.snapshot.auth.status !== "authenticated") {
@@ -73,6 +90,8 @@ async function runAssetSessionEnsureForPage(
   }
 
   const currentEntry = await readAssetSessionSyncEntry(platform);
+  const assetProxyState = await readAssetProxyState();
+  const hasKnownPlatformProxyState = assetProxyState.platforms[platform].updatedAt !== null;
 
   if (
     currentEntry.skipNextPageSync &&
@@ -89,10 +108,15 @@ async function runAssetSessionEnsureForPage(
     return createEnsureResult("none", null, null, true);
   }
 
+  if (!hasKnownPlatformProxyState) {
+    return refreshAssetSessionForPage(platform);
+  }
+
   try {
     const assetSyncResponse = await fetchAssetSessionSync(platform, currentEntry.revision);
 
     if (assetSyncResponse.status === "forbidden") {
+      await clearAssetPlatformProxy(platform);
       await clearAssetPlatformCookies(platform);
       await markAssetSessionSyncSkipped(platform, subscriptionRequiredMessage);
       return createEnsureResult("none");
@@ -103,35 +127,44 @@ async function runAssetSessionEnsureForPage(
       return createEnsureResult("none", null, null, true);
     }
 
-    await syncAffectedTabIdsWithOpenPlatformTabs(platform);
-    setPageEnsurePhase(platform, "refreshing");
-    await notifyOverlayStateForAffectedTabs(platform, "loading", syncReloadMessage);
-    await markAssetSessionSyncRunning(platform);
-
-    const assetResponse = await prepareAssetAccessSession({
-      platform,
-    });
-
-    if (assetResponse.status === "forbidden") {
-      await clearAssetPlatformCookies(platform);
-      await notifyOverlayStateForAffectedTabs(platform, "idle", "");
-      await markAssetSessionSyncSkipped(platform, subscriptionRequiredMessage);
-      return createEnsureResult("none");
-    }
-
-    await markAssetSessionSyncReloadRequired(platform, getAffectedTabIds(platform));
-    await reloadAffectedPlatformTabs(platform);
-
-    return createEnsureResult("none");
+    return refreshAssetSessionForPage(platform);
   } catch (error) {
     return handleAssetSessionEnsureError(platform, error);
   }
+}
+
+async function refreshAssetSessionForPage(platform: AssetPlatform): Promise<AssetSessionEnsureResult> {
+  await syncAffectedTabIdsWithOpenPlatformTabs(platform);
+  setPageEnsurePhase(platform, "refreshing");
+  await notifyOverlayStateForAffectedTabs(platform, "loading", syncReloadMessage);
+  await markAssetSessionSyncRunning(platform);
+
+  const assetResponse = await prepareAssetAccessSession({
+    platform,
+  });
+
+  if (assetResponse.status === "forbidden") {
+    await clearAssetPlatformProxy(platform);
+    await clearAssetPlatformCookies(platform);
+    await notifyOverlayStateForAffectedTabs(platform, "idle", "");
+    await markAssetSessionSyncSkipped(platform, subscriptionRequiredMessage);
+    return createEnsureResult("none");
+  }
+
+  await markAssetSessionSyncReloadRequired(platform, getAffectedTabIds(platform));
+  await reloadAffectedPlatformTabs(platform);
+
+  return createEnsureResult("none");
 }
 
 async function handleAssetSessionEnsureError(
   platform: AssetPlatform,
   error: unknown,
 ): Promise<AssetSessionEnsureResult> {
+  if (error instanceof ProxyConflictError) {
+    return createEnsureResult("proxy_blocked", error.message, getProxyBlockedPageUrl());
+  }
+
   if (isExtensionApiRequestError(error) && error.code === "EXT_UNAUTHENTICATED") {
     const redirectTo = await markExtensionSessionUnauthenticated();
     await notifyRedirectToAffectedTabs(platform, redirectTo);

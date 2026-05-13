@@ -25,14 +25,15 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
   const [message, setMessage] = useState("");
   const [state, setState] = useState<AccessOverlayState>("idle");
   const platform = detectAssetPlatformFromHostname(window.location.hostname);
+  const isTradingViewWebsite = isTradingViewHostname(window.location.hostname);
 
   useEffect(() => {
-    if (platform !== "tradingview") {
+    if (platform !== "tradingview" || !isTradingViewWebsite) {
       return;
     }
 
     return installTvDomPatches();
-  }, [platform]);
+  }, [isTradingViewWebsite, platform]);
 
   useEffect(() => {
     if (!platform) {
@@ -91,6 +92,17 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
         return;
       }
 
+      if (ensureResult.value.action === "proxy_blocked") {
+        if (ensureResult.value.redirectTo) {
+          window.location.assign(ensureResult.value.redirectTo);
+          return;
+        }
+
+        setMessage(ensureResult.value.message ?? fallbackReloadMessage);
+        setState("error");
+        return;
+      }
+
       if (ensureResult.value.action !== "reload_required") {
         if (ensureResult.value.shouldStartHeartbeat) {
           await sendRuntimeMessage<null>({
@@ -128,6 +140,12 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
   }
 
   return <AccessOverlay message={message} platform={platform} state={state} />;
+}
+
+function isTradingViewHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase();
+
+  return normalizedHostname === "tradingview.com" || normalizedHostname.endsWith(".tradingview.com");
 }
 
 type RuntimeMessageResult<TValue> = {

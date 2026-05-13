@@ -334,6 +334,9 @@ async function importBootstrapCoreTestRuntime(
   vi.doMock("@/background/core/heartbeat", () => ({
     stopAllHeartbeats: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/background/core/proxy", () => ({
+    clearManagedProxyState: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/storage/assetSessionSync", () => ({
     clearAssetSessionSyncState: vi.fn(() => Promise.resolve()),
   }));

@@ -15,14 +15,14 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
     platform: "tradingview",
     label: "TradingView",
     targetUrl: "https://www.tradingview.com/chart/",
-    hostPatterns: ["tradingview.com"],
+    hostPatterns: ["tradingview.com", "whoer.net"],
     cookieDomains: [".tradingview.com", "tradingview.com"],
   },
   fxtester: {
     platform: "fxtester",
     label: "FXTester",
     targetUrl: "https://forextester.com/",
-    hostPatterns: ["forextester.com"],
+    hostPatterns: ["forextester.com", "browserscan.net"],
     cookieDomains: [".forextester.com", "forextester.com"],
   },
 };
