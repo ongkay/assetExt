@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { installTvDomPatches } from "@/content/dom/installTvDomPatches";
+import * as tvDomUtils from "@/content/dom/tv/tvDomUtils";
 import * as assetPlatforms from "@/lib/asset-access/platforms";
 import { runtimeMessageType } from "@/lib/runtime/messages";
 import {
@@ -96,6 +97,8 @@ const restrictedIndicatorTemplatesTabOverlaySelector = '[data-asset-manager-rest
 const restrictedIndicatorTemplatesAccessDeniedMessage =
   "Access denied, silahkan beli akun full private untuk akses fitur ini!!";
 const restrictedActiveWatchlistMenuMessage = "watchlist bukan milik anda";
+const restrictedTvDefaultChartPath = "/chart/ceqTNBkY/";
+const restrictedTvDefaultChartUrl = `https://www.tradingview.com${restrictedTvDefaultChartPath}`;
 
 const originalChrome = globalThis.chrome;
 const originalDocumentClassName = document.documentElement.className;
@@ -110,6 +113,7 @@ describe("TV DOM patches", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
     mockDetectedPlatform("tradingview");
+    setTestLocationPath(restrictedTvDefaultChartPath);
   });
 
   afterEach(() => {
@@ -120,6 +124,7 @@ describe("TV DOM patches", () => {
     document.documentElement.className = originalDocumentClassName;
     document.documentElement.removeAttribute(tvShellStateAttributeName);
     document.getElementById(tvShellBootstrapStyleElementId)?.remove();
+    setTestLocationPath(restrictedTvDefaultChartPath);
   });
 
   it("applies restricted menu rules when private access is unavailable", async () => {
@@ -195,6 +200,281 @@ describe("TV DOM patches", () => {
     expect(getButtonBySelector(sidebarHelpSelector).disabled).toBe(false);
     expect(getLogoutMenuItem().getAttribute("aria-label")).toBe("Sign out");
     expect(getLogoutMenuItem().textContent).toContain("Sign out");
+
+    disposeTvDomPatches();
+  });
+
+  it("redirects restricted users from non-chart TradingView pages to the default chart", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-pricing.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    setTestLocationPath("/pricing/");
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("allows the default TradingView chart for restricted users", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-default-chart.png",
+        hasPrivateAccess: false,
+      }),
+    );
+    setTestLocationPath(restrictedTvDefaultChartPath);
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).not.toHaveBeenCalled();
+
+    disposeTvDomPatches();
+  });
+
+  it("allows restricted users to stay on non-default charts that contain their publicId", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-owned-chart.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["50975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).not.toHaveBeenCalled();
+
+    disposeTvDomPatches();
+  });
+
+  it("does not allow substring-only publicId matches on non-default charts", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-substring-chart.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["150975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("redirects restricted users away from non-default charts owned by other users", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-foreign-chart.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["88888 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("waits briefly for the chart owner label before redirecting restricted users", async () => {
+    vi.useFakeTimers();
+
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-pending-chart.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+    expect(replaceSpy).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1400);
+    expect(replaceSpy).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(200);
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("re-checks restricted chart ownership after SPA navigation updates the existing layout label", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-spa-chart.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["50975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+    expect(replaceSpy).not.toHaveBeenCalled();
+
+    const layoutOwnerLabel = document.querySelector("#header-toolbar-layouts + .wrap-n5bmFxyX span.text-Uy_he976");
+
+    expect(layoutOwnerLabel).toBeInstanceOf(HTMLSpanElement);
+
+    window.history.pushState({}, "", "/chart/foreign-chart/");
+    (layoutOwnerLabel as HTMLSpanElement).textContent = "88888 layoutuser";
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("re-checks restricted route access after SPA replaceState navigation", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-replace-state.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["50975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+    replaceSpy.mockClear();
+
+    window.history.replaceState({}, "", "/pricing/");
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("re-checks restricted route access on popstate navigation", async () => {
+    const nativeReplaceState = window.history.replaceState.bind(window.history);
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-popstate.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["50975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+    replaceSpy.mockClear();
+
+    nativeReplaceState({}, "", "/pricing/");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("re-checks restricted route access on hashchange navigation", async () => {
+    const nativeReplaceState = window.history.replaceState.bind(window.history);
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-hashchange.png",
+        hasPrivateAccess: false,
+        publicId: "50975",
+      }),
+    );
+    setTestLocationPath("/chart/MRv6iZKP/");
+    renderTradingViewPage({ layoutOwnerLabels: ["50975 layoutuser"] });
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+    replaceSpy.mockClear();
+
+    nativeReplaceState({}, "", "/pricing/");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).toHaveBeenCalledWith(restrictedTvDefaultChartUrl);
+
+    disposeTvDomPatches();
+  });
+
+  it("does not apply the restricted route guard to private TradingView users", async () => {
+    const replaceSpy = vi.spyOn(tvDomUtils, "replaceLocation").mockImplementation(() => undefined);
+
+    installChromeExtensionMocks(
+      createBootstrapCacheRecordWithUser({
+        avatarUrl: "https://cdn.example.com/avatar-route-private-pricing.png",
+        hasPrivateAccess: true,
+      }),
+    );
+    setTestLocationPath("/pricing/");
+    renderTradingViewPage();
+
+    const disposeTvDomPatches = installTvDomPatches();
+
+    await flushAsyncWork();
+
+    expect(replaceSpy).not.toHaveBeenCalled();
 
     disposeTvDomPatches();
   });
@@ -1998,8 +2278,11 @@ describe("TV DOM patches", () => {
   });
 });
 
-function renderTradingViewPage() {
-  document.body.innerHTML = `${createTradingViewHeaderMarkup()}${createTradingViewMenuMarkup()}`;
+function renderTradingViewPage(options: { layoutOwnerLabels?: string[] } = {}) {
+  document.body.innerHTML = `${createTradingViewHeaderMarkup(
+    "https://old.example.com/avatar.png",
+    options.layoutOwnerLabels ?? [],
+  )}${createTradingViewMenuMarkup()}`;
 }
 
 function getMainMenuButton() {
@@ -2588,7 +2871,10 @@ function createBootstrapCacheRecordWithUser(
   });
 }
 
-function createTradingViewHeaderMarkup(avatarUrl = "https://old.example.com/avatar.png") {
+function createTradingViewHeaderMarkup(
+  avatarUrl = "https://old.example.com/avatar.png",
+  layoutOwnerLabels: string[] = [],
+) {
   return `
     <div class="layout__area--topleft">
       <div class="topLeftButton-hCWTCWBf">
@@ -2620,6 +2906,10 @@ function createTradingViewHeaderMarkup(avatarUrl = "https://old.example.com/avat
       <div id="header-toolbar-publish-desktop" class="desktopPublish-OhqNVIYA container-yRWAMXSg">
         <button type="button" aria-label="Share your idea with the trade community">Publish</button>
       </div>
+      <div class="group-MBOVGQRI">
+        <button type="button" id="header-toolbar-layouts" aria-label="Layout setup"></button>
+        ${createTradingViewLayoutOwnerMarkup(layoutOwnerLabels)}
+      </div>
     </div>
     <div class="mobilePublish-OhqNVIYA group-MBOVGQRI noRightDecoration-MBOVGQRI">
       <div id="header-toolbar-publish-mobile" class="container-yRWAMXSg">
@@ -2634,6 +2924,29 @@ function createTradingViewHeaderMarkup(avatarUrl = "https://old.example.com/avat
       <button type="button" aria-label="Help Center" data-name="help-button"></button>
     </div>
   `;
+}
+
+function createTradingViewLayoutOwnerMarkup(layoutOwnerLabels: string[]) {
+  if (layoutOwnerLabels.length === 0) {
+    return "";
+  }
+
+  return layoutOwnerLabels
+    .map(
+      (layoutOwnerLabel) => `
+        <div class="wrap-n5bmFxyX">
+          <button type="button" aria-label="All changes saved" aria-disabled="true">
+            <div class="js-button-text text-GwQQdU8S">
+              <div class="textWrap-Uy_he976">
+                <span class="text-Uy_he976">${layoutOwnerLabel}</span>
+                <span class="stateTitle-rkvkFYz2 hidden-rkvkFYz2">Save</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      `,
+    )
+    .join("");
 }
 
 function createTradingViewMenuMarkup() {
@@ -3904,4 +4217,8 @@ function mockDetectedPlatform(platform: ReturnType<typeof assetPlatforms.detectA
   }
 
   vi.spyOn(assetPlatforms, "detectAssetPlatformFromHostname").mockReturnValue(platform);
+}
+
+function setTestLocationPath(pathname: string) {
+  window.history.replaceState({}, "", pathname);
 }

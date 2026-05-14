@@ -15,6 +15,14 @@ export function escapeHtml(text: string) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+export function replaceLocation(nextUrl: string) {
+  window.location.replace(nextUrl);
+}
+
+export function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function hidePersistentElement(element: Element | null) {
   if (!(element instanceof HTMLElement)) {
     return;

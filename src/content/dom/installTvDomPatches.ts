@@ -6,7 +6,16 @@ import { syncRestrictedTvContextMenus } from "./tv/tvContextMenus";
 import { syncRestrictedTvDialogs } from "./tv/tvDialogs";
 import { syncRestrictedTvIndicatorTemplates } from "./tv/tvIndicatorTemplates";
 import { syncRestrictedTvLayouts } from "./tv/tvLayouts";
-import { logoutRedirectDelayMs, mainMenuButtonSelector } from "./tv/tvSelectors";
+import {
+  createTvRouteGuardState,
+  syncRestrictedTvRouteGuard,
+  type TvRouteGuardStatus,
+} from "./tv/tvRouteGuard";
+import {
+  logoutRedirectDelayMs,
+  mainMenuButtonSelector,
+  restrictedTvRouteGuardRetryDelayMs,
+} from "./tv/tvSelectors";
 import {
   cleanupTvShellBootstrapState,
   createTvOverrideState,
@@ -35,13 +44,27 @@ export function installTvDomPatches(): () => void {
   let isWaitingForFirstMenuOpen = false;
   let loadOverrideStatePromise: Promise<void> | null = null;
   let mutationObserver: MutationObserver | null = null;
+  let routeGuardRetryTimerId: number | null = null;
   let isObserverActive = false;
   let isDisposed = false;
+  const routeGuardState = createTvRouteGuardState();
+  const historyWithMutableMethods = window.history as History & {
+    pushState: History["pushState"];
+    replaceState: History["replaceState"];
+  };
+  const originalPushState = historyWithMutableMethods.pushState;
+  const originalReplaceState = historyWithMutableMethods.replaceState;
 
   installTvShellBootstrapState();
 
   const syncTvPage = () => {
     if (isDisposed) {
+      return;
+    }
+
+    const routeGuardStatus = syncRestrictedTvRoute();
+
+    if (routeGuardStatus === "redirected") {
       return;
     }
 
@@ -52,6 +75,18 @@ export function installTvDomPatches(): () => void {
       syncOpenTvPopupMenu({ logoutStatus, overrideState, onLogoutClick: handleLogoutClick });
       syncTvShellBootstrapState(overrideState);
     });
+  };
+
+  const syncRestrictedTvRoute = (): TvRouteGuardStatus => {
+    const routeGuardStatus = syncRestrictedTvRouteGuard(routeGuardState, overrideState);
+
+    if (routeGuardStatus === "pending") {
+      scheduleRouteGuardRetry();
+      return routeGuardStatus;
+    }
+
+    clearRouteGuardRetry();
+    return routeGuardStatus;
   };
 
   const ensureOverrideStateLoaded = () => {
@@ -129,6 +164,10 @@ export function installTvDomPatches(): () => void {
       });
   };
 
+  const handleTvRouteChange = () => {
+    syncTvPage();
+  };
+
   function handleLogoutClick(event: Event) {
     event.preventDefault();
     event.stopPropagation();
@@ -172,6 +211,7 @@ export function installTvDomPatches(): () => void {
     mutationObserver.observe(document.documentElement, {
       attributeFilter: ["src"],
       attributes: true,
+      characterData: true,
       childList: true,
       subtree: true,
     });
@@ -188,6 +228,31 @@ export function installTvDomPatches(): () => void {
     }
   }
 
+  function scheduleRouteGuardRetry() {
+    if (routeGuardRetryTimerId !== null) {
+      return;
+    }
+
+    routeGuardRetryTimerId = window.setTimeout(() => {
+      routeGuardRetryTimerId = null;
+      syncTvPage();
+    }, restrictedTvRouteGuardRetryDelayMs);
+  }
+
+  function clearRouteGuardRetry() {
+    if (routeGuardRetryTimerId === null) {
+      return;
+    }
+
+    window.clearTimeout(routeGuardRetryTimerId);
+    routeGuardRetryTimerId = null;
+  }
+
+  historyWithMutableMethods.pushState = createHistoryMethodInterceptor(originalPushState, handleTvRouteChange);
+  historyWithMutableMethods.replaceState = createHistoryMethodInterceptor(originalReplaceState, handleTvRouteChange);
+  window.addEventListener("hashchange", handleTvRouteChange);
+  window.addEventListener("popstate", handleTvRouteChange);
+
   mutationObserver = new MutationObserver(handleMutations);
   resumeObserver();
   document.addEventListener("click", handleMainMenuButtonClick, true);
@@ -197,8 +262,13 @@ export function installTvDomPatches(): () => void {
 
   return () => {
     isDisposed = true;
+    clearRouteGuardRetry();
     pauseObserver();
     document.removeEventListener("click", handleMainMenuButtonClick, true);
+    window.removeEventListener("hashchange", handleTvRouteChange);
+    window.removeEventListener("popstate", handleTvRouteChange);
+    historyWithMutableMethods.pushState = originalPushState;
+    historyWithMutableMethods.replaceState = originalReplaceState;
     cleanupTvShellBootstrapState();
   };
 }
@@ -244,4 +314,15 @@ async function requestTvLogout(): Promise<string> {
       },
     );
   });
+}
+
+function createHistoryMethodInterceptor<TMethod extends History["pushState"] | History["replaceState"]>(
+  originalMethod: TMethod,
+  onLocationChanged: () => void,
+): TMethod {
+  return function historyMethodInterceptor(this: History, ...args: Parameters<TMethod>) {
+    const result = originalMethod.apply(this, args);
+    onLocationChanged();
+    return result;
+  } as TMethod;
 }

@@ -147,7 +147,16 @@ export function isRelevantTvMutation(mutation: MutationRecord) {
     return mutation.target instanceof Element && mutation.target.matches(mainAvatarImageSelector);
   }
 
-  return [...mutation.addedNodes, ...mutation.removedNodes].some(isRelevantTvNode);
+  if (mutation.type === "characterData") {
+    const parentElement = mutation.target.parentElement;
+
+    return (
+      parentElement instanceof Element &&
+      (parentElement.matches(tvRelevantMutationSelectors) || Boolean(parentElement.closest(tvRelevantMutationSelectors)))
+    );
+  }
+
+  return isRelevantTvNode(mutation.target) || [...mutation.addedNodes, ...mutation.removedNodes].some(isRelevantTvNode);
 }
 
 export function createTvOverrideState(bootstrapCacheRecord: BootstrapCacheRecord | null): TvOverrideState {

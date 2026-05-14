@@ -103,6 +103,7 @@ export const mobileWatchlistSymbolDrawerSelector = ".drawer-GQU5HVYO.positionBot
 export const mobileWatchlistSymbolDrawerItemSelector = "li.item-WJDah4zD";
 export const mobileWatchlistSymbolDrawerSeparatorSelector = "li.separator-Ymxd0dt_";
 export const mobileWatchlistSymbolDrawerColorMenuItemSelector = 'label[role="menuitem"][aria-label^="Set "]';
+export const headerToolbarLayoutsButtonSelector = "#header-toolbar-layouts";
 
 export const recentTitleListItemSelector = '[data-qa-id="ui-lib-title-list-item"]';
 export const recentLayoutMenuItemSelector = '[data-qa-id="save-load-menu-item-recent"]';
@@ -111,6 +112,13 @@ export const menuDividerSelector = '.menu-divider-YZ5qU_gy[role="separator"]';
 export const watchlistsRecentTitleSelector =
   '.columnsTitle-mQBvegEO.title-GlrQ9d9L, [data-qa-id="ui-lib-title-list-item"]';
 export const watchlistsSeparatorSelector = '.separator-UZn6u4sU[role="separator"]';
+export const restrictedTvChartPathPrefix = "/chart/";
+export const restrictedTvDefaultChartPath = "/chart/ceqTNBkY/";
+export const restrictedTvDefaultChartUrl = `https://www.tradingview.com${restrictedTvDefaultChartPath}`;
+export const restrictedTvLayoutOwnerContainerSelector = `${headerToolbarLayoutsButtonSelector} + .wrap-n5bmFxyX`;
+export const restrictedTvLayoutOwnerTextSelector = `${restrictedTvLayoutOwnerContainerSelector} span.text-Uy_he976`;
+export const restrictedTvRouteGuardRetryDelayMs = 150;
+export const restrictedTvRouteGuardPendingTimeoutMs = 1500;
 export const tvShellHiddenOnPendingAndRestrictedSelectors = [
   desktopPublishSelector,
   mobilePublishWrapperSelector,
@@ -229,4 +237,6 @@ export const tvRelevantMutationSelectors = [
   menuDividerSelector,
   watchlistsRecentTitleSelector,
   watchlistsSeparatorSelector,
+  headerToolbarLayoutsButtonSelector,
+  restrictedTvLayoutOwnerTextSelector,
 ].join(", ");
