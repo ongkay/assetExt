@@ -4,6 +4,15 @@ import { describe, expect, it } from "vitest";
 
 import viteConfig from "../../../vite.config";
 
+const buildProtectionPluginName = "asset-manager-build-protection";
+const buildOutputRenamePluginName = "asset-manager-build-output-rename";
+
+const protectedBuildOutputFileNames = {
+  assetFileNames: "assets/[hash][extname]",
+  chunkFileNames: "assets/[hash].js",
+  entryFileNames: "assets/[hash].js",
+};
+
 describe("Vite dev server config", () => {
   it("allows Chrome extension origins for CRXJS dev loader requests", () => {
     const corsOrigin =
@@ -35,9 +44,24 @@ describe("Vite dev server config", () => {
 
   it("builds the proxy blocked page as an extension entry", () => {
     const buildInput = viteConfig.build?.rollupOptions?.input as Record<string, string> | undefined;
+    const buildOutput = viteConfig.build?.rollupOptions?.output;
+    const buildPlugins = Array.isArray(viteConfig.plugins) ? viteConfig.plugins : [];
 
     expect(viteConfig.build?.outDir).toBe("dist/ext-1");
+    expect(viteConfig.build?.minify).toBe("terser");
+    expect(viteConfig.build?.sourcemap).toBe(false);
     expect(buildInput?.ext1Blocked).toContain("ext-1-blocked.html");
     expect(buildInput?.proxyBlocked).toContain("proxy-blocked.html");
+    expect(buildOutput).toMatchObject(protectedBuildOutputFileNames);
+    expect(
+      buildPlugins.some((plugin) => hasPluginName(plugin) && plugin.name === buildProtectionPluginName),
+    ).toBe(true);
+    expect(
+      buildPlugins.some((plugin) => hasPluginName(plugin) && plugin.name === buildOutputRenamePluginName),
+    ).toBe(true);
   });
 });
+
+function hasPluginName(plugin: unknown): plugin is { name: string } {
+  return typeof plugin === "object" && plugin !== null && "name" in plugin;
+}

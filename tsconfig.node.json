@@ -29,5 +29,6 @@
     "manifest.ext-2.json",
     "eslint.config.js",
     "scripts"
-  ]
+  ],
+  "exclude": ["scripts/**/*.test.ts"]
 }

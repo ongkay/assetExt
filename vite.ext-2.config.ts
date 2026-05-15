@@ -4,9 +4,23 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { crx } from "@crxjs/vite-plugin";
 import manifest from "./manifest.ext-2.json";
+import {
+  createBuildProtectionPlugin,
+  createProtectedBuildOptions,
+  getProtectedEntryModuleIdsFromManifest,
+} from "./scripts/buildProtection";
+import { createBuildOutputRenamePlugin } from "./scripts/buildOutputRename";
+
+const protectedEntryModuleIds = getProtectedEntryModuleIdsFromManifest(manifest);
 
 export default defineConfig({
-  plugins: [tailwindcss(), react(), crx({ manifest })],
+  plugins: [
+    tailwindcss(),
+    react(),
+    crx({ manifest }),
+    createBuildOutputRenamePlugin(),
+    createBuildProtectionPlugin({ protectedEntryModuleIds }),
+  ],
   server: {
     host: "127.0.0.1",
     port: 5174,
@@ -20,14 +34,12 @@ export default defineConfig({
       protocol: "ws",
     },
   },
-  build: {
-    outDir: "dist/ext-2",
-    rollupOptions: {
-      input: {
-        peerGuardBlocked: resolve(__dirname, "ext-2-blocked.html"),
-      },
+  build: createProtectedBuildOptions({
+    input: {
+      peerGuardBlocked: resolve(__dirname, "ext-2-blocked.html"),
     },
-  },
+    outDir: "dist/ext-2",
+  }),
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
