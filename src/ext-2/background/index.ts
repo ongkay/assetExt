@@ -8,7 +8,6 @@ import { redirectPeerGuardProtectedAssetTabs } from "@/background/core/tabs";
 import { getPeerGuardIdentity, peerGuardStateStorageKey } from "@/lib/peer-guard/peerGuardConfig";
 import { createPeerGuardController } from "@/lib/peer-guard/createPeerGuardController";
 import { clearPeerGuardManagedCookies } from "@/lib/peer-guard/managedCookies";
-import { clearPeerGuardState } from "@/lib/peer-guard/peerGuardStorage";
 
 const ext2PeerGuardWarningPagePath = getPeerGuardIdentity("ext-2").warningPagePath;
 
@@ -64,8 +63,8 @@ async function clearExt2Storage(): Promise<void> {
     return;
   }
 
-  await clearPeerGuardState();
-
+  // Keep the blocked peer-guard state in local storage so the warning page stays open
+  // until the paired extension is actually enabled again.
   if (chrome.storage?.session) {
     await chrome.storage.session.remove([peerGuardStateStorageKey]);
   }
