@@ -10,7 +10,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev:all": "node scripts/dev-all.mjs",
+    "dev:ext-2": "vite --config vite.ext-2.config.ts",
+    "build": "tsc -b --force && pnpm build:ext-1 && pnpm build:ext-2",
+    "build:ext-1": "vite build",
+    "build:ext-2": "vite build --config vite.ext-2.config.ts",
     "lint": "eslint .",
     "prepare": "husky",
     "typecheck": "tsc --noEmit",

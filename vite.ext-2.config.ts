@@ -1,33 +1,30 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { crx } from "@crxjs/vite-plugin";
-import { resolve } from "path";
-import manifest from "./manifest.json";
+import manifest from "./manifest.ext-2.json";
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), crx({ manifest })],
   server: {
     host: "127.0.0.1",
-    port: 5173,
+    port: 5174,
     strictPort: true,
     cors: {
       origin: [/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/, /^chrome-extension:\/\/.*$/],
     },
     hmr: {
       host: "127.0.0.1",
-      port: 5173,
+      port: 5174,
       protocol: "ws",
     },
   },
   build: {
-    outDir: "dist/ext-1",
+    outDir: "dist/ext-2",
     rollupOptions: {
       input: {
-        popup: resolve(__dirname, "popup.html"),
-        options: resolve(__dirname, "options.html"),
-        ext1Blocked: resolve(__dirname, "ext-1-blocked.html"),
-        proxyBlocked: resolve(__dirname, "proxy-blocked.html"),
+        peerGuardBlocked: resolve(__dirname, "ext-2-blocked.html"),
       },
     },
   },

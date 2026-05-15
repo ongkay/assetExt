@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { LogOutIcon, RefreshCcwIcon } from "lucide-react";
+import { LogOutIcon, RefreshCcwIcon, ShieldAlertIcon } from "lucide-react";
 
 import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
 import { BootstrapSkeleton } from "@/components/asset-manager/BootstrapSkeleton";
@@ -13,6 +13,13 @@ import { UnauthenticatedPanel } from "@/components/asset-manager/Unauthenticated
 import { VersionGatePanel } from "@/components/asset-manager/VersionGatePanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
 import type {
@@ -21,12 +28,18 @@ import type {
   ExtensionBootstrap,
 } from "@/lib/api/extensionApiTypes";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
+import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
+import { createUnblockedPeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { isSubscriptionActive } from "@/lib/asset-access/subscription";
 import { disableManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
-import { runtimeMessageType, type BootstrapRuntimeValue } from "@/lib/runtime/messages";
+import {
+  runtimeMessageType,
+  type BootstrapRuntimeValue,
+} from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
+import { peerGuardStateStorageKey } from "@/lib/peer-guard/peerGuardConfig";
 import {
   bootstrapCacheStorageKey,
   createBootstrapCacheRecord,
@@ -45,6 +58,7 @@ export function PopupApp() {
   const apiBaseUrl = getExtensionApiBaseUrl();
   const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
   const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
+  const [peerGuardState, setPeerGuardState] = useState<PeerGuardState | null>(null);
   const [popupView, setPopupView] = useState<PopupView>("main");
   const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
   const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
@@ -56,6 +70,7 @@ export function PopupApp() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isRefreshing);
+  const isPeerGuardBlocked = peerGuardState?.isBlocked === true;
   const proxyConflictMessage = assetProxyState?.conflict.isActive ? assetProxyState.conflict.message : null;
 
   const requestAssetAccess = useCallback(async (platform: AssetPlatform) => {
@@ -102,7 +117,11 @@ export function PopupApp() {
       if (bootstrapCacheStorageKey in changes) {
         const nextCache = changes[bootstrapCacheStorageKey]?.newValue as BootstrapCacheRecord | undefined;
 
-        setBootstrapValue({ cache: nextCache ?? null, isSyncing: false });
+        setBootstrapValue((currentBootstrapValue) => ({
+          cache: nextCache ?? null,
+          isSyncing: false,
+          peerGuardState: currentBootstrapValue?.peerGuardState ?? createUnblockedPeerGuardState("ext-1"),
+        }));
         setIsRefreshing(false);
       }
 
@@ -112,6 +131,17 @@ export function PopupApp() {
           | undefined;
 
         setAssetProxyState(nextAssetProxyState ?? null);
+      }
+
+      if (peerGuardStateStorageKey in changes) {
+        const nextPeerGuardState = changes[peerGuardStateStorageKey]?.newValue as PeerGuardState | undefined;
+
+        setPeerGuardState(nextPeerGuardState ?? null);
+
+        if (nextPeerGuardState && !nextPeerGuardState.isBlocked) {
+          void requestBootstrap();
+          void requestAssetProxyState();
+        }
       }
     };
 
@@ -203,7 +233,12 @@ export function PopupApp() {
     await requestBootstrap();
   };
 
+  if (isPeerGuardBlocked) {
+    return renderPeerGuardBlockedState();
+  }
+
   if (!snapshot) {
+
     return (
       <PopupShell isThemeReady={isThemeReady}>
         <BootstrapSkeleton />
@@ -378,6 +413,7 @@ export function PopupApp() {
 
     if (nextBootstrapValue.value) {
       setBootstrapValue(nextBootstrapValue.value);
+      setPeerGuardState(nextBootstrapValue.value.peerGuardState);
     }
   }
 
@@ -396,7 +432,11 @@ export function PopupApp() {
   }
 
   function updateBootstrapCache(cache: BootstrapCacheRecord) {
-    setBootstrapValue({ cache, isSyncing: false });
+    setBootstrapValue((currentBootstrapValue) => ({
+      cache,
+      isSyncing: false,
+      peerGuardState: currentBootstrapValue?.peerGuardState ?? createUnblockedPeerGuardState("ext-1"),
+    }));
   }
 
   async function requestAssetProxyState() {
@@ -452,6 +492,33 @@ export function PopupApp() {
       </div>
     );
   }
+
+  function renderPeerGuardBlockedState() {
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <Empty className="min-h-[350px] gap-3 rounded-2xl border border-border/80 bg-card/96 px-6 py-10 shadow-lg shadow-black/5">
+          <EmptyHeader className="gap-3">
+            <EmptyMedia
+              className="size-11 rounded-2xl border border-red-500/15 bg-red-500/[0.08] text-red-500 [&_svg:not([class*='size-'])]:size-5"
+              variant="icon"
+            >
+              <ShieldAlertIcon />
+            </EmptyMedia>
+            <EmptyTitle>Akses diblokir</EmptyTitle>
+            <EmptyDescription>{getBlockedPopupSummary(peerGuardState)}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </PopupShell>
+    );
+  }
+}
+
+function getBlockedPopupSummary(peerGuardState: PeerGuardState | null): string {
+  if (peerGuardState?.reason === "peer_missing") {
+    return `${peerGuardState.peerLabel} belum aktif. Aktifkan pair.`;
+  }
+
+  return `${peerGuardState?.peerLabel ?? "Extension pasangan"} dimatikan. Aktifkan pair.`;
 }
 
 function getAbsoluteApiUrl(apiBaseUrl: string, path: string): string {

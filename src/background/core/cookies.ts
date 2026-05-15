@@ -1,22 +1,12 @@
 import { assetPlatforms, getAssetPlatformConfig, type AssetPlatform } from "@/lib/asset-access/platforms";
 import type { ExtensionCookiePayload, ExtensionCookieSameSite } from "@/lib/api/extensionApiTypes";
+import { clearCookiesForDomains } from "@/lib/peer-guard/managedCookies";
+export { buildCookieUrl, clearCookiesForDomains, clearPeerGuardManagedCookies } from "@/lib/peer-guard/managedCookies";
 
 export async function clearAssetPlatformCookies(platform: AssetPlatform): Promise<void> {
   const platformConfig = getAssetPlatformConfig(platform);
 
-  for (const domain of platformConfig.cookieDomains) {
-    const cookies = await chrome.cookies.getAll({ domain });
-
-    await Promise.all(
-      cookies.map((cookie) =>
-        chrome.cookies.remove({
-          name: cookie.name,
-          storeId: cookie.storeId,
-          url: buildCookieUrl(cookie),
-        }),
-      ),
-    );
-  }
+  await clearCookiesForDomains(platformConfig.cookieDomains);
 }
 
 export async function clearAllAssetPlatformCookies(): Promise<void> {
@@ -52,12 +42,6 @@ export function buildCookieSetUrl(cookie: ExtensionCookiePayload): string {
   const hostname = cookie.domain.replace(/^\./, "");
 
   return `https://${hostname}${cookie.path ?? "/"}`;
-}
-
-export function buildCookieUrl(cookie: chrome.cookies.Cookie): string {
-  const hostname = cookie.domain.replace(/^\./, "");
-
-  return `https://${hostname}${cookie.path || "/"}`;
 }
 
 export function toChromeSameSite(

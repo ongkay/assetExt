@@ -22,5 +22,12 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "manifest.json", "eslint.config.js", "scripts"]
+  "include": [
+    "vite.config.ts",
+    "vite.ext-2.config.ts",
+    "manifest.json",
+    "manifest.ext-2.json",
+    "eslint.config.js",
+    "scripts"
+  ]
 }

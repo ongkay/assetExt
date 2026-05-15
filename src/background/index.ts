@@ -6,6 +6,7 @@ import {
   type BootstrapRefreshRuntimeResponse,
   type BootstrapRuntimeResponse,
   type LogoutRuntimeResponse,
+  type PeerGuardRuntimeResponse,
   type ProxyConflictRefreshRuntimeResponse,
   type RedeemCdKeyRuntimeResponse,
   type RuntimeMessage,
@@ -23,6 +24,12 @@ import {
 } from "./core/bootstrap";
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
+import {
+  ensurePeerGuardAccess,
+  initializePeerGuard,
+  readCurrentPeerGuardState,
+  refreshPeerGuardState,
+} from "@/ext-1/background/core/peerGuard";
 import { ensureProductionOriginHeaderRuleReady } from "./core/productionOrigin";
 import { ensureProxyControllerReady, refreshProxyConflictState } from "./core/proxy";
 import { ensureAssetSessionForPage } from "./core/startupAssetSync";
@@ -30,6 +37,7 @@ import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 
 void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
 void ensureProxyControllerReady().catch(() => undefined);
+void initializePeerGuard().catch(() => undefined);
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)
@@ -47,15 +55,32 @@ async function handleRuntimeMessage(
 ): Promise<RuntimeResponse<unknown>> {
   switch (message.type) {
     case runtimeMessageType.bootstrapRequested: {
+      const peerGuardState = await refreshPeerGuardState();
+
+      if (peerGuardState.isBlocked) {
+        return {
+          ok: true,
+          value: {
+            cache: null,
+            isSyncing: false,
+            peerGuardState,
+          },
+        } satisfies BootstrapRuntimeResponse;
+      }
+
       const bootstrapState = await readBootstrapState(false);
 
       return {
         ok: true,
-        value: bootstrapState,
+        value: {
+          ...bootstrapState,
+          peerGuardState,
+        },
       } satisfies BootstrapRuntimeResponse;
     }
 
     case runtimeMessageType.bootstrapRefreshRequested: {
+      await ensurePeerGuardAccess();
       const bootstrapCache = await forceRefreshBootstrapCache();
 
       return {
@@ -65,6 +90,7 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.redeemCdKeyRequested: {
+      await ensurePeerGuardAccess();
       await ensureProductionOriginHeaderRuleReady();
       const redeemResult = await redeemExtensionCdKey(createExtensionApiConfig(), message.code);
 
@@ -90,6 +116,8 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.assetAccessRequested: {
+      await ensurePeerGuardAccess();
+
       try {
         const assetResponse = await runAssetAccess({
           platform: message.platform,
@@ -119,6 +147,20 @@ async function handleRuntimeMessage(
       } satisfies AssetSessionEnsureRuntimeResponse;
     }
 
+    case runtimeMessageType.peerGuardStatusRequested: {
+      return {
+        ok: true,
+        value: await readCurrentPeerGuardState(),
+      } satisfies PeerGuardRuntimeResponse;
+    }
+
+    case runtimeMessageType.peerGuardRefreshRequested: {
+      return {
+        ok: true,
+        value: await refreshPeerGuardState(),
+      } satisfies PeerGuardRuntimeResponse;
+    }
+
     case runtimeMessageType.proxyConflictRefreshRequested: {
       const assetProxyState = await refreshProxyConflictState();
 
@@ -130,6 +172,14 @@ async function handleRuntimeMessage(
 
     case runtimeMessageType.heartbeatStarted: {
       const tabId = message.tabId ?? sender.tab?.id;
+
+      if ((await refreshPeerGuardState()).isBlocked) {
+        return {
+          ok: true,
+          value: null,
+        } satisfies RuntimeResponse<null>;
+      }
+
       const bootstrapCache = await readBootstrapCache();
 
       if (tabId && bootstrapCache?.isValid && bootstrapCache.snapshot.auth.status === "authenticated") {

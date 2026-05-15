@@ -7,6 +7,7 @@ export type AssetPlatformConfig = {
   label: string;
   targetUrl: string;
   hostPatterns: readonly string[];
+  peerGuardProtectedHostPatterns: readonly string[];
   cookieDomains: readonly string[];
 };
 
@@ -16,6 +17,7 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
     label: "TradingView",
     targetUrl: "https://www.tradingview.com/chart/",
     hostPatterns: ["tradingview.com", "whoer.net"],
+    peerGuardProtectedHostPatterns: ["tradingview.com"],
     cookieDomains: [".tradingview.com", "tradingview.com"],
   },
   fxtester: {
@@ -23,6 +25,7 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
     label: "FXTester",
     targetUrl: "https://forextester.com/",
     hostPatterns: ["forextester.com", "browserscan.net"],
+    peerGuardProtectedHostPatterns: ["forextester.com"],
     cookieDomains: [".forextester.com", "forextester.com"],
   },
 };
@@ -33,6 +36,10 @@ export function getAssetPlatformConfig(platform: AssetPlatform): AssetPlatformCo
 
 export function isAssetPlatform(platform: string): platform is AssetPlatform {
   return assetPlatforms.includes(platform as AssetPlatform);
+}
+
+export function getPeerGuardProtectedAssetHostPatterns(): readonly string[] {
+  return [...new Set(assetPlatforms.flatMap((platform) => getAssetPlatformConfig(platform).peerGuardProtectedHostPatterns))];
 }
 
 export function detectAssetPlatformFromHostname(hostname: string): AssetPlatform | null {

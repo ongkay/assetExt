@@ -92,6 +92,17 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
         return;
       }
 
+      if (ensureResult.value.action === "peer_required") {
+        if (ensureResult.value.redirectTo) {
+          window.location.assign(ensureResult.value.redirectTo);
+          return;
+        }
+
+        setMessage(ensureResult.value.message ?? fallbackReloadMessage);
+        setState("error");
+        return;
+      }
+
       if (ensureResult.value.action === "proxy_blocked") {
         if (ensureResult.value.redirectTo) {
           window.location.assign(ensureResult.value.redirectTo);

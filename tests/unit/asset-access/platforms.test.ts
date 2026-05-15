@@ -4,6 +4,7 @@ import {
   assetPlatforms,
   detectAssetPlatformFromHostname,
   getAssetPlatformConfig,
+  getPeerGuardProtectedAssetHostPatterns,
 } from "@/lib/asset-access/platforms";
 
 describe("asset platform mapping", () => {
@@ -32,6 +33,14 @@ describe("asset platform mapping", () => {
       targetUrl: "https://www.tradingview.com/chart/",
       cookieDomains: [".tradingview.com", "tradingview.com"],
       hostPatterns: ["tradingview.com", "whoer.net"],
+      peerGuardProtectedHostPatterns: ["tradingview.com"],
     });
+  });
+
+  it("returns only production asset hosts for peer-guard redirects", () => {
+    expect(getPeerGuardProtectedAssetHostPatterns()).toEqual([
+      "tradingview.com",
+      "forextester.com",
+    ]);
   });
 });

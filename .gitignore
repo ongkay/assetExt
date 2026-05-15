@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 *.tsbuildinfo
-vite.config.d.ts
+vite*.config.d.ts
 
 # Editor directories and files
 .vscode/*
@@ -34,3 +34,7 @@ playwright-report/
 .playwright-mcp
 zzz.html
 zprompt.md
+
+# Extension packaging artifacts
+*.crx
+*.pem

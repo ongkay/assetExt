@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Asset Manager ext-2",
+  "description": "Local watchdog companion for Asset Manager ext-1.",
+  "version": "2.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzIh7FR95W9/b4n88sCjx1Y9MqxWzc4sUtv1NQNHzBSzyqvvRGbUk+w6N7drTUT21FO0spT8A+yLGlLAKvMiMLUjx/evVZSH2C8i5YUrffc5+lNnXYZjkfPc3TJEdJnpNJAVzdaLjUxLIzZDrDO3H32Sb8q6xZIkbFDQZ+cxDNq7LFXh0Cw7ahNQProNqWUpS81I79Q9IkUrlXJH9vBGAftASIHR1L+0/1Tmefmq6N+JbJEA70Y8iy1DOEljD2lTWqruWC1wYRPKrnSmRLii2epVEqWscTZCHQTuXqFInWRexXwLb9S09olCxqkaaDJHrCDxIZquvOGqyFgJE1gXGGwIDAQAB",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": ["cookies", "management", "storage", "tabs"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://www.tradingview.com/*",
+    "https://*.tradingview.com/*",
+    "https://whoer.net/*",
+    "https://*.whoer.net/*",
+    "https://forextester.com/*",
+    "https://*.forextester.com/*",
+    "https://browserscan.net/*",
+    "https://*.browserscan.net/*",
+    "https://tv.checkout.com/*",
+    "https://*.tv.checkout.com/*"
+  ],
+  "background": {
+    "service_worker": "src/ext-2/background/index.ts",
+    "type": "module"
+  }
+}

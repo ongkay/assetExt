@@ -11,9 +11,11 @@ import {
   writeBootstrapCache,
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
+import { clearStoredDeviceId } from "@/lib/storage/deviceIdentity";
+import { clearInjectionCooldowns } from "@/lib/storage/injectionCooldown";
 import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
 
-import { clearAllAssetPlatformCookies } from "./cookies";
+import { clearAllAssetPlatformCookies, clearPeerGuardManagedCookies } from "./cookies";
 import { stopAllHeartbeats } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 import { clearManagedProxyState } from "./proxy";
@@ -94,6 +96,19 @@ export async function markExtensionSessionUnauthenticated(loginUrl?: string | nu
   await stopAllHeartbeats();
 
   return redirectTo;
+}
+
+export async function clearExtensionSessionArtifactsForPeerGuard(): Promise<void> {
+  latestExplicitBootstrapCache = null;
+  bootstrapWriteRevision += 1;
+  extensionSessionLifecycleRevision += 1;
+  await clearBootstrapCache();
+  await clearAssetSessionSyncState();
+  await clearManagedProxyState();
+  await clearPeerGuardManagedCookies();
+  await clearStoredDeviceId();
+  await clearInjectionCooldowns();
+  await stopAllHeartbeats();
 }
 
 export function createExtensionApiConfig(): ExtensionApiConfig {

@@ -12,13 +12,18 @@ import { ExtensionApiRequestError, fetchAssetSessionSync, prepareAssetAccessSess
 import { markExtensionSessionUnauthenticated } from "./bootstrap";
 import { clearAssetPlatformCookies } from "./cookies";
 import {
+  ensurePeerGuardAccess,
+  getPeerGuardWarningPageUrl,
+  PeerGuardBlockedError,
+} from "@/ext-1/background/core/peerGuard";
+import {
   ProxyConflictError,
   clearAssetPlatformProxy,
   ensureProxyAccessAvailable,
   getProxyBlockedPageUrl,
 } from "./proxy";
 
-export type AssetSessionEnsureAction = "none" | "proxy_blocked" | "reload_required" | "redirect_login";
+export type AssetSessionEnsureAction = "none" | "peer_required" | "proxy_blocked" | "reload_required" | "redirect_login";
 
 export type AssetSessionEnsureResult = {
   action: AssetSessionEnsureAction;
@@ -73,6 +78,16 @@ async function runAssetSessionEnsureForPage(
   platform: AssetPlatform,
   tabId?: number,
 ): Promise<AssetSessionEnsureResult> {
+  try {
+    await ensurePeerGuardAccess();
+  } catch (error) {
+    if (error instanceof PeerGuardBlockedError) {
+      return createEnsureResult("peer_required", error.message, getPeerGuardWarningPageUrl());
+    }
+
+    throw error;
+  }
+
   try {
     await ensureProxyAccessAvailable();
   } catch (error) {

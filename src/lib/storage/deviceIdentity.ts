@@ -14,3 +14,11 @@ export async function getOrCreateDeviceId(): Promise<string> {
 
   return deviceId;
 }
+
+export async function clearStoredDeviceId(): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.storage?.local) {
+    return;
+  }
+
+  await chrome.storage.local.remove(deviceIdStorageKey);
+}

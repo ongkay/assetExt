@@ -36,6 +36,8 @@ describe("Vite dev server config", () => {
   it("builds the proxy blocked page as an extension entry", () => {
     const buildInput = viteConfig.build?.rollupOptions?.input as Record<string, string> | undefined;
 
+    expect(viteConfig.build?.outDir).toBe("dist/ext-1");
+    expect(buildInput?.ext1Blocked).toContain("ext-1-blocked.html");
     expect(buildInput?.proxyBlocked).toContain("proxy-blocked.html");
   });
 });

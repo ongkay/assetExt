@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Asset Manager",
+  "name": "Asset Manager ext-1",
   "description": "Premium asset access manager for authenticated subscribers.",
   "version": "2.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp6UnW1PX5llxzWkWyx8DXn+hEli99SDY9F7MG4GXWbS/nQGXAgSTst+sPeXmk8rwi/QV5nOkG+lZWLb9PFh1hfc6UnlIekeMDlPErrQICJ1U4O4n/i46+Sf2frUi9fC9xRo0ltbToKrJrV+mlxW9P8mcIc5ayuyaxv82TnHeguKjRUy7AgTEKfAWMd086RwBZCe+BGn7PPoJfJUq5jkEW8h2oBE+1tGEucqNYFqmgJvICxTcvzeEF1qZa01xi9lx3cct8TDzlmaiBI0F/q+FqXc7ra+oMU/2hOYSQTob11ztKATRiWuA7AcWtdw5YzKMwkuHRv+MTl66PXgJpCFt4QIDAQAB",
   "action": {
-    "default_title": "Asset Manager",
+    "default_title": "Asset Manager ext-1",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -48,7 +49,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["proxy-blocked.html", "assets/*"],
+      "resources": ["proxy-blocked.html", "ext-1-blocked.html", "assets/*"],
       "matches": [
         "https://www.tradingview.com/*",
         "https://*.tradingview.com/*",

@@ -1,4 +1,5 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
+import { assetPlatforms } from "@/lib/asset-access/platforms";
 import { getChromeStorageValue, setChromeStorageValue } from "@/lib/storage/chromeStorage";
 
 const injectionCooldownStorageKey = "assetManager.injectionCooldown";
@@ -20,4 +21,12 @@ export async function isInjectionCooldownActive(platform: AssetPlatform, now = D
 
 export async function markInjectionCooldown(platform: AssetPlatform, now = Date.now()): Promise<void> {
   await setChromeStorageValue(getInjectionCooldownStorageKey(platform), now);
+}
+
+export async function clearInjectionCooldowns(): Promise<void> {
+  if (typeof chrome === "undefined" || !chrome.storage?.local) {
+    return;
+  }
+
+  await chrome.storage.local.remove(assetPlatforms.map((platform) => getInjectionCooldownStorageKey(platform)));
 }

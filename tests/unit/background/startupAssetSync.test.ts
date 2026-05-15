@@ -263,6 +263,23 @@ describe("background startup asset sync", () => {
       shouldStartHeartbeat: false,
     });
   });
+
+  it("redirects to the peer guard warning page when ext-2 is unavailable", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      peerGuardError: new Error("ext-2 wajib aktif"),
+      peerGuardWarningPageUrl: "chrome-extension://runtime-id/ext-1-blocked.html",
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
+      action: "peer_required",
+      message: "ext-2 wajib aktif",
+      redirectTo: "chrome-extension://runtime-id/ext-1-blocked.html",
+      shouldStartHeartbeat: false,
+    });
+
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
+    expect(testRuntime.prepareAssetAccessSession).not.toHaveBeenCalled();
+  });
 });
 
 async function importStartupAssetSyncTestRuntime({
@@ -270,6 +287,8 @@ async function importStartupAssetSyncTestRuntime({
   assetProxyState = createKnownAssetProxyState(),
   proxyAccessError = null,
   proxyBlockedPageUrl = "chrome-extension://runtime-id/proxy-blocked.html",
+  peerGuardError = null,
+  peerGuardWarningPageUrl = "chrome-extension://runtime-id/ext-1-blocked.html",
   assetSyncError = null,
   assetSyncResponses = [],
   bootstrapCache = createAuthenticatedBootstrapCache(),
@@ -280,6 +299,8 @@ async function importStartupAssetSyncTestRuntime({
   assetProxyState?: AssetProxyState;
   proxyAccessError?: Error | null;
   proxyBlockedPageUrl?: string;
+  peerGuardError?: Error | null;
+  peerGuardWarningPageUrl?: string;
   assetSyncError?: Error | null;
   assetSyncResponses?: ExtensionAssetSyncResponse[];
   bootstrapCache?: BootstrapCacheRecord | null;
@@ -323,6 +344,7 @@ async function importStartupAssetSyncTestRuntime({
     };
   });
   vi.doMock("@/background/core/bootstrap", () => ({
+    clearExtensionSessionArtifactsForPeerGuard: vi.fn(() => Promise.resolve()),
     markExtensionSessionUnauthenticated: vi.fn(() => Promise.resolve(unauthenticatedRedirectTo)),
   }));
   vi.doMock("@/background/core/cookies", () => ({
@@ -346,6 +368,25 @@ async function importStartupAssetSyncTestRuntime({
         return Promise.resolve();
       }),
       getProxyBlockedPageUrl: vi.fn(() => proxyBlockedPageUrl),
+    };
+  });
+  vi.doMock("@/ext-1/background/core/peerGuard", () => {
+    class MockPeerGuardBlockedError extends Error {
+      constructor(message: string) {
+        super(message);
+      }
+    }
+
+    return {
+      PeerGuardBlockedError: MockPeerGuardBlockedError,
+      ensurePeerGuardAccess: vi.fn(() => {
+        if (peerGuardError) {
+          return Promise.reject(new MockPeerGuardBlockedError(peerGuardError.message));
+        }
+
+        return Promise.resolve();
+      }),
+      getPeerGuardWarningPageUrl: vi.fn(() => peerGuardWarningPageUrl),
     };
   });
   vi.doMock("@/lib/storage/assetSessionSync", async (importOriginal) => {

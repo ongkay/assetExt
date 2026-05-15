@@ -1,5 +1,6 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import type { ExtensionAssetResponse, ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
+import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
@@ -13,6 +14,8 @@ export const runtimeMessageType = {
   logoutRequested: "LOGOUT_REQUESTED",
   heartbeatStarted: "HEARTBEAT_STARTED",
   heartbeatStopped: "HEARTBEAT_STOPPED",
+  peerGuardStatusRequested: "PEER_GUARD_STATUS_REQUESTED",
+  peerGuardRefreshRequested: "PEER_GUARD_REFRESH_REQUESTED",
   overlayStateChanged: "OVERLAY_STATE_CHANGED",
 } as const;
 
@@ -59,6 +62,14 @@ export type HeartbeatStoppedMessage = {
   type: (typeof runtimeMessageType)["heartbeatStopped"];
 };
 
+export type PeerGuardStatusRequestedMessage = {
+  type: (typeof runtimeMessageType)["peerGuardStatusRequested"];
+};
+
+export type PeerGuardRefreshRequestedMessage = {
+  type: (typeof runtimeMessageType)["peerGuardRefreshRequested"];
+};
+
 export type OverlayStateChangedMessage = {
   assetResponse?: ExtensionAssetResponse;
   message: string;
@@ -69,7 +80,7 @@ export type OverlayStateChangedMessage = {
 };
 
 export type AssetSessionEnsureResult = {
-  action: "none" | "proxy_blocked" | "reload_required" | "redirect_login";
+  action: "none" | "peer_required" | "proxy_blocked" | "reload_required" | "redirect_login";
   message: string | null;
   redirectTo: string | null;
   shouldStartHeartbeat: boolean;
@@ -85,6 +96,8 @@ export type RuntimeMessage =
   | LogoutRequestedMessage
   | HeartbeatStartedMessage
   | HeartbeatStoppedMessage
+  | PeerGuardStatusRequestedMessage
+  | PeerGuardRefreshRequestedMessage
   | OverlayStateChangedMessage;
 
 export type RuntimeSuccessResponse<TValue> = {
@@ -102,6 +115,7 @@ export type RuntimeResponse<TValue> = RuntimeSuccessResponse<TValue> | RuntimeEr
 export type BootstrapRuntimeValue = {
   cache: BootstrapCacheRecord | null;
   isSyncing: boolean;
+  peerGuardState: PeerGuardState;
 };
 
 export type BootstrapRuntimeResponse = RuntimeResponse<BootstrapRuntimeValue>;
@@ -111,3 +125,5 @@ export type AssetSessionEnsureRuntimeResponse = RuntimeResponse<AssetSessionEnsu
 export type ProxyConflictRefreshRuntimeResponse = RuntimeResponse<AssetProxyState>;
 export type RedeemCdKeyRuntimeResponse = RuntimeResponse<ExtensionBootstrap>;
 export type LogoutRuntimeResponse = RuntimeResponse<{ redirectTo: string }>;
+export type PeerGuardRuntimeValue = PeerGuardState;
+export type PeerGuardRuntimeResponse = RuntimeResponse<PeerGuardRuntimeValue>;
