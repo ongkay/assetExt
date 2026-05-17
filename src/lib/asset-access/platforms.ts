@@ -15,7 +15,7 @@ export const assetPlatformConfigs: Record<AssetPlatform, AssetPlatformConfig> = 
   tradingview: {
     platform: "tradingview",
     label: "TradingView",
-    targetUrl: "https://www.tradingview.com/chart/",
+    targetUrl: "https://www.tradingview.com/chart/ceqTNBkY/",
     hostPatterns: ["tradingview.com", "whoer.net"],
     peerGuardProtectedHostPatterns: ["tradingview.com"],
     cookieDomains: [".tradingview.com", "tradingview.com"],

@@ -30,7 +30,7 @@ describe("asset platform mapping", () => {
   it("returns the TradingView platform config", () => {
     expect(getAssetPlatformConfig("tradingview")).toMatchObject({
       label: "TradingView",
-      targetUrl: "https://www.tradingview.com/chart/",
+      targetUrl: "https://www.tradingview.com/chart/ceqTNBkY/",
       cookieDomains: [".tradingview.com", "tradingview.com"],
       hostPatterns: ["tradingview.com", "whoer.net"],
       peerGuardProtectedHostPatterns: ["tradingview.com"],

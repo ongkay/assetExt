@@ -61,6 +61,14 @@ export function disableStyledButton(button: HTMLButtonElement) {
   button.style.cursor = "not-allowed";
 }
 
+export function assignPageLocation(targetUrl: string) {
+  window.location.assign(targetUrl);
+}
+
+export function replacePageLocation(targetUrl: string) {
+  window.location.replace(targetUrl);
+}
+
 export function disableFavoriteButton(button: Element | null) {
   if (!(button instanceof HTMLButtonElement)) {
     return;

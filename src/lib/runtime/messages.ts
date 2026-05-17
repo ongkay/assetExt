@@ -14,6 +14,16 @@ export const runtimeMessageType = {
   logoutRequested: "LOGOUT_REQUESTED",
   heartbeatStarted: "HEARTBEAT_STARTED",
   heartbeatStopped: "HEARTBEAT_STOPPED",
+  tvOwnedLayoutRememberRequested: "TV_OWNED_LAYOUT_REMEMBER_REQUESTED",
+  tvOwnedLayoutPendingOperationSubmitted: "TV_OWNED_LAYOUT_PENDING_OPERATION_SUBMITTED",
+  tvOwnedLayoutRenameRequested: "TV_OWNED_LAYOUT_RENAME_REQUESTED",
+  tvOwnedLayoutDeleteCompleted: "TV_OWNED_LAYOUT_DELETE_COMPLETED",
+  tvOwnedLayoutPageConfirmed: "TV_OWNED_LAYOUT_PAGE_CONFIRMED",
+  tvOwnedLayoutPageInvalid: "TV_OWNED_LAYOUT_PAGE_INVALID",
+  tvOwnedLayoutOpenTabRequested: "TV_OWNED_LAYOUT_OPEN_TAB_REQUESTED",
+  tvOwnedLayoutRouteStatusRequested: "TV_OWNED_LAYOUT_ROUTE_STATUS_REQUESTED",
+  tvOwnedLayoutOperationStatusRequested: "TV_OWNED_LAYOUT_OPERATION_STATUS_REQUESTED",
+  tvOwnedLayoutPendingOperationCleared: "TV_OWNED_LAYOUT_PENDING_OPERATION_CLEARED",
   peerGuardStatusRequested: "PEER_GUARD_STATUS_REQUESTED",
   peerGuardRefreshRequested: "PEER_GUARD_REFRESH_REQUESTED",
   overlayStateChanged: "OVERLAY_STATE_CHANGED",
@@ -62,6 +72,74 @@ export type HeartbeatStoppedMessage = {
   type: (typeof runtimeMessageType)["heartbeatStopped"];
 };
 
+export type TvOwnedLayoutRememberRequestedMessage = {
+  chartId: string;
+  publicId: string;
+  shouldMarkAsOpened: boolean;
+  title: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutRememberRequested"];
+  updatedAt: number;
+  url: string;
+};
+
+export type TvOwnedLayoutPendingOperationSubmittedMessage = {
+  expectedTitle: string;
+  kind: "copy" | "create";
+  openInNewTab?: boolean;
+  publicId: string;
+  sourceChartId: string | null;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutPendingOperationSubmitted"];
+};
+
+export type TvOwnedLayoutRenameRequestedMessage = {
+  chartId: string;
+  publicId: string;
+  title: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutRenameRequested"];
+};
+
+export type TvOwnedLayoutDeleteCompletedMessage = {
+  chartId: string;
+  publicId: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutDeleteCompleted"];
+};
+
+export type TvOwnedLayoutPageConfirmedMessage = {
+  chartId: string;
+  publicId: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutPageConfirmed"];
+  url: string;
+};
+
+export type TvOwnedLayoutPageInvalidMessage = {
+  chartId: string;
+  publicId: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutPageInvalid"];
+};
+
+export type TvOwnedLayoutOpenTabRequestedMessage = {
+  operationId: string;
+  publicId: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutOpenTabRequested"];
+  url: string;
+};
+
+export type TvOwnedLayoutRouteStatusRequestedMessage = {
+  type: (typeof runtimeMessageType)["tvOwnedLayoutRouteStatusRequested"];
+  url: string;
+};
+
+export type TvOwnedLayoutOperationStatusRequestedMessage = {
+  operationId: string;
+  publicId: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutOperationStatusRequested"];
+};
+
+export type TvOwnedLayoutPendingOperationClearedMessage = {
+  operationId?: string;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutPendingOperationCleared"];
+};
+
 export type PeerGuardStatusRequestedMessage = {
   type: (typeof runtimeMessageType)["peerGuardStatusRequested"];
 };
@@ -96,6 +174,16 @@ export type RuntimeMessage =
   | LogoutRequestedMessage
   | HeartbeatStartedMessage
   | HeartbeatStoppedMessage
+  | TvOwnedLayoutRememberRequestedMessage
+  | TvOwnedLayoutPendingOperationSubmittedMessage
+  | TvOwnedLayoutRenameRequestedMessage
+  | TvOwnedLayoutDeleteCompletedMessage
+  | TvOwnedLayoutPageConfirmedMessage
+  | TvOwnedLayoutPageInvalidMessage
+  | TvOwnedLayoutOpenTabRequestedMessage
+  | TvOwnedLayoutRouteStatusRequestedMessage
+  | TvOwnedLayoutOperationStatusRequestedMessage
+  | TvOwnedLayoutPendingOperationClearedMessage
   | PeerGuardStatusRequestedMessage
   | PeerGuardRefreshRequestedMessage
   | OverlayStateChangedMessage;

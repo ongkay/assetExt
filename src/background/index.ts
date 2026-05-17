@@ -33,11 +33,28 @@ import {
 import { ensureProductionOriginHeaderRuleReady } from "./core/productionOrigin";
 import { ensureProxyControllerReady, refreshProxyConflictState } from "./core/proxy";
 import { ensureAssetSessionForPage } from "./core/startupAssetSync";
+import { initializeTvOwnedLayoutRedirectListener } from "./core/tvOwnedLayoutTabs";
+import {
+  clearTradingViewOwnedLayoutOperationById,
+  clearTradingViewOwnedLayoutOperation,
+  completeTradingViewOwnedLayoutDelete,
+  confirmTradingViewOwnedLayoutPage,
+  invalidateTradingViewOwnedLayoutPage,
+  openTradingViewOwnedLayoutInNewTabForPublic,
+  readTradingViewOwnedLayoutOperationStatus,
+  rememberTradingViewOwnedLayout,
+  renameTradingViewOwnedLayout,
+  resolveRestrictedTradingViewRouteStatus,
+  submitTradingViewOwnedLayoutOperation,
+} from "./core/tvOwnedLayoutController";
+import type { TvOwnedLayoutOperationKind } from "@/lib/storage/tvOwnedLayoutOperations";
 import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import { getRestrictedTradingViewPublicId } from "@/lib/tradingview/tvAccessState";
 
 void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
 void ensureProxyControllerReady().catch(() => undefined);
 void initializePeerGuard().catch(() => undefined);
+initializeTvOwnedLayoutRedirectListener();
 
 chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendResponse) => {
   void handleRuntimeMessage(message, sender)
@@ -197,6 +214,152 @@ async function handleRuntimeMessage(
 
       if (tabId) {
         stopHeartbeat(tabId);
+      }
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutRememberRequested: {
+      await rememberTradingViewOwnedLayout({
+        chartId: message.chartId,
+        publicId: message.publicId,
+        shouldMarkAsOpened: message.shouldMarkAsOpened,
+        title: message.title,
+        updatedAt: message.updatedAt,
+        url: message.url,
+      });
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutPendingOperationSubmitted: {
+      let operationId: string | null = null;
+
+      if (typeof sender.tab?.id === "number") {
+        const pendingOperation = await submitTradingViewOwnedLayoutOperation({
+          expectedTitle: message.expectedTitle,
+          kind: message.kind,
+          openInNewTab: message.openInNewTab,
+          originTabId: sender.tab.id,
+          publicId: message.publicId,
+          sourceChartId: message.sourceChartId,
+        });
+
+        operationId = pendingOperation.operationId;
+      }
+
+      return {
+        ok: true,
+        value: { operationId },
+      } satisfies RuntimeResponse<{ operationId: string | null }>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutRenameRequested: {
+      await renameTradingViewOwnedLayout(message.publicId, message.chartId, message.title);
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutDeleteCompleted: {
+      await completeTradingViewOwnedLayoutDelete(message.publicId, message.chartId);
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutPageConfirmed: {
+      if (typeof sender.tab?.id === "number") {
+        await confirmTradingViewOwnedLayoutPage({
+          chartId: message.chartId,
+          publicId: message.publicId,
+          tabId: sender.tab.id,
+          url: message.url,
+        });
+      }
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutPageInvalid: {
+      return {
+        ok: true,
+        value: {
+          redirectUrl: await invalidateTradingViewOwnedLayoutPage({
+            chartId: message.chartId,
+            publicId: message.publicId,
+          }),
+        },
+      } satisfies RuntimeResponse<{ redirectUrl: string }>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutOpenTabRequested: {
+      if (typeof sender.tab?.id === "number") {
+        await openTradingViewOwnedLayoutInNewTabForPublic(
+          sender.tab.id,
+          message.url,
+          message.publicId,
+          message.operationId,
+        );
+      }
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutRouteStatusRequested: {
+      return {
+        ok: true,
+        value: await resolveRestrictedTradingViewRouteStatus(message.url, sender.tab?.id, sender.tab?.openerTabId),
+      } satisfies RuntimeResponse<{
+        currentChartId: string | null;
+        expectedTitle: string | null;
+        isPendingOperation: boolean;
+        isRestricted: boolean;
+        operationId: string | null;
+        pendingOperationKind: TvOwnedLayoutOperationKind | null;
+        redirectUrl: string | null;
+        shouldAllow: boolean;
+      }>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutOperationStatusRequested: {
+      return {
+        ok: true,
+        value: await readTradingViewOwnedLayoutOperationStatus(message.publicId, message.operationId),
+      } satisfies RuntimeResponse<{
+        boundChartId: string | null;
+        isActive: boolean;
+        isBound: boolean;
+        kind: TvOwnedLayoutOperationKind | null;
+      }>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutPendingOperationCleared: {
+      const bootstrapCacheRecord = await readBootstrapCache();
+      const publicId = getRestrictedTradingViewPublicId(bootstrapCacheRecord);
+
+      if (publicId) {
+        if (message.operationId) {
+          await clearTradingViewOwnedLayoutOperationById(publicId, message.operationId, sender.tab?.id);
+        } else {
+          await clearTradingViewOwnedLayoutOperation(publicId, sender.tab?.id);
+        }
       }
 
       return {

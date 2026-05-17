@@ -15,6 +15,7 @@ import { startHeartbeat } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 import { clearAssetPlatformProxy, ensureProxyAccessAvailable, syncAssetPlatformProxy } from "./proxy";
 import { openOrReloadTab } from "./tabs";
+import { resolveTradingViewAssetTargetUrl } from "./tvOwnedLayoutTabs";
 
 export type RunAssetAccessOptions = {
   platform: AssetPlatform;
@@ -51,8 +52,8 @@ export async function runAssetAccess(options: RunAssetAccessOptions): Promise<Ex
   }
 
   if (options.shouldNavigate) {
-    const platformConfig = getAssetPlatformConfig(options.platform);
-    const assetTab = await openOrReloadTab(platformConfig.targetUrl, options.tabId);
+    const assetTargetUrl = await resolveAssetTargetUrl(options.platform);
+    const assetTab = await openOrReloadTab(assetTargetUrl, options.tabId);
     const heartbeatTabId = assetTab.id ?? options.tabId;
 
     if (heartbeatTabId) {
@@ -63,6 +64,14 @@ export async function runAssetAccess(options: RunAssetAccessOptions): Promise<Ex
   }
 
   return assetResponse;
+}
+
+async function resolveAssetTargetUrl(platform: AssetPlatform): Promise<string> {
+  if (platform === "tradingview") {
+    return resolveTradingViewAssetTargetUrl();
+  }
+
+  return getAssetPlatformConfig(platform).targetUrl;
 }
 
 export async function prepareAssetAccessSession(

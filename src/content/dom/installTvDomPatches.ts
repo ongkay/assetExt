@@ -6,6 +6,7 @@ import { syncRestrictedTvContextMenus } from "./tv/tvContextMenus";
 import { syncRestrictedTvDialogs } from "./tv/tvDialogs";
 import { syncRestrictedTvIndicatorTemplates } from "./tv/tvIndicatorTemplates";
 import { syncRestrictedTvLayouts } from "./tv/tvLayouts";
+import { installTvOwnedLayouts } from "./tv/tvOwnedLayouts";
 import { logoutRedirectDelayMs, mainMenuButtonSelector } from "./tv/tvSelectors";
 import {
   cleanupTvShellBootstrapState,
@@ -37,6 +38,7 @@ export function installTvDomPatches(): () => void {
   let mutationObserver: MutationObserver | null = null;
   let isObserverActive = false;
   let isDisposed = false;
+  const disposeTvOwnedLayouts = installTvOwnedLayouts();
 
   installTvShellBootstrapState();
 
@@ -200,6 +202,7 @@ export function installTvDomPatches(): () => void {
     pauseObserver();
     document.removeEventListener("click", handleMainMenuButtonClick, true);
     cleanupTvShellBootstrapState();
+    disposeTvOwnedLayouts();
   };
 }
 
