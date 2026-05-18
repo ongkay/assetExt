@@ -34,7 +34,10 @@ describe("background asset access", () => {
       }),
     ).resolves.toEqual(readyAssetResponse);
 
-    expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith("https://www.tradingview.com/chart/ceqTNBkY/", undefined);
+    expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith(
+      "https://www.tradingview.com/chart/ceqTNBkY/",
+      undefined,
+    );
     expect(testRuntime.syncAssetPlatformProxy.mock.invocationCallOrder[0]).toBeLessThan(
       testRuntime.openOrReloadTab.mock.invocationCallOrder[0],
     );

@@ -4,6 +4,10 @@ import {
   getTradingViewChartId,
   normalizeTradingViewChartUrl,
 } from "@/lib/tradingview/tvChartUrl";
+import type {
+  ExtensionTradingViewOwnedLayout,
+  ExtensionTradingViewOwnedLayoutsSnapshot,
+} from "@/lib/api/extensionApiTypes";
 
 export const tvOwnedLayoutsStorageKey = "assetManager.tradingviewOwnedLayouts";
 
@@ -31,10 +35,13 @@ export type TvPendingLayoutIntent =
     };
 
 export type TvOwnedLayoutState = {
+  lastOpenedAt: number | null;
   lastOpenedChartId: string | null;
   layouts: TvOwnedLayout[];
   pendingIntent: TvPendingLayoutIntent | null;
 };
+
+export type TvOwnedLayoutDurableState = Omit<TvOwnedLayoutState, "pendingIntent">;
 
 type TvOwnedLayoutsStorageRecord = Record<string, TvOwnedLayoutState>;
 
@@ -42,6 +49,7 @@ let pendingStorageWrite: Promise<void> = Promise.resolve();
 
 export function createEmptyTvOwnedLayoutState(): TvOwnedLayoutState {
   return {
+    lastOpenedAt: null,
     lastOpenedChartId: null,
     layouts: [],
     pendingIntent: null,
@@ -60,7 +68,21 @@ export async function readTvOwnedLayout(publicId: string, chartId: string): Prom
   return state.layouts.find((layout) => layout.chartId === chartId) ?? null;
 }
 
-export async function upsertTvOwnedLayout(publicId: string, layout: TvOwnedLayout): Promise<TvOwnedLayoutState> {
+export function createEmptyTvOwnedLayoutDurableState(): TvOwnedLayoutDurableState {
+  const emptyState = createEmptyTvOwnedLayoutState();
+
+  return {
+    lastOpenedAt: emptyState.lastOpenedAt,
+    lastOpenedChartId: emptyState.lastOpenedChartId,
+    layouts: emptyState.layouts,
+  };
+}
+
+export async function upsertTvOwnedLayout(
+  publicId: string,
+  layout: TvOwnedLayout,
+  openedAt = Date.now(),
+): Promise<TvOwnedLayoutState> {
   return updateTvOwnedLayoutState(publicId, (state) => {
     const normalizedLayout = normalizeTvOwnedLayout(layout);
 
@@ -68,19 +90,25 @@ export async function upsertTvOwnedLayout(publicId: string, layout: TvOwnedLayou
       return state;
     }
 
-    const nextLayouts = state.layouts.filter((currentLayout) => currentLayout.chartId !== normalizedLayout.chartId);
+    const nextLayouts = state.layouts.filter(
+      (currentLayout) => currentLayout.chartId !== normalizedLayout.chartId,
+    );
 
     nextLayouts.unshift(normalizedLayout);
 
     return {
       ...state,
+      lastOpenedAt: openedAt,
       lastOpenedChartId: normalizedLayout.chartId,
       layouts: nextLayouts,
     };
   });
 }
 
-export async function rememberTvOwnedLayout(publicId: string, layout: TvOwnedLayout): Promise<TvOwnedLayoutState> {
+export async function rememberTvOwnedLayout(
+  publicId: string,
+  layout: TvOwnedLayout,
+): Promise<TvOwnedLayoutState> {
   return updateTvOwnedLayoutState(publicId, (state) => {
     const normalizedLayout = normalizeTvOwnedLayout(layout);
 
@@ -88,7 +116,9 @@ export async function rememberTvOwnedLayout(publicId: string, layout: TvOwnedLay
       return state;
     }
 
-    const existingLayout = state.layouts.find((currentLayout) => currentLayout.chartId === normalizedLayout.chartId);
+    const existingLayout = state.layouts.find(
+      (currentLayout) => currentLayout.chartId === normalizedLayout.chartId,
+    );
     const nextLayout: TvOwnedLayout = existingLayout
       ? {
           ...normalizedLayout,
@@ -96,7 +126,9 @@ export async function rememberTvOwnedLayout(publicId: string, layout: TvOwnedLay
         }
       : normalizedLayout;
 
-    const nextLayouts = state.layouts.filter((currentLayout) => currentLayout.chartId !== normalizedLayout.chartId);
+    const nextLayouts = state.layouts.filter(
+      (currentLayout) => currentLayout.chartId !== normalizedLayout.chartId,
+    );
 
     nextLayouts.push(nextLayout);
 
@@ -142,21 +174,32 @@ export async function renameTvOwnedLayout(
 }
 
 export async function removeTvOwnedLayout(publicId: string, chartId: string): Promise<TvOwnedLayoutState> {
-  return updateTvOwnedLayoutState(publicId, (state) => ({
-    ...state,
-    lastOpenedChartId: state.lastOpenedChartId === chartId ? null : state.lastOpenedChartId,
-    layouts: state.layouts.filter((layout) => layout.chartId !== chartId),
-  }));
+  return updateTvOwnedLayoutState(publicId, (state) => {
+    return {
+      ...state,
+      lastOpenedAt: state.lastOpenedChartId === chartId ? null : state.lastOpenedAt,
+      lastOpenedChartId: state.lastOpenedChartId === chartId ? null : state.lastOpenedChartId,
+      layouts: state.layouts.filter((layout) => layout.chartId !== chartId),
+    };
+  });
 }
 
 export async function setLastOpenedTvOwnedLayout(
   publicId: string,
   chartId: string | null,
+  openedAt = Date.now(),
 ): Promise<TvOwnedLayoutState> {
-  return updateTvOwnedLayoutState(publicId, (state) => ({
-    ...state,
-    lastOpenedChartId: chartId,
-  }));
+  return updateTvOwnedLayoutState(publicId, (state) => {
+    if (state.lastOpenedChartId === chartId) {
+      return state;
+    }
+
+    return {
+      ...state,
+      lastOpenedAt: chartId ? openedAt : null,
+      lastOpenedChartId: chartId,
+    };
+  });
 }
 
 export async function setPendingTvOwnedLayoutIntent(
@@ -180,6 +223,84 @@ export async function resolveLastOpenedTvOwnedLayoutUrl(publicId: string): Promi
     : null;
 
   return lastOpenedLayout?.url ?? defaultTradingViewChartUrl;
+}
+
+export function buildExtensionTradingViewOwnedLayoutsSnapshot(
+  state: TvOwnedLayoutState | TvOwnedLayoutDurableState,
+): ExtensionTradingViewOwnedLayoutsSnapshot {
+  const normalizedState = normalizeTvOwnedLayoutState({
+    ...createEmptyTvOwnedLayoutState(),
+    ...state,
+    pendingIntent: "pendingIntent" in state ? state.pendingIntent : null,
+  });
+
+  return {
+    lastOpenedAt: formatTimestampAsIsoString(normalizedState.lastOpenedAt),
+    lastOpenedChartId: normalizedState.lastOpenedChartId,
+    layouts: normalizedState.layouts.map((layout) => ({
+      chartId: layout.chartId,
+      title: layout.title,
+      updatedAt: formatTimestampAsIsoString(layout.updatedAt) ?? new Date(layout.updatedAt).toISOString(),
+      url: layout.url,
+    })),
+  };
+}
+
+export async function mergeTvOwnedLayoutSnapshot(
+  publicId: string,
+  snapshot: ExtensionTradingViewOwnedLayoutsSnapshot | null | undefined,
+): Promise<TvOwnedLayoutState> {
+  return updateTvOwnedLayoutState(publicId, (state) =>
+    mergeTvOwnedLayoutState(state, createTvOwnedLayoutDurableStateFromSnapshot(snapshot)),
+  );
+}
+
+export function createTvOwnedLayoutDurableStateFromSnapshot(
+  snapshot: ExtensionTradingViewOwnedLayoutsSnapshot | null | undefined,
+): TvOwnedLayoutDurableState {
+  return normalizeTvOwnedLayoutState({
+    lastOpenedAt: parseTimestamp(snapshot?.lastOpenedAt),
+    lastOpenedChartId: snapshot?.lastOpenedChartId?.trim() || null,
+    layouts: (snapshot?.layouts ?? []).flatMap((layout) => {
+      const normalizedLayout = normalizeExtensionTradingViewOwnedLayout(layout);
+
+      return normalizedLayout ? [normalizedLayout] : [];
+    }),
+    pendingIntent: null,
+  });
+}
+
+export function mergeTvOwnedLayoutState(
+  currentState: TvOwnedLayoutState,
+  incomingState: TvOwnedLayoutDurableState,
+): TvOwnedLayoutState {
+  const normalizedCurrentState = normalizeTvOwnedLayoutState(currentState);
+  const normalizedIncomingState = normalizeTvOwnedLayoutState({
+    ...incomingState,
+    pendingIntent: null,
+  });
+  const layoutsByChartId = new Map<string, TvOwnedLayout>();
+
+  for (const layout of [...normalizedCurrentState.layouts, ...normalizedIncomingState.layouts]) {
+    const currentLayout = layoutsByChartId.get(layout.chartId);
+
+    if (!currentLayout || currentLayout.updatedAt < layout.updatedAt) {
+      layoutsByChartId.set(layout.chartId, layout);
+    }
+  }
+
+  const preferredLastOpened = resolvePreferredLastOpenedEntry(
+    normalizedCurrentState,
+    normalizedIncomingState,
+    layoutsByChartId,
+  );
+
+  return normalizeTvOwnedLayoutState({
+    lastOpenedAt: preferredLastOpened.lastOpenedAt,
+    lastOpenedChartId: preferredLastOpened.lastOpenedChartId,
+    layouts: [...layoutsByChartId.values()],
+    pendingIntent: normalizedCurrentState.pendingIntent,
+  });
 }
 
 export function isFreshTvPendingLayoutIntent(
@@ -257,10 +378,14 @@ function normalizeTvOwnedLayoutState(state: TvOwnedLayoutState | undefined): TvO
     }
   }
 
-  const layouts = [...layoutsByChartId.values()].sort((firstLayout, secondLayout) => secondLayout.updatedAt - firstLayout.updatedAt);
+  const layouts = [...layoutsByChartId.values()].sort(
+    (firstLayout, secondLayout) => secondLayout.updatedAt - firstLayout.updatedAt,
+  );
+  const nextLastOpenedAt = normalizeLastOpenedAt(state.lastOpenedAt, state.lastOpenedChartId, layouts);
   const hasLastOpenedLayout = layouts.some((layout) => layout.chartId === state.lastOpenedChartId);
 
   return {
+    lastOpenedAt: hasLastOpenedLayout ? nextLastOpenedAt : null,
     lastOpenedChartId: hasLastOpenedLayout ? state.lastOpenedChartId : null,
     layouts,
     pendingIntent: normalizeTvPendingLayoutIntent(state.pendingIntent),
@@ -284,7 +409,20 @@ function normalizeTvOwnedLayout(layout: TvOwnedLayout): TvOwnedLayout | null {
   };
 }
 
-function normalizeTvPendingLayoutIntent(pendingIntent: TvPendingLayoutIntent | null): TvPendingLayoutIntent | null {
+function normalizeExtensionTradingViewOwnedLayout(
+  layout: ExtensionTradingViewOwnedLayout,
+): TvOwnedLayout | null {
+  return normalizeTvOwnedLayout({
+    chartId: layout.chartId,
+    title: layout.title,
+    updatedAt: parseTimestamp(layout.updatedAt) ?? Date.now(),
+    url: layout.url,
+  });
+}
+
+function normalizeTvPendingLayoutIntent(
+  pendingIntent: TvPendingLayoutIntent | null,
+): TvPendingLayoutIntent | null {
   if (!pendingIntent) {
     return null;
   }
@@ -319,6 +457,89 @@ function normalizeTvPendingLayoutIntent(pendingIntent: TvPendingLayoutIntent | n
   };
 }
 
+function resolvePreferredLastOpenedEntry(
+  currentState: TvOwnedLayoutState,
+  incomingState: TvOwnedLayoutDurableState,
+  layoutsByChartId: Map<string, TvOwnedLayout>,
+): { lastOpenedAt: number | null; lastOpenedChartId: string | null } {
+  const currentEntry = {
+    lastOpenedAt: normalizeLastOpenedAt(
+      currentState.lastOpenedAt,
+      currentState.lastOpenedChartId,
+      currentState.layouts,
+    ),
+    lastOpenedChartId: currentState.lastOpenedChartId,
+  };
+  const incomingEntry = {
+    lastOpenedAt: normalizeLastOpenedAt(
+      incomingState.lastOpenedAt,
+      incomingState.lastOpenedChartId,
+      incomingState.layouts,
+    ),
+    lastOpenedChartId: incomingState.lastOpenedChartId,
+  };
+  const preferredEntry =
+    (incomingEntry.lastOpenedAt ?? -1) > (currentEntry.lastOpenedAt ?? -1) ? incomingEntry : currentEntry;
+  const fallbackEntry = preferredEntry === incomingEntry ? currentEntry : incomingEntry;
+
+  return (
+    resolveValidLastOpenedEntry(preferredEntry, layoutsByChartId) ??
+    resolveValidLastOpenedEntry(fallbackEntry, layoutsByChartId) ?? {
+      lastOpenedAt: null,
+      lastOpenedChartId: null,
+    }
+  );
+}
+
+function normalizeLastOpenedAt(
+  lastOpenedAt: number | null | undefined,
+  lastOpenedChartId: string | null,
+  layouts: TvOwnedLayout[],
+): number | null {
+  if (!lastOpenedChartId) {
+    return null;
+  }
+
+  if (Number.isFinite(lastOpenedAt)) {
+    return Number(lastOpenedAt);
+  }
+
+  return layouts.find((layout) => layout.chartId === lastOpenedChartId)?.updatedAt ?? null;
+}
+
+function parseTimestamp(timestamp: string | null | undefined): number | null {
+  if (!timestamp) {
+    return null;
+  }
+
+  const parsedTimestamp = Date.parse(timestamp);
+
+  return Number.isNaN(parsedTimestamp) ? null : parsedTimestamp;
+}
+
+function formatTimestampAsIsoString(timestamp: number | null): string | null {
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  return new Date(Number(timestamp)).toISOString();
+}
+
+function resolveValidLastOpenedEntry(
+  entry: { lastOpenedAt: number | null; lastOpenedChartId: string | null },
+  layoutsByChartId: Map<string, TvOwnedLayout>,
+): { lastOpenedAt: number | null; lastOpenedChartId: string | null } | null {
+  if (!entry.lastOpenedChartId || !entry.lastOpenedAt) {
+    return null;
+  }
+
+  if (!layoutsByChartId.has(entry.lastOpenedChartId)) {
+    return null;
+  }
+
+  return entry;
+}
+
 function queueTvOwnedLayoutsWrite<TValue>(writeOperation: () => Promise<TValue>): Promise<TValue> {
   const nextWrite = pendingStorageWrite.then(writeOperation, writeOperation);
 
@@ -330,7 +551,11 @@ function queueTvOwnedLayoutsWrite<TValue>(writeOperation: () => Promise<TValue>)
   return nextWrite;
 }
 
-export function createOwnedTvLayoutFromChartUrl(chartUrl: string, title: string, updatedAt = Date.now()): TvOwnedLayout | null {
+export function createOwnedTvLayoutFromChartUrl(
+  chartUrl: string,
+  title: string,
+  updatedAt = Date.now(),
+): TvOwnedLayout | null {
   const normalizedUrl = normalizeTradingViewChartUrl(chartUrl);
   const chartId = normalizedUrl ? getTradingViewChartId(normalizedUrl) : null;
 

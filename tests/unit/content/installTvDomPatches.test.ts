@@ -1935,7 +1935,7 @@ describe("TV DOM patches", () => {
     disposeTvDomPatches();
   });
 
-  it("keeps the initial restricted rules for the current page session", async () => {
+  it("refreshes avatar state when bootstrap cache changes", async () => {
     const { emitStorageChange } = installChromeExtensionMocks(
       createBootstrapCacheRecordWithUser({
         avatarUrl: "https://cdn.example.com/avatar-b.png",
@@ -1956,7 +1956,7 @@ describe("TV DOM patches", () => {
     );
     await flushAsyncWork();
 
-    expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-b.png");
+    expect(getMainAvatarImage().src).toBe("https://cdn.example.com/avatar-next.png");
     expect(getMenuItemBySelector('[data-qa-id="main-menu-user-menu-item"]')).toBeNull();
     expect(getMenuItemBySelector(helpCenterMenuItemSelector)).toBeNull();
     expect(getMenuItemByTextPrefix("Language")).toBeNull();

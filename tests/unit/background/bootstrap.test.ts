@@ -266,6 +266,41 @@ describe("background bootstrap core", () => {
     });
   });
 
+  it("hydrates TradingView owned layouts from bootstrap snapshots", async () => {
+    const authenticatedSnapshot = {
+      assets: [{ mode: "share" as const, platform: "tradingview" as const }],
+      auth: { status: "authenticated" as const },
+      tradingViewOwnedLayouts: {
+        lastOpenedAt: "2026-05-17T02:00:00.000Z",
+        lastOpenedChartId: "OWN123",
+        layouts: [
+          {
+            chartId: "OWN123",
+            title: "Layout Baru",
+            updatedAt: "2026-05-17T02:00:00.000Z",
+            url: "https://www.tradingview.com/chart/OWN123/",
+          },
+        ],
+      },
+      user: {
+        avatarUrl: null,
+        email: "user@example.com",
+        publicId: "PUB-001",
+        username: "user",
+      },
+      version: { status: "supported" as const },
+    };
+    const testRuntime = await importBootstrapCoreTestRuntime(null, () =>
+      Promise.resolve({ ok: true, status: 200, value: authenticatedSnapshot }),
+    );
+
+    await testRuntime.bootstrapCore.readBootstrapState(false);
+
+    expect(testRuntime.hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot).toHaveBeenCalledWith(
+      authenticatedSnapshot,
+    );
+  });
+
   it("clears persisted bootstrap cache on logout", async () => {
     const testRuntime = await importBootstrapCoreTestRuntime(previousCache, () =>
       Promise.resolve({ ok: true, status: 200, value: staleSnapshot }),
@@ -340,6 +375,12 @@ async function importBootstrapCoreTestRuntime(
   vi.doMock("@/lib/storage/assetSessionSync", () => ({
     clearAssetSessionSyncState: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/lib/storage/tvOwnedLayoutSyncState", () => ({
+    clearTvOwnedLayoutSyncState: vi.fn(() => Promise.resolve()),
+  }));
+  vi.doMock("@/background/core/tvOwnedLayoutSync", () => ({
+    hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot: vi.fn(() => Promise.resolve()),
+  }));
   vi.doMock("@/lib/storage/bootstrapCache", async (importOriginal) => {
     const originalBootstrapCache = await importOriginal<typeof import("@/lib/storage/bootstrapCache")>();
 
@@ -367,12 +408,18 @@ async function importBootstrapCoreTestRuntime(
   const assetSessionSync = await import("@/lib/storage/assetSessionSync");
   const bootstrapCache = await import("@/lib/storage/bootstrapCache");
   const extensionApi = await import("@/lib/api/extensionApi");
+  const tvOwnedLayoutSync = await import("@/background/core/tvOwnedLayoutSync");
+  const tvOwnedLayoutSyncState = await import("@/lib/storage/tvOwnedLayoutSyncState");
 
   return {
     bootstrapCore,
     clearAssetSessionSyncState: vi.mocked(assetSessionSync.clearAssetSessionSyncState),
     clearAllAssetPlatformCookies: vi.mocked(backgroundCookies.clearAllAssetPlatformCookies),
+    clearTvOwnedLayoutSyncState: vi.mocked(tvOwnedLayoutSyncState.clearTvOwnedLayoutSyncState),
     fetchExtensionBootstrap: vi.mocked(extensionApi.fetchExtensionBootstrap),
+    hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot: vi.mocked(
+      tvOwnedLayoutSync.hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot,
+    ),
     postExtensionLogout: vi.mocked(extensionApi.postExtensionLogout),
     clearBootstrapCache: vi.mocked(bootstrapCache.clearBootstrapCache),
     getCurrentCache: () => currentCache,

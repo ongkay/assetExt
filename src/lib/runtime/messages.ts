@@ -1,5 +1,9 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import type { ExtensionAssetResponse, ExtensionBootstrap } from "@/lib/api/extensionApiTypes";
+import type {
+  ExtensionAssetResponse,
+  ExtensionBootstrap,
+  ExtensionTradingViewOwnedLayoutsSyncTrigger,
+} from "@/lib/api/extensionApiTypes";
 import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
@@ -24,6 +28,7 @@ export const runtimeMessageType = {
   tvOwnedLayoutRouteStatusRequested: "TV_OWNED_LAYOUT_ROUTE_STATUS_REQUESTED",
   tvOwnedLayoutOperationStatusRequested: "TV_OWNED_LAYOUT_OPERATION_STATUS_REQUESTED",
   tvOwnedLayoutPendingOperationCleared: "TV_OWNED_LAYOUT_PENDING_OPERATION_CLEARED",
+  tvOwnedLayoutSyncRequested: "TV_OWNED_LAYOUT_SYNC_REQUESTED",
   peerGuardStatusRequested: "PEER_GUARD_STATUS_REQUESTED",
   peerGuardRefreshRequested: "PEER_GUARD_REFRESH_REQUESTED",
   overlayStateChanged: "OVERLAY_STATE_CHANGED",
@@ -140,6 +145,11 @@ export type TvOwnedLayoutPendingOperationClearedMessage = {
   type: (typeof runtimeMessageType)["tvOwnedLayoutPendingOperationCleared"];
 };
 
+export type TvOwnedLayoutSyncRequestedMessage = {
+  trigger: ExtensionTradingViewOwnedLayoutsSyncTrigger;
+  type: (typeof runtimeMessageType)["tvOwnedLayoutSyncRequested"];
+};
+
 export type PeerGuardStatusRequestedMessage = {
   type: (typeof runtimeMessageType)["peerGuardStatusRequested"];
 };
@@ -184,6 +194,7 @@ export type RuntimeMessage =
   | TvOwnedLayoutRouteStatusRequestedMessage
   | TvOwnedLayoutOperationStatusRequestedMessage
   | TvOwnedLayoutPendingOperationClearedMessage
+  | TvOwnedLayoutSyncRequestedMessage
   | PeerGuardStatusRequestedMessage
   | PeerGuardRefreshRequestedMessage
   | OverlayStateChangedMessage;

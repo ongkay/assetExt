@@ -16,7 +16,9 @@ const peerGuardController = createPeerGuardController({
   onBlocked: async () => {
     await clearPeerGuardManagedCookies();
     await clearExt2Storage();
-    const assetRedirectResult = await redirectPeerGuardProtectedAssetTabs(chrome.runtime.getURL(ext2PeerGuardWarningPagePath));
+    const assetRedirectResult = await redirectPeerGuardProtectedAssetTabs(
+      chrome.runtime.getURL(ext2PeerGuardWarningPagePath),
+    );
 
     return {
       redirectedAssetTabCount: assetRedirectResult.redirectedTabCount,

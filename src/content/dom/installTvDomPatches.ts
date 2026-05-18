@@ -1,5 +1,9 @@
 import { detectAssetPlatformFromHostname } from "@/lib/asset-access/platforms";
-import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import {
+  bootstrapCacheStorageKey,
+  readBootstrapCache,
+  type BootstrapCacheRecord,
+} from "@/lib/storage/bootstrapCache";
 import { runtimeMessageType } from "@/lib/runtime/messages";
 
 import { syncRestrictedTvContextMenus } from "./tv/tvContextMenus";
@@ -194,12 +198,35 @@ export function installTvDomPatches(): () => void {
   resumeObserver();
   document.addEventListener("click", handleMainMenuButtonClick, true);
 
+  const handleStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (
+    changes,
+    areaName,
+  ) => {
+    if (areaName !== "local" || !(bootstrapCacheStorageKey in changes) || isDisposed) {
+      return;
+    }
+
+    const nextBootstrapCache = changes[bootstrapCacheStorageKey]?.newValue as
+      | BootstrapCacheRecord
+      | undefined;
+
+    overrideState = createTvOverrideState(nextBootstrapCache ?? null);
+    syncTvPage();
+  };
+
+  if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener(handleStorageChanged);
+  }
+
   void ensureOverrideStateLoaded().catch(() => undefined);
   syncTvPage();
 
   return () => {
     isDisposed = true;
     pauseObserver();
+    if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+      chrome.storage.onChanged.removeListener(handleStorageChanged);
+    }
     document.removeEventListener("click", handleMainMenuButtonClick, true);
     cleanupTvShellBootstrapState();
     disposeTvOwnedLayouts();

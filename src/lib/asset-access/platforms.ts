@@ -39,7 +39,11 @@ export function isAssetPlatform(platform: string): platform is AssetPlatform {
 }
 
 export function getPeerGuardProtectedAssetHostPatterns(): readonly string[] {
-  return [...new Set(assetPlatforms.flatMap((platform) => getAssetPlatformConfig(platform).peerGuardProtectedHostPatterns))];
+  return [
+    ...new Set(
+      assetPlatforms.flatMap((platform) => getAssetPlatformConfig(platform).peerGuardProtectedHostPatterns),
+    ),
+  ];
 }
 
 export function detectAssetPlatformFromHostname(hostname: string): AssetPlatform | null {

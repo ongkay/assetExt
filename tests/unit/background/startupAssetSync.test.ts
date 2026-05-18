@@ -309,9 +309,6 @@ async function importStartupAssetSyncTestRuntime({
 }) {
   let currentAssetSessionSyncState = assetSessionSyncState;
 
-  vi.doMock("@/lib/storage/bootstrapCache", () => ({
-    readBootstrapCache: vi.fn(() => Promise.resolve(bootstrapCache)),
-  }));
   vi.doMock("@/lib/storage/assetProxyState", () => ({
     readAssetProxyState: vi.fn(() => Promise.resolve(assetProxyState)),
   }));
@@ -346,6 +343,7 @@ async function importStartupAssetSyncTestRuntime({
   vi.doMock("@/background/core/bootstrap", () => ({
     clearExtensionSessionArtifactsForPeerGuard: vi.fn(() => Promise.resolve()),
     markExtensionSessionUnauthenticated: vi.fn(() => Promise.resolve(unauthenticatedRedirectTo)),
+    readBootstrapState: vi.fn(() => Promise.resolve({ cache: bootstrapCache, isSyncing: false })),
   }));
   vi.doMock("@/background/core/cookies", () => ({
     clearAssetPlatformCookies: vi.fn(() => Promise.resolve()),

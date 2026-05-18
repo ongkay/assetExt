@@ -15,7 +15,9 @@ describe("ext-2 manifest", () => {
   });
 
   it("declares the permissions required to monitor and revoke access", () => {
-    expect(manifest.permissions).toEqual(expect.arrayContaining(["cookies", "management", "storage", "tabs"]));
+    expect(manifest.permissions).toEqual(
+      expect.arrayContaining(["cookies", "management", "storage", "tabs"]),
+    );
     expect(manifest.host_permissions).toEqual(
       expect.arrayContaining([
         "https://whoer.net/*",

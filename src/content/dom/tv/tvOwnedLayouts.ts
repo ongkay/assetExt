@@ -1,6 +1,6 @@
 import { runtimeMessageType, type RuntimeMessage } from "@/lib/runtime/messages";
-import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
-import { readTvOwnedLayoutState } from "@/lib/storage/tvOwnedLayouts";
+import { bootstrapCacheStorageKey, readBootstrapCache } from "@/lib/storage/bootstrapCache";
+import { readTvOwnedLayoutState, tvOwnedLayoutsStorageKey } from "@/lib/storage/tvOwnedLayouts";
 import { getRestrictedTradingViewPublicId } from "@/lib/tradingview/tvAccessState";
 import {
   getTradingViewChartId,
@@ -22,13 +22,13 @@ const openLayoutRowTitleSelector = '[data-name="list-item-title"]';
 const openLayoutDeleteButtonSelector = '[data-name="list-item-remove-button"]';
 const manageLayoutsButtonSelector = 'button[aria-label="Manage layouts"]';
 const menuItemSelector = '[data-role="menuitem"], [role="menuitem"]';
-const openLayoutMenuItemLabel = 'Open layout';
+const openLayoutMenuItemLabel = "Open layout";
 const openLayoutsDialogCloseButtonSelector = `${openLayoutsDialogSelector} button[data-qa-id="close"], ${openLayoutsDialogSelector} button[data-name="close"]`;
-const currentLayoutTitleSelector = '#header-toolbar-layouts + .wrap-n5bmFxyX span.text-Uy_he976';
+const currentLayoutTitleSelector = "#header-toolbar-layouts + .wrap-n5bmFxyX span.text-Uy_he976";
 const confirmDialogDeleteButtonSelector = 'button[data-qa-id="yes-btn"]';
 const confirmDialogDismissButtonSelector = 'button[data-qa-id="no-btn"], button[data-name="close"]';
-const chartNotFoundSelector = '.js-chart-not-found';
-const pendingIntentBypassAttribute = 'data-asset-manager-layout-intent-bypass';
+const chartNotFoundSelector = ".js-chart-not-found";
+const pendingIntentBypassAttribute = "data-asset-manager-layout-intent-bypass";
 const copyRecoveryInitialDelayMs = 2_000;
 const copyRecoveryRetryDelayMs = 300;
 const copyRecoveryMaxAttempts = 30;
@@ -88,6 +88,7 @@ export function installTvOwnedLayouts(): () => void {
   let shouldRunRouteCheckAgain = false;
   let lastConfirmedRouteKey = "";
   let restrictedPublicIdPromise: Promise<string | null> | null = null;
+  let lastRequestedSyncPublicId: string | null = null;
   let deleteCandidate: DeleteCandidate | null = null;
   let pendingCopyRecovery: PendingCopyRecovery | null = null;
   const pendingDeleteVerifications = new Map<string, PendingDeleteVerification>();
@@ -167,6 +168,7 @@ export function installTvOwnedLayouts(): () => void {
       const publicId = await resolveRestrictedPublicId();
 
       if (!publicId || !isTradingViewHostname(window.location.hostname)) {
+        lastRequestedSyncPublicId = null;
         return;
       }
 
@@ -178,7 +180,11 @@ export function installTvOwnedLayouts(): () => void {
         return;
       }
 
-      if (!routeStatus.shouldAllow || !routeStatus.currentChartId || !isTradingViewChartPath(window.location.pathname)) {
+      if (
+        !routeStatus.shouldAllow ||
+        !routeStatus.currentChartId ||
+        !isTradingViewChartPath(window.location.pathname)
+      ) {
         pendingInvalidPageVerification = null;
         return;
       }
@@ -211,6 +217,14 @@ export function installTvOwnedLayouts(): () => void {
 
       pendingInvalidPageVerification = null;
 
+      if (lastRequestedSyncPublicId !== publicId && !pendingCopyRecovery && !routeStatus.isPendingOperation) {
+        lastRequestedSyncPublicId = publicId;
+        void sendRuntimeMessage<null>({
+          trigger: "tv_page_open",
+          type: runtimeMessageType.tvOwnedLayoutSyncRequested,
+        }).catch(() => undefined);
+      }
+
       const currentRouteKey = `${routeStatus.currentChartId}:${window.location.href}`;
 
       if (lastConfirmedRouteKey === currentRouteKey) {
@@ -229,6 +243,10 @@ export function installTvOwnedLayouts(): () => void {
         type: runtimeMessageType.tvOwnedLayoutPageConfirmed,
         url: window.location.href,
       });
+
+      if (routeStatus.isPendingOperation) {
+        lastRequestedSyncPublicId = publicId;
+      }
     } finally {
       isRouteCheckRunning = false;
 
@@ -254,7 +272,10 @@ export function installTvOwnedLayouts(): () => void {
       return;
     }
 
-    const copyOperationStatus = await readPendingOperationStatus(publicId, currentCopyRecovery.operationId).catch(() => null);
+    const copyOperationStatus = await readPendingOperationStatus(
+      publicId,
+      currentCopyRecovery.operationId,
+    ).catch(() => null);
 
     if (!copyOperationStatus || !copyOperationStatus.isActive || copyOperationStatus.kind !== "copy") {
       pendingCopyRecovery = null;
@@ -262,7 +283,10 @@ export function installTvOwnedLayouts(): () => void {
     }
 
     if (copyOperationStatus.isBound && copyOperationStatus.boundChartId) {
-      const boundCopiedLayout = await findLayoutByChartIdFromDialog(copyOperationStatus.boundChartId, publicId);
+      const boundCopiedLayout = await findLayoutByChartIdFromDialog(
+        copyOperationStatus.boundChartId,
+        publicId,
+      );
 
       if (!boundCopiedLayout) {
         pendingCopyRecovery = {
@@ -275,6 +299,11 @@ export function installTvOwnedLayouts(): () => void {
 
       pendingCopyRecovery = null;
       await rememberOwnedLayout(publicId, boundCopiedLayout, true);
+      lastRequestedSyncPublicId = publicId;
+      await sendRuntimeMessage<null>({
+        trigger: "tv_page_open",
+        type: runtimeMessageType.tvOwnedLayoutSyncRequested,
+      }).catch(() => undefined);
       await sendRuntimeMessage<null>({
         operationId: currentCopyRecovery.operationId,
         type: runtimeMessageType.tvOwnedLayoutPendingOperationCleared,
@@ -322,7 +351,8 @@ export function installTvOwnedLayouts(): () => void {
     const currentChartId = getTradingViewChartId(window.location.pathname);
 
     for (const [chartId, currentDeleteVerification] of pendingDeleteVerifications) {
-      const isCurrentChartDeleted = currentChartId === currentDeleteVerification.chartId && hasInvalidChartPageSignal();
+      const isCurrentChartDeleted =
+        currentChartId === currentDeleteVerification.chartId && hasInvalidChartPageSignal();
       const isDeletedLayoutStillPresent = await isLayoutPresentInDialog(
         currentDeleteVerification.title,
         currentDeleteVerification.chartId,
@@ -451,13 +481,22 @@ export function installTvOwnedLayouts(): () => void {
     const saveButton = clickTarget.closest(layoutDialogSaveButtonSelector);
 
     if (saveButton instanceof HTMLButtonElement) {
-      void handleLayoutDialogSaveClick(saveButton, event, resolveRestrictedPublicId, () => {
-        pendingCopyRecovery = null;
-      }, (nextCopyRecovery) => {
-        pendingCopyRecovery = nextCopyRecovery;
-      }, scheduleCopyRecovery, (nextRenameVerification) => {
-        pendingRenameVerification = nextRenameVerification;
-      }, scheduleRenameVerification);
+      void handleLayoutDialogSaveClick(
+        saveButton,
+        event,
+        resolveRestrictedPublicId,
+        () => {
+          pendingCopyRecovery = null;
+        },
+        (nextCopyRecovery) => {
+          pendingCopyRecovery = nextCopyRecovery;
+        },
+        scheduleCopyRecovery,
+        (nextRenameVerification) => {
+          pendingRenameVerification = nextRenameVerification;
+        },
+        scheduleRenameVerification,
+      );
       return;
     }
 
@@ -476,6 +515,7 @@ export function installTvOwnedLayouts(): () => void {
 
   const handleRouteChanged = () => {
     lastConfirmedRouteKey = "";
+    lastRequestedSyncPublicId = null;
     scheduleRouteCheck();
   };
 
@@ -500,6 +540,32 @@ export function installTvOwnedLayouts(): () => void {
     childList: true,
     subtree: true,
   });
+
+  const handleStorageChanged: Parameters<typeof chrome.storage.onChanged.addListener>[0] = (
+    changes,
+    areaName,
+  ) => {
+    if (areaName !== "local") {
+      return;
+    }
+
+    if (bootstrapCacheStorageKey in changes) {
+      restrictedPublicIdPromise = null;
+      lastConfirmedRouteKey = "";
+      scheduleRouteCheck();
+      return;
+    }
+
+    if (tvOwnedLayoutsStorageKey in changes) {
+      lastConfirmedRouteKey = "";
+      scheduleRouteCheck();
+    }
+  };
+
+  if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener(handleStorageChanged);
+  }
+
   document.addEventListener("mousedown", handleDocumentMouseDown, true);
   document.addEventListener("click", handleDocumentClick, true);
   document.addEventListener("contextmenu", handleDocumentContextMenu, true);
@@ -511,6 +577,9 @@ export function installTvOwnedLayouts(): () => void {
   return () => {
     isDisposed = true;
     mutationObserver.disconnect();
+    if (typeof chrome !== "undefined" && chrome.storage?.onChanged) {
+      chrome.storage.onChanged.removeListener(handleStorageChanged);
+    }
     document.removeEventListener("mousedown", handleDocumentMouseDown, true);
     document.removeEventListener("click", handleDocumentClick, true);
     document.removeEventListener("contextmenu", handleDocumentContextMenu, true);
@@ -754,7 +823,14 @@ function shouldInterceptClick(event: Event): boolean {
     return true;
   }
 
-  return !event.defaultPrevented && event.button === 0 && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey;
+  return (
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.altKey &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.shiftKey
+  );
 }
 
 function shouldPreloadOpenLayoutFromMouseEvent(event: MouseEvent): boolean {
@@ -828,8 +904,18 @@ async function requestRouteStatus(currentUrl: string): Promise<RouteStatus> {
 async function readPendingOperationStatus(
   publicId: string,
   operationId: string,
-): Promise<{ boundChartId: string | null; isActive: boolean; isBound: boolean; kind: "copy" | "create" | null }> {
-  return sendRuntimeMessage<{ boundChartId: string | null; isActive: boolean; isBound: boolean; kind: "copy" | "create" | null }>({
+): Promise<{
+  boundChartId: string | null;
+  isActive: boolean;
+  isBound: boolean;
+  kind: "copy" | "create" | null;
+}> {
+  return sendRuntimeMessage<{
+    boundChartId: string | null;
+    isActive: boolean;
+    isBound: boolean;
+    kind: "copy" | "create" | null;
+  }>({
     operationId,
     publicId,
     type: runtimeMessageType.tvOwnedLayoutOperationStatusRequested,
@@ -875,7 +961,9 @@ async function findCopiedLayoutFromDialog(
     return null;
   }
 
-  const matchingCopiedLayouts = [...document.querySelectorAll(`${openLayoutsDialogSelector} ${openLayoutRowSelector}`)]
+  const matchingCopiedLayouts = [
+    ...document.querySelectorAll(`${openLayoutsDialogSelector} ${openLayoutRowSelector}`),
+  ]
     .flatMap((layoutRow) => {
       if (!(layoutRow instanceof HTMLAnchorElement)) {
         return [];
@@ -905,11 +993,17 @@ async function findCopiedLayoutFromDialog(
     })
     .sort((firstLayout, secondLayout) => secondLayout.updatedAt - firstLayout.updatedAt);
 
-  const exactTitleMatches = matchingCopiedLayouts.filter((layout) => layout.title === pendingCopyRecovery.expectedTitle);
-  const sourceTitleMatches = matchingCopiedLayouts.filter((layout) => layout.title === pendingCopyRecovery.sourceLayoutLabel);
+  const exactTitleMatches = matchingCopiedLayouts.filter(
+    (layout) => layout.title === pendingCopyRecovery.expectedTitle,
+  );
+  const sourceTitleMatches = matchingCopiedLayouts.filter(
+    (layout) => layout.title === pendingCopyRecovery.sourceLayoutLabel,
+  );
   const copiedLayout =
     exactTitleMatches[0] ??
-    (pendingCopyRecovery.expectedTitle === pendingCopyRecovery.sourceLayoutLabel ? (sourceTitleMatches[0] ?? null) : null);
+    (pendingCopyRecovery.expectedTitle === pendingCopyRecovery.sourceLayoutLabel
+      ? (sourceTitleMatches[0] ?? null)
+      : null);
 
   if (!hadOpenLayoutsDialog) {
     closeOpenLayoutsDialog();
@@ -918,7 +1012,10 @@ async function findCopiedLayoutFromDialog(
   return copiedLayout;
 }
 
-async function isLayoutPresentInDialog(expectedTitle: string | null, chartId: string): Promise<boolean | null> {
+async function isLayoutPresentInDialog(
+  expectedTitle: string | null,
+  chartId: string,
+): Promise<boolean | null> {
   const hadOpenLayoutsDialog = document.querySelector(openLayoutsDialogSelector) instanceof HTMLElement;
 
   if (!hadOpenLayoutsDialog && !(await openLayoutsDialog())) {
@@ -932,7 +1029,9 @@ async function isLayoutPresentInDialog(expectedTitle: string | null, chartId: st
   }
 
   const isLayoutPresent =
-    document.querySelector(`${openLayoutsDialogSelector} ${openLayoutRowSelector}[href$="/chart/${chartId}/"]`) !== null;
+    document.querySelector(
+      `${openLayoutsDialogSelector} ${openLayoutRowSelector}[href$="/chart/${chartId}/"]`,
+    ) !== null;
 
   restoreDialogSearch?.();
 
@@ -959,7 +1058,11 @@ async function openLayoutsDialog(): Promise<boolean> {
   const openLayoutMenuItem = await waitForElement(() => {
     const menuItems = document.querySelectorAll(menuItemSelector);
 
-    return [...menuItems].find((menuItem) => normalizeText(menuItem.textContent).startsWith(openLayoutMenuItemLabel)) ?? null;
+    return (
+      [...menuItems].find((menuItem) =>
+        normalizeText(menuItem.textContent).startsWith(openLayoutMenuItemLabel),
+      ) ?? null
+    );
   });
 
   if (!(openLayoutMenuItem instanceof HTMLElement)) {
@@ -968,7 +1071,10 @@ async function openLayoutsDialog(): Promise<boolean> {
 
   openLayoutMenuItem.click();
 
-  return (await waitForElement(() => document.querySelector(openLayoutsDialogSelector), 20, 50)) instanceof HTMLElement;
+  return (
+    (await waitForElement(() => document.querySelector(openLayoutsDialogSelector), 20, 50)) instanceof
+    HTMLElement
+  );
 }
 
 function closeOpenLayoutsDialog() {
@@ -1032,18 +1138,21 @@ async function sendRuntimeMessage<TValue>(message: RuntimeMessage): Promise<TVal
   }
 
   return new Promise<TValue>((resolve, reject) => {
-    chrome.runtime.sendMessage(message, (response: { ok?: boolean; value?: TValue; errorMessage?: string } | undefined) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message ?? "Runtime request failed."));
-        return;
-      }
+    chrome.runtime.sendMessage(
+      message,
+      (response: { ok?: boolean; value?: TValue; errorMessage?: string } | undefined) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message ?? "Runtime request failed."));
+          return;
+        }
 
-      if (!response?.ok) {
-        reject(new Error(response?.errorMessage ?? "Runtime request failed."));
-        return;
-      }
+        if (!response?.ok) {
+          reject(new Error(response?.errorMessage ?? "Runtime request failed."));
+          return;
+        }
 
-      resolve((response.value ?? null) as TValue);
-    });
+        resolve((response.value ?? null) as TValue);
+      },
+    );
   });
 }

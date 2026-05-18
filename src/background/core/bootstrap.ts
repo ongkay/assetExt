@@ -14,11 +14,13 @@ import {
 import { clearStoredDeviceId } from "@/lib/storage/deviceIdentity";
 import { clearInjectionCooldowns } from "@/lib/storage/injectionCooldown";
 import { clearAssetSessionSyncState } from "@/lib/storage/assetSessionSync";
+import { clearTvOwnedLayoutSyncState } from "@/lib/storage/tvOwnedLayoutSyncState";
 
 import { clearAllAssetPlatformCookies, clearPeerGuardManagedCookies } from "./cookies";
 import { stopAllHeartbeats } from "./heartbeat";
 import { ensureProductionOriginHeaderRuleReady } from "./productionOrigin";
 import { clearManagedProxyState } from "./proxy";
+import { hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot } from "./tvOwnedLayoutSync";
 
 let bootstrapSyncPromise: Promise<BootstrapCacheRecord> | null = null;
 let bootstrapWriteRevision = 0;
@@ -55,6 +57,7 @@ export async function replaceBootstrapCacheFromSnapshot(
   bootstrapWriteRevision += 1;
   await writeBootstrapCache(nextCache);
   await clearAssetSessionSyncState();
+  await hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot(snapshot);
 
   return nextCache;
 }
@@ -73,6 +76,7 @@ export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse>
   extensionSessionLifecycleRevision += 1;
   await clearBootstrapCache();
   await clearAssetSessionSyncState();
+  await clearTvOwnedLayoutSyncState();
   await clearManagedProxyState();
   await clearAllAssetPlatformCookies();
   await stopAllHeartbeats();
@@ -91,6 +95,7 @@ export async function markExtensionSessionUnauthenticated(loginUrl?: string | nu
   extensionSessionLifecycleRevision += 1;
   await writeBootstrapCache(createInvalidUnauthenticatedBootstrapCache(redirectTo));
   await clearAssetSessionSyncState();
+  await clearTvOwnedLayoutSyncState();
   await clearManagedProxyState();
   await clearAllAssetPlatformCookies();
   await stopAllHeartbeats();
@@ -104,6 +109,7 @@ export async function clearExtensionSessionArtifactsForPeerGuard(): Promise<void
   extensionSessionLifecycleRevision += 1;
   await clearBootstrapCache();
   await clearAssetSessionSyncState();
+  await clearTvOwnedLayoutSyncState();
   await clearManagedProxyState();
   await clearPeerGuardManagedCookies();
   await clearStoredDeviceId();
@@ -200,6 +206,7 @@ async function writeBootstrapCacheIfSyncIsCurrent(
   }
 
   await writeBootstrapCache(nextCache);
+  await hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot(nextCache.snapshot);
 
   return nextCache;
 }

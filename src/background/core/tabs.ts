@@ -21,14 +21,17 @@ export async function openOrReloadTab(targetUrl: string, tabId?: number): Promis
   return chrome.tabs.create({ active: true, url: targetUrl });
 }
 
-export async function redirectPeerGuardProtectedAssetTabs(targetUrl: string): Promise<PeerGuardAssetRedirectResult> {
+export async function redirectPeerGuardProtectedAssetTabs(
+  targetUrl: string,
+): Promise<PeerGuardAssetRedirectResult> {
   if (typeof chrome === "undefined" || !chrome.tabs?.query || !chrome.tabs?.update) {
     return { redirectedTabCount: 0, warningTabId: null };
   }
 
   const tabs = await chrome.tabs.query({});
   const protectedAssetTabs = tabs.filter((tab) => isPeerGuardProtectedAssetTab(tab));
-  const primaryWarningTab = protectedAssetTabs.find((tab) => tab.active && typeof tab.id === "number") ?? protectedAssetTabs[0];
+  const primaryWarningTab =
+    protectedAssetTabs.find((tab) => tab.active && typeof tab.id === "number") ?? protectedAssetTabs[0];
 
   if (!primaryWarningTab?.id) {
     return { redirectedTabCount: 0, warningTabId: null };

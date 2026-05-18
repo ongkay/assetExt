@@ -54,7 +54,8 @@ describe("createPeerGuardController", () => {
 
     const peerGuardController = createPeerGuardController({
       onBlocked: async () => {
-        observedStateDuringBlockedHandler = (await peerGuardController.readCurrentState()) as StoredPeerGuardState;
+        observedStateDuringBlockedHandler =
+          (await peerGuardController.readCurrentState()) as StoredPeerGuardState;
 
         return { redirectedAssetTabCount: 1 };
       },

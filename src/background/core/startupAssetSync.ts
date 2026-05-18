@@ -1,6 +1,5 @@
 import { detectAssetPlatformFromHostname, type AssetPlatform } from "@/lib/asset-access/platforms";
 import { runtimeMessageType, type OverlayStateChangedMessage } from "@/lib/runtime/messages";
-import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 import { readAssetProxyState } from "@/lib/storage/assetProxyState";
 import {
   readAssetSessionSyncState,
@@ -9,7 +8,7 @@ import {
 } from "@/lib/storage/assetSessionSync";
 
 import { ExtensionApiRequestError, fetchAssetSessionSync, prepareAssetAccessSession } from "./assetAccess";
-import { markExtensionSessionUnauthenticated } from "./bootstrap";
+import { markExtensionSessionUnauthenticated, readBootstrapState } from "./bootstrap";
 import { clearAssetPlatformCookies } from "./cookies";
 import {
   ensurePeerGuardAccess,
@@ -23,7 +22,12 @@ import {
   getProxyBlockedPageUrl,
 } from "./proxy";
 
-export type AssetSessionEnsureAction = "none" | "peer_required" | "proxy_blocked" | "reload_required" | "redirect_login";
+export type AssetSessionEnsureAction =
+  | "none"
+  | "peer_required"
+  | "proxy_blocked"
+  | "reload_required"
+  | "redirect_login";
 
 export type AssetSessionEnsureResult = {
   action: AssetSessionEnsureAction;
@@ -98,7 +102,8 @@ async function runAssetSessionEnsureForPage(
     throw error;
   }
 
-  const bootstrapCache = await readBootstrapCache();
+  const bootstrapState = await readBootstrapState(false);
+  const bootstrapCache = bootstrapState.cache;
 
   if (!bootstrapCache || !bootstrapCache.isValid || bootstrapCache.snapshot.auth.status !== "authenticated") {
     return createEnsureResult("none");

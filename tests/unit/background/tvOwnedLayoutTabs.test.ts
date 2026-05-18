@@ -8,7 +8,11 @@ import {
   resolveRestrictedTradingViewRouteStatus,
   submitTradingViewOwnedLayoutOperation,
 } from "@/background/core/tvOwnedLayoutController";
-import { createOwnedTvLayoutFromChartUrl, readTvOwnedLayoutState, upsertTvOwnedLayout } from "@/lib/storage/tvOwnedLayouts";
+import {
+  createOwnedTvLayoutFromChartUrl,
+  readTvOwnedLayoutState,
+  upsertTvOwnedLayout,
+} from "@/lib/storage/tvOwnedLayouts";
 
 const originalChrome = globalThis.chrome;
 
@@ -70,7 +74,10 @@ describe("background tv owned layout tabs", () => {
   });
 
   it("resolves popup target to the last opened owned chart", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -84,7 +91,10 @@ describe("background tv owned layout tabs", () => {
   });
 
   it("redirects non chart tradingview pages to the last opened owned chart", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -93,14 +103,15 @@ describe("background tv owned layout tabs", () => {
     const tvOwnedLayoutTabs = await import("@/background/core/tvOwnedLayoutTabs");
 
     await expect(
-      tvOwnedLayoutTabs.resolveRestrictedTradingViewRedirectUrl(
-        "https://www.tradingview.com/pricing/",
-      ),
+      tvOwnedLayoutTabs.resolveRestrictedTradingViewRedirectUrl("https://www.tradingview.com/pricing/"),
     ).resolves.toBe("https://www.tradingview.com/chart/OWN123/");
   });
 
   it("allows stored owned charts and the default chart", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -125,7 +136,10 @@ describe("background tv owned layout tabs", () => {
   });
 
   it("redirects foreign charts unless a fresh create intent exists", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -159,7 +173,10 @@ describe("background tv owned layout tabs", () => {
   });
 
   it("does not bind a same-tab create operation to a child tab", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -175,11 +192,7 @@ describe("background tv owned layout tabs", () => {
     });
 
     await expect(
-      resolveRestrictedTradingViewRouteStatus(
-        "https://www.tradingview.com/chart/FOREIGN1/",
-        22,
-        11,
-      ),
+      resolveRestrictedTradingViewRouteStatus("https://www.tradingview.com/chart/FOREIGN1/", 22, 11),
     ).resolves.toMatchObject({
       redirectUrl: "https://www.tradingview.com/chart/OWN123/",
       shouldAllow: false,
@@ -187,7 +200,10 @@ describe("background tv owned layout tabs", () => {
   });
 
   it("does not bind an open-in-new-tab create operation to the origin tab", async () => {
-    const ownedLayout = createOwnedTvLayoutFromChartUrl("https://www.tradingview.com/chart/OWN123/", "Layout Sendiri");
+    const ownedLayout = createOwnedTvLayoutFromChartUrl(
+      "https://www.tradingview.com/chart/OWN123/",
+      "Layout Sendiri",
+    );
 
     expect(ownedLayout).not.toBeNull();
 
@@ -203,10 +219,7 @@ describe("background tv owned layout tabs", () => {
     });
 
     await expect(
-      resolveRestrictedTradingViewRouteStatus(
-        "https://www.tradingview.com/chart/FOREIGN1/",
-        11,
-      ),
+      resolveRestrictedTradingViewRouteStatus("https://www.tradingview.com/chart/FOREIGN1/", 11),
     ).resolves.toMatchObject({
       redirectUrl: "https://www.tradingview.com/chart/OWN123/",
       shouldAllow: false,

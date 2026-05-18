@@ -9,6 +9,8 @@ import type {
   ExtensionBootstrap,
   ExtensionHeartbeatResponse,
   ExtensionLogoutResponse,
+  PostTradingViewOwnedLayoutsSyncRequest,
+  PostTradingViewOwnedLayoutsSyncResponse,
   ExtensionRedeemSuccess,
 } from "@/lib/api/extensionApiTypes";
 
@@ -80,6 +82,16 @@ export function postExtensionLogout(
   config: ExtensionApiConfig,
 ): Promise<ExtensionApiResult<ExtensionLogoutResponse>> {
   return requestExtensionApi(config, "/api/ext/logout", { method: "POST" });
+}
+
+export function postTradingViewOwnedLayoutsSync(
+  config: ExtensionApiConfig,
+  input: PostTradingViewOwnedLayoutsSyncRequest,
+): Promise<ExtensionApiResult<PostTradingViewOwnedLayoutsSyncResponse>> {
+  return requestExtensionApi(config, "/api/ext/tradingview/layouts/sync", {
+    body: JSON.stringify(input),
+    method: "POST",
+  });
 }
 
 async function requestExtensionApi<TValue>(

@@ -9,7 +9,9 @@ const ext1PeerGuardWarningPagePath = getPeerGuardIdentity("ext-1").warningPagePa
 const peerGuardController = createPeerGuardController({
   onBlocked: async () => {
     await clearExtensionSessionArtifactsForPeerGuard();
-    const assetRedirectResult = await redirectPeerGuardProtectedAssetTabs(chrome.runtime.getURL(ext1PeerGuardWarningPagePath));
+    const assetRedirectResult = await redirectPeerGuardProtectedAssetTabs(
+      chrome.runtime.getURL(ext1PeerGuardWarningPagePath),
+    );
 
     return {
       redirectedAssetTabCount: assetRedirectResult.redirectedTabCount,

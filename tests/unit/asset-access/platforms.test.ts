@@ -38,9 +38,6 @@ describe("asset platform mapping", () => {
   });
 
   it("returns only production asset hosts for peer-guard redirects", () => {
-    expect(getPeerGuardProtectedAssetHostPatterns()).toEqual([
-      "tradingview.com",
-      "forextester.com",
-    ]);
+    expect(getPeerGuardProtectedAssetHostPatterns()).toEqual(["tradingview.com", "forextester.com"]);
   });
 });

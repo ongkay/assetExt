@@ -1,7 +1,11 @@
 import { assetPlatforms, getAssetPlatformConfig, type AssetPlatform } from "@/lib/asset-access/platforms";
 import type { ExtensionCookiePayload, ExtensionCookieSameSite } from "@/lib/api/extensionApiTypes";
 import { clearCookiesForDomains } from "@/lib/peer-guard/managedCookies";
-export { buildCookieUrl, clearCookiesForDomains, clearPeerGuardManagedCookies } from "@/lib/peer-guard/managedCookies";
+export {
+  buildCookieUrl,
+  clearCookiesForDomains,
+  clearPeerGuardManagedCookies,
+} from "@/lib/peer-guard/managedCookies";
 
 export async function clearAssetPlatformCookies(platform: AssetPlatform): Promise<void> {
   const platformConfig = getAssetPlatformConfig(platform);

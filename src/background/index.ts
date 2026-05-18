@@ -47,6 +47,7 @@ import {
   resolveRestrictedTradingViewRouteStatus,
   submitTradingViewOwnedLayoutOperation,
 } from "./core/tvOwnedLayoutController";
+import { syncTradingViewOwnedLayouts } from "./core/tvOwnedLayoutSync";
 import type { TvOwnedLayoutOperationKind } from "@/lib/storage/tvOwnedLayoutOperations";
 import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 import { getRestrictedTradingViewPublicId } from "@/lib/tradingview/tvAccessState";
@@ -98,6 +99,12 @@ async function handleRuntimeMessage(
 
     case runtimeMessageType.bootstrapRefreshRequested: {
       await ensurePeerGuardAccess();
+      const currentBootstrapCache = await readBootstrapCache();
+
+      if (currentBootstrapCache?.isValid && currentBootstrapCache.snapshot.auth.status === "authenticated") {
+        await syncTradingViewOwnedLayouts("manual_refresh").catch(() => undefined);
+      }
+
       const bootstrapCache = await forceRefreshBootstrapCache();
 
       return {
@@ -325,7 +332,11 @@ async function handleRuntimeMessage(
     case runtimeMessageType.tvOwnedLayoutRouteStatusRequested: {
       return {
         ok: true,
-        value: await resolveRestrictedTradingViewRouteStatus(message.url, sender.tab?.id, sender.tab?.openerTabId),
+        value: await resolveRestrictedTradingViewRouteStatus(
+          message.url,
+          sender.tab?.id,
+          sender.tab?.openerTabId,
+        ),
       } satisfies RuntimeResponse<{
         currentChartId: string | null;
         expectedTitle: string | null;
@@ -361,6 +372,15 @@ async function handleRuntimeMessage(
           await clearTradingViewOwnedLayoutOperation(publicId, sender.tab?.id);
         }
       }
+
+      return {
+        ok: true,
+        value: null,
+      } satisfies RuntimeResponse<null>;
+    }
+
+    case runtimeMessageType.tvOwnedLayoutSyncRequested: {
+      void syncTradingViewOwnedLayouts(message.trigger).catch(() => undefined);
 
       return {
         ok: true,

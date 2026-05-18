@@ -98,7 +98,10 @@ export function normalizeTvOwnedLayoutOperation(
   };
 }
 
-export function isFreshTvOwnedLayoutOperation(operation: TvOwnedLayoutOperation | null, now = Date.now()): boolean {
+export function isFreshTvOwnedLayoutOperation(
+  operation: TvOwnedLayoutOperation | null,
+  now = Date.now(),
+): boolean {
   if (!operation) {
     return false;
   }

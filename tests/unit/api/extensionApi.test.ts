@@ -4,6 +4,7 @@ import type { ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
 import {
   fetchExtensionAssetSync,
   fetchExtensionBootstrap,
+  postTradingViewOwnedLayoutsSync,
   redeemExtensionCdKey,
 } from "@/lib/api/extensionApi";
 import type {
@@ -14,6 +15,7 @@ import type {
   ExtensionCookiePayload,
   ExtensionCookieSameSite,
   ExtensionRedeemSuccess,
+  PostTradingViewOwnedLayoutsSyncResponse,
 } from "@/lib/api/extensionApiTypes";
 
 const originalFetch = globalThis.fetch;
@@ -173,6 +175,64 @@ describe("extension API client", () => {
       "http://localhost:3000/api/ext/asset/sync?platform=tradingview&revision=extr1_local",
       expect.objectContaining({ method: "GET" }),
     );
+  });
+
+  it("sends TradingView owned layouts sync snapshot to the new endpoint", async () => {
+    const fetchMock: FetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          lastOpenedAt: "2026-05-17T02:00:00.000Z",
+          lastOpenedChartId: "OWN123",
+          layouts: [
+            {
+              chartId: "OWN123",
+              title: "Layout Baru",
+              updatedAt: "2026-05-17T02:00:00.000Z",
+              url: "https://www.tradingview.com/chart/OWN123/",
+            },
+          ],
+        } satisfies PostTradingViewOwnedLayoutsSyncResponse),
+      ),
+    );
+    globalThis.fetch = fetchMock as typeof fetch;
+
+    await postTradingViewOwnedLayoutsSync(extensionApiConfig, {
+      isAuthoritativeSnapshot: false,
+      lastOpenedAt: "2026-05-17T02:00:00.000Z",
+      lastOpenedChartId: "OWN123",
+      layouts: [
+        {
+          chartId: "OWN123",
+          title: "Layout Baru",
+          updatedAt: "2026-05-17T02:00:00.000Z",
+          url: "https://www.tradingview.com/chart/OWN123/",
+        },
+      ],
+      snapshotCapturedAt: "2026-05-17T02:05:00.000Z",
+      trigger: "manual_refresh",
+    });
+
+    const [requestUrl, requestInit] = fetchMock.mock.calls[0];
+
+    expect(requestUrl).toBe("http://localhost:3000/api/ext/tradingview/layouts/sync");
+    expect(requestInit).toMatchObject({
+      body: JSON.stringify({
+        isAuthoritativeSnapshot: false,
+        lastOpenedAt: "2026-05-17T02:00:00.000Z",
+        lastOpenedChartId: "OWN123",
+        layouts: [
+          {
+            chartId: "OWN123",
+            title: "Layout Baru",
+            updatedAt: "2026-05-17T02:00:00.000Z",
+            url: "https://www.tradingview.com/chart/OWN123/",
+          },
+        ],
+        snapshotCapturedAt: "2026-05-17T02:05:00.000Z",
+        trigger: "manual_refresh",
+      }),
+      method: "POST",
+    });
   });
 
   it("exports plan-aligned API response type names and shapes", () => {

@@ -84,11 +84,17 @@ export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPagePro
                     {isLoading ? `Memeriksa ${extensionLabel}` : "Akses dihentikan"}
                   </CardTitle>
                   <CardDescription className="max-w-lg text-sm leading-6">
-                    {isLoading ? "Status extension pasangan sedang diperiksa." : getBlockedHeroCopy(peerGuardState)}
+                    {isLoading
+                      ? "Status extension pasangan sedang diperiksa."
+                      : getBlockedHeroCopy(peerGuardState)}
                   </CardDescription>
                 </div>
               </div>
-              {isLoading ? <Spinner className="size-8 shrink-0" /> : <ShieldAlertIcon className="size-8 shrink-0 text-red-500" />}
+              {isLoading ? (
+                <Spinner className="size-8 shrink-0" />
+              ) : (
+                <ShieldAlertIcon className="size-8 shrink-0 text-red-500" />
+              )}
             </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 py-5">
@@ -98,12 +104,20 @@ export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPagePro
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Status</p>
-                <p className="mt-1 text-sm font-medium text-foreground">Pasangan {peerGuardState?.peerLabel ?? "ext-2"} tidak aktif</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                  Status
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  Pasangan {peerGuardState?.peerLabel ?? "ext-2"} tidak aktif
+                </p>
               </div>
               <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Tindakan</p>
-                <p className="mt-1 text-sm font-medium text-foreground">Aktifkan pair. Tab ini akan tertutup otomatis.</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                  Tindakan
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  Aktifkan pair. Tab ini akan tertutup otomatis.
+                </p>
               </div>
             </div>
 
@@ -116,7 +130,11 @@ export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPagePro
     </main>
   );
 
-  async function requestPeerGuardState(messageType: typeof runtimeMessageType.peerGuardStatusRequested | typeof runtimeMessageType.peerGuardRefreshRequested) {
+  async function requestPeerGuardState(
+    messageType:
+      | typeof runtimeMessageType.peerGuardStatusRequested
+      | typeof runtimeMessageType.peerGuardRefreshRequested,
+  ) {
     const runtimeResult = await sendRuntimeMessage<PeerGuardRuntimeValue>({
       type: messageType,
     });

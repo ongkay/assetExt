@@ -54,6 +54,29 @@ export type ExtensionSubscription = {
   status: SubscriptionStatus;
 };
 
+export type ExtensionTradingViewOwnedLayout = {
+  chartId: string;
+  title: string;
+  updatedAt: string;
+  url: string;
+};
+
+export type ExtensionTradingViewOwnedLayoutsSnapshot = {
+  lastOpenedAt?: string | null;
+  lastOpenedChartId?: string | null;
+  layouts: ExtensionTradingViewOwnedLayout[];
+};
+
+export type ExtensionTradingViewOwnedLayoutsSyncTrigger = "manual_refresh" | "popup_open" | "tv_page_open";
+
+export type PostTradingViewOwnedLayoutsSyncRequest = ExtensionTradingViewOwnedLayoutsSnapshot & {
+  isAuthoritativeSnapshot: boolean;
+  snapshotCapturedAt: string;
+  trigger: ExtensionTradingViewOwnedLayoutsSyncTrigger;
+};
+
+export type PostTradingViewOwnedLayoutsSyncResponse = ExtensionTradingViewOwnedLayoutsSnapshot;
+
 export type ExtensionRedeemState = {
   enabled: boolean;
 };
@@ -64,6 +87,7 @@ export type ExtensionBootstrap = {
   packages?: ExtensionPackage[];
   redeem?: ExtensionRedeemState;
   subscription?: ExtensionSubscription;
+  tradingViewOwnedLayouts?: ExtensionTradingViewOwnedLayoutsSnapshot;
   user?: ExtensionUser;
   version: ExtensionVersionStatus;
 };

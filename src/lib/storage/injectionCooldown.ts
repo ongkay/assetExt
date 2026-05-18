@@ -28,5 +28,7 @@ export async function clearInjectionCooldowns(): Promise<void> {
     return;
   }
 
-  await chrome.storage.local.remove(assetPlatforms.map((platform) => getInjectionCooldownStorageKey(platform)));
+  await chrome.storage.local.remove(
+    assetPlatforms.map((platform) => getInjectionCooldownStorageKey(platform)),
+  );
 }

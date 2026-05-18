@@ -78,6 +78,7 @@ Catatan implementasi saat ini:
 | `POST` | `/api/ext/heartbeat` | Update session activity dan fingerprint extension. |
 | `POST` | `/api/ext/redeem` | Redeem CD-Key dan refresh bootstrap snapshot. |
 | `POST` | `/api/ext/logout` | Logout web session aktif dan revoke `app_session`. |
+| `POST` | `/api/ext/tradingview/layouts/sync` | Sinkronkan snapshot owned layout TradingView dari cache lokal extension ke database. |
 
 ## `GET /api/ext/bootstrap`
 
@@ -122,6 +123,18 @@ Authenticated active/processed response:
     "endAt": "2026-05-01T09:45:22.805+00:00",
     "packageName": "Paket 3",
     "status": "active"
+  },
+  "tradingViewOwnedLayouts": {
+    "lastOpenedAt": "2026-05-17T02:00:00.000Z",
+    "lastOpenedChartId": "OWN123",
+    "layouts": [
+      {
+        "chartId": "OWN123",
+        "title": "Layout Baru",
+        "updatedAt": "2026-05-17T02:00:00.000Z",
+        "url": "https://www.tradingview.com/chart/OWN123/"
+      }
+    ]
   },
   "user": {
     "avatarUrl": null,
@@ -176,6 +189,14 @@ Version status union:
 - `{"status":"supported"}`
 - `{"status":"update_available","downloadUrl":"...","latestVersion":"...","minimumVersion":"..."}`
 - `{"status":"update_required","downloadUrl":"...","latestVersion":"...","minimumVersion":"..."}`
+
+Catatan penting untuk `tradingViewOwnedLayouts`:
+
+- field ini hanya relevan untuk user yang saat itu memakai akses `TradingView share`,
+- field bisa tidak ada pada bootstrap response bila user tidak memenuhi kondisi tersebut,
+- snapshot ini hanya berisi layout aktif,
+- layout yang sudah dihapus tidak lagi dikirim sebagai tombstone atau deleted row,
+- client extension harus treat field ini sebagai bootstrap snapshot durable, bukan sebagai pemicu manipulasi UI TradingView.
 
 `asset`, `asset/sync`, `redeem`, dan `heartbeat` membutuhkan sesi aktif. Pada verifikasi manual/Postman, sertakan `x-ext-dev-app-session` atau gunakan cookie web aktif yang setara.
 
@@ -318,6 +339,73 @@ Invalid query response:
   }
 }
 ```
+
+## `POST /api/ext/tradingview/layouts/sync`
+
+Endpoint ini dipakai extension untuk mengirim snapshot durable owned layout TradingView dari local cache ke backend.
+
+Endpoint ini **bukan** untuk live sync per interaction UI. Trigger yang direkomendasikan:
+
+- popup refresh,
+- page-open TradingView dengan snapshot lokal yang sudah ada.
+
+Body:
+
+| Field | Wajib | Keterangan |
+| --- | --- | --- |
+| `trigger` | Ya | `manual_refresh` atau `tv_page_open` |
+| `isAuthoritativeSnapshot` | Ya | Saat ini client extension mengirim `false`. Field tetap dipertahankan di contract request. |
+| `snapshotCapturedAt` | Ya | Timestamp ISO saat snapshot dibuat di client. |
+| `lastOpenedAt` | Tidak | Timestamp ISO chart terakhir yang dibuka. |
+| `lastOpenedChartId` | Tidak | Chart id terakhir yang dibuka. |
+| `layouts` | Ya | Array layout aktif dari local durable cache. |
+
+Contoh request:
+
+```json
+{
+  "trigger": "manual_refresh",
+  "isAuthoritativeSnapshot": false,
+  "snapshotCapturedAt": "2026-05-17T02:05:00.000Z",
+  "lastOpenedAt": "2026-05-17T02:00:00.000Z",
+  "lastOpenedChartId": "OWN123",
+  "layouts": [
+    {
+      "chartId": "OWN123",
+      "title": "Layout Baru",
+      "updatedAt": "2026-05-17T02:00:00.000Z",
+      "url": "https://www.tradingview.com/chart/OWN123/"
+    }
+  ]
+}
+```
+
+Contoh response:
+
+```json
+{
+  "lastOpenedAt": "2026-05-17T02:00:00.000Z",
+  "lastOpenedChartId": "OWN123",
+  "layouts": [
+    {
+      "chartId": "OWN123",
+      "title": "Layout Baru",
+      "updatedAt": "2026-05-17T02:00:00.000Z",
+      "url": "https://www.tradingview.com/chart/OWN123/"
+    }
+  ]
+}
+```
+
+Catatan implementasi client:
+
+- jangan gunakan endpoint ini untuk memicu interaksi DOM TradingView,
+- gunakan snapshot local storage yang memang sudah dihasilkan oleh flow owned-layout existing,
+- jika user bukan TradingView share, client sebaiknya skip request ini sama sekali,
+- snapshot yang dikirim client adalah active-only snapshot. Jika suatu `chartId` hilang dari `layouts`, backend menganggap layout itu harus di-hard-delete,
+- manual refresh popup tidak lagi memaksa upload setiap saat. Client hanya mengirim request sync bila fingerprint snapshot lokal berbeda dari snapshot terakhir yang berhasil di-upload,
+- sebelum bootstrap refresh dari popup, client akan mencoba sinkronisasi `local -> backend` terlebih dahulu agar delete/rename/create lokal tidak kalah oleh snapshot backend lama,
+- hydrate bootstrap snapshot ke local state akan di-skip sementara jika local owned-layout state masih punya perubahan yang belum berhasil tersync.
 
 ## `POST /api/ext/heartbeat`
 

@@ -13,13 +13,7 @@ import { UnauthenticatedPanel } from "@/components/asset-manager/Unauthenticated
 import { VersionGatePanel } from "@/components/asset-manager/VersionGatePanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
 import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
 import type {
@@ -34,10 +28,7 @@ import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { isSubscriptionActive } from "@/lib/asset-access/subscription";
 import { disableManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
-import {
-  runtimeMessageType,
-  type BootstrapRuntimeValue,
-} from "@/lib/runtime/messages";
+import { runtimeMessageType, type BootstrapRuntimeValue } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
 import { peerGuardStateStorageKey } from "@/lib/peer-guard/peerGuardConfig";
 import {
@@ -238,7 +229,6 @@ export function PopupApp() {
   }
 
   if (!snapshot) {
-
     return (
       <PopupShell isThemeReady={isThemeReady}>
         <BootstrapSkeleton />

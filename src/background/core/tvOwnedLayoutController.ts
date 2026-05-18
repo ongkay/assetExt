@@ -27,6 +27,7 @@ import {
   isTradingViewChartPath,
   isTradingViewHostname,
 } from "@/lib/tradingview/tvChartUrl";
+import { syncTradingViewOwnedLayouts } from "./tvOwnedLayoutSync";
 
 type TvOwnedLayoutRouteStatus = {
   currentChartId: string | null;
@@ -172,14 +173,14 @@ export async function resolveRestrictedTradingViewRouteStatus(
   }
 
   return createRouteStatus({
-      currentChartId,
-      expectedTitle: matchedOperation.expectedTitle,
-      isPendingOperation: true,
-      isRestricted: true,
-      operationId: matchedOperation.operationId,
-      pendingOperationKind: matchedOperation.kind,
-      shouldAllow: true,
-    });
+    currentChartId,
+    expectedTitle: matchedOperation.expectedTitle,
+    isPendingOperation: true,
+    isRestricted: true,
+    operationId: matchedOperation.operationId,
+    pendingOperationKind: matchedOperation.kind,
+    shouldAllow: true,
+  });
 }
 
 export async function rememberTradingViewOwnedLayout(input: RememberTvOwnedLayoutInput): Promise<void> {
@@ -218,7 +219,9 @@ export async function submitTradingViewOwnedLayoutOperation(
     const operationsRecord = await readTvOwnedLayoutOperationsRecord();
     const nextOperationsRecord = Object.fromEntries(
       Object.entries(operationsRecord).filter(([, activeOperation]) => {
-        return !(activeOperation.publicId === input.publicId && activeOperation.originTabId === input.originTabId);
+        return !(
+          activeOperation.publicId === input.publicId && activeOperation.originTabId === input.originTabId
+        );
       }),
     );
 
@@ -251,6 +254,7 @@ export async function confirmTradingViewOwnedLayoutPage(input: ConfirmTvOwnedLay
     }
 
     await clearActiveTvOwnedLayoutOperationById(activeOperation.operationId, input.publicId);
+    await syncTradingViewOwnedLayouts("tv_page_open");
     return;
   }
 
@@ -261,7 +265,11 @@ export async function confirmTradingViewOwnedLayoutPage(input: ConfirmTvOwnedLay
   }
 }
 
-export async function renameTradingViewOwnedLayout(publicId: string, chartId: string, title: string): Promise<void> {
+export async function renameTradingViewOwnedLayout(
+  publicId: string,
+  chartId: string,
+  title: string,
+): Promise<void> {
   await renameTvOwnedLayout(publicId, chartId, title);
 }
 
@@ -280,7 +288,8 @@ export async function invalidateTradingViewOwnedLayoutPage(
     return defaultTradingViewChartUrl;
   }
 
-  const matchingOperation = activeOperations.find((activeOperation) => activeOperation.provisionalChartId === input.chartId) ?? null;
+  const matchingOperation =
+    activeOperations.find((activeOperation) => activeOperation.provisionalChartId === input.chartId) ?? null;
 
   if (matchingOperation) {
     await clearActiveTvOwnedLayoutOperationById(matchingOperation.operationId, input.publicId);
@@ -323,7 +332,12 @@ export async function clearTradingViewOwnedLayoutOperationById(
 export async function readTradingViewOwnedLayoutOperationStatus(
   publicId: string,
   operationId: string,
-): Promise<{ boundChartId: string | null; isActive: boolean; isBound: boolean; kind: TvOwnedLayoutOperationKind | null }> {
+): Promise<{
+  boundChartId: string | null;
+  isActive: boolean;
+  isBound: boolean;
+  kind: TvOwnedLayoutOperationKind | null;
+}> {
   const activeOperations = await readActiveTvOwnedLayoutOperations(publicId);
   const activeOperation = activeOperations.find((operation) => operation.operationId === operationId) ?? null;
 
@@ -383,7 +397,10 @@ export async function rememberTradingViewOwnedLayoutCreateCandidateTab(
   });
 }
 
-export async function openTradingViewOwnedLayoutInNewTab(originTabId: number, targetUrl: string): Promise<void> {
+export async function openTradingViewOwnedLayoutInNewTab(
+  originTabId: number,
+  targetUrl: string,
+): Promise<void> {
   await openTradingViewOwnedLayoutInNewTabForPublic(originTabId, targetUrl, null, null);
 }
 
@@ -399,7 +416,11 @@ export async function openTradingViewOwnedLayoutInNewTabForPublic(
       ? (activeOperations.find((activeOperation) => activeOperation.operationId === operationId) ?? null)
       : (activeOperations.find((activeOperation) => activeOperation.kind === "copy") ?? null);
 
-    if (activeCopyOperation && activeCopyOperation.targetTabId !== null && activeCopyOperation.provisionalChartId) {
+    if (
+      activeCopyOperation &&
+      activeCopyOperation.targetTabId !== null &&
+      activeCopyOperation.provisionalChartId
+    ) {
       return;
     }
   }
@@ -439,7 +460,10 @@ async function bindOrMatchPendingOperation(
       return nextOperation;
     }
 
-    if (!operation.openInNewTab && Date.now() - operation.createdAt > pendingSameTabCreateRouteBindingWindowMs) {
+    if (
+      !operation.openInNewTab &&
+      Date.now() - operation.createdAt > pendingSameTabCreateRouteBindingWindowMs
+    ) {
       return null;
     }
 
@@ -472,7 +496,8 @@ async function bindOrMatchPendingOperation(
     return operation;
   }
 
-  const shouldBindCopyToCurrentTab = input.tabId === operation.originTabId || input.openerTabId === operation.originTabId;
+  const shouldBindCopyToCurrentTab =
+    input.tabId === operation.originTabId || input.openerTabId === operation.originTabId;
 
   if (!shouldBindCopyToCurrentTab) {
     return null;
@@ -491,24 +516,34 @@ async function bindOrMatchPendingOperation(
 
 async function readActiveTvOwnedLayoutOperations(publicId: string): Promise<TvOwnedLayoutOperation[]> {
   const operationsRecord = await readTvOwnedLayoutOperationsRecord();
-  const activeOperations = Object.values(operationsRecord).filter((activeOperation) => activeOperation.publicId === publicId);
-  const freshOperations = activeOperations.filter((activeOperation) => Date.now() - activeOperation.createdAt <= 20_000);
+  const activeOperations = Object.values(operationsRecord).filter(
+    (activeOperation) => activeOperation.publicId === publicId,
+  );
+  const freshOperations = activeOperations.filter(
+    (activeOperation) => Date.now() - activeOperation.createdAt <= 20_000,
+  );
   const staleOperationIds = activeOperations
     .filter((activeOperation) => Date.now() - activeOperation.createdAt > 20_000)
     .map((activeOperation) => activeOperation.operationId);
 
   if (staleOperationIds.length > 0) {
     await Promise.all(
-      staleOperationIds.map((staleOperationId) => clearActiveTvOwnedLayoutOperationById(staleOperationId, publicId)),
+      staleOperationIds.map((staleOperationId) =>
+        clearActiveTvOwnedLayoutOperationById(staleOperationId, publicId),
+      ),
     );
   }
 
-  return freshOperations.sort((firstOperation, secondOperation) => secondOperation.createdAt - firstOperation.createdAt);
+  return freshOperations.sort(
+    (firstOperation, secondOperation) => secondOperation.createdAt - firstOperation.createdAt,
+  );
 }
 
 async function resolvePreferredTradingViewRedirectUrl(publicId: string): Promise<string> {
   const activeOperations = await readActiveTvOwnedLayoutOperations(publicId);
-  const provisionalChartId = activeOperations.find((activeOperation) => activeOperation.provisionalChartId)?.provisionalChartId ?? null;
+  const provisionalChartId =
+    activeOperations.find((activeOperation) => activeOperation.provisionalChartId)?.provisionalChartId ??
+    null;
 
   if (provisionalChartId) {
     return createTradingViewChartUrl(provisionalChartId);
@@ -551,7 +586,9 @@ async function clearActiveTvOwnedLayoutOperationsByPublicId(publicId: string): P
   const activeOperations = await readActiveTvOwnedLayoutOperations(publicId);
 
   await Promise.all(
-    activeOperations.map((activeOperation) => clearActiveTvOwnedLayoutOperationById(activeOperation.operationId, publicId)),
+    activeOperations.map((activeOperation) =>
+      clearActiveTvOwnedLayoutOperationById(activeOperation.operationId, publicId),
+    ),
   );
 }
 
