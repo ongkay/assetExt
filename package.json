@@ -19,8 +19,8 @@
     "prepare": "husky",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "check": "pnpm lint && prettier --check .",
-    "check:fix": "eslint . --fix && prettier --write .",
+    "check": "pnpm lint",
+    "check:fix": "eslint . --fix",
     "preview": "vite preview",
     "setup": "node scripts/setup.js",
     "test": "vitest run",
@@ -28,7 +28,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "eslint --fix --max-warnings=0"
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
     ],
     "*.{json,md,css,html,yml,yaml}": [
       "prettier --write"
