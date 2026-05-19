@@ -31,6 +31,26 @@ export function createTradingViewChartUrl(chartId: string): string {
   return `${tradingViewOrigin}/chart/${chartId.trim()}/`;
 }
 
+export function resolveTradingViewLaunchUrl(value: string | null | undefined): string | null {
+  const normalizedValue = value?.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const normalizedUrl = normalizeTradingViewChartUrl(normalizedValue);
+
+  if (normalizedUrl) {
+    return normalizedUrl;
+  }
+
+  if (normalizedValue.includes("://")) {
+    return null;
+  }
+
+  return createTradingViewChartUrl(normalizedValue);
+}
+
 export function normalizeTradingViewChartUrl(value: string): string | null {
   try {
     const parsedUrl = new URL(value);

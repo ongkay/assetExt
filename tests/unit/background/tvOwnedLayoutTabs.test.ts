@@ -20,7 +20,7 @@ const restrictedBootstrapCache: BootstrapCacheRecord = {
   fetchedAt: 1,
   isValid: true,
   snapshot: {
-    assets: [{ mode: "share", platform: "tradingview" }],
+    assets: [{ launchUrl: null, mode: "share", platform: "tradingview" }],
     auth: { status: "authenticated" },
     user: {
       avatarUrl: null,
@@ -90,6 +90,22 @@ describe("background tv owned layout tabs", () => {
     );
   });
 
+  it("falls back to the bootstrap launch url when no owned layout exists", async () => {
+    storageValues[bootstrapCacheStorageKey] = {
+      ...restrictedBootstrapCache,
+      snapshot: {
+        ...restrictedBootstrapCache.snapshot,
+        assets: [{ launchUrl: "OWN999", mode: "share", platform: "tradingview" }],
+      },
+    } satisfies BootstrapCacheRecord;
+
+    const tvOwnedLayoutTabs = await import("@/background/core/tvOwnedLayoutTabs");
+
+    await expect(tvOwnedLayoutTabs.resolveTradingViewAssetTargetUrl()).resolves.toBe(
+      "https://www.tradingview.com/chart/OWN999/",
+    );
+  });
+
   it("redirects non chart tradingview pages to the last opened owned chart", async () => {
     const ownedLayout = createOwnedTvLayoutFromChartUrl(
       "https://www.tradingview.com/chart/OWN123/",
@@ -107,7 +123,7 @@ describe("background tv owned layout tabs", () => {
     ).resolves.toBe("https://www.tradingview.com/chart/OWN123/");
   });
 
-  it("allows stored owned charts and the default chart", async () => {
+  it("allows stored owned charts and redirects the hardcoded default when another preferred chart exists", async () => {
     const ownedLayout = createOwnedTvLayoutFromChartUrl(
       "https://www.tradingview.com/chart/OWN123/",
       "Layout Sendiri",
@@ -132,7 +148,27 @@ describe("background tv owned layout tabs", () => {
         undefined,
         11,
       ),
-    ).resolves.toBeNull();
+    ).resolves.toBe("https://www.tradingview.com/chart/OWN123/");
+  });
+
+  it("redirects the old hardcoded default chart to the bootstrap launch url when they differ", async () => {
+    storageValues[bootstrapCacheStorageKey] = {
+      ...restrictedBootstrapCache,
+      snapshot: {
+        ...restrictedBootstrapCache.snapshot,
+        assets: [{ launchUrl: "OWN999", mode: "share", platform: "tradingview" }],
+      },
+    } satisfies BootstrapCacheRecord;
+
+    const tvOwnedLayoutTabs = await import("@/background/core/tvOwnedLayoutTabs");
+
+    await expect(
+      tvOwnedLayoutTabs.resolveRestrictedTradingViewRedirectUrl(
+        "https://www.tradingview.com/chart/ceqTNBkY/",
+        undefined,
+        11,
+      ),
+    ).resolves.toBe("https://www.tradingview.com/chart/OWN999/");
   });
 
   it("redirects foreign charts unless a fresh create intent exists", async () => {

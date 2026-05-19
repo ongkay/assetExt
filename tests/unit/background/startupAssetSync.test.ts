@@ -14,6 +14,7 @@ const readyAssetResponse: ExtensionAssetReadyResponse = {
       value: "tv-session",
     },
   ],
+  launchUrl: null,
   mode: "private",
   platform: "tradingview",
   revision: "extr1_ready",

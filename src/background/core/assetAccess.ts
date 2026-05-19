@@ -52,7 +52,7 @@ export async function runAssetAccess(options: RunAssetAccessOptions): Promise<Ex
   }
 
   if (options.shouldNavigate) {
-    const assetTargetUrl = await resolveAssetTargetUrl(options.platform);
+    const assetTargetUrl = await resolveAssetTargetUrl(options.platform, assetResponse.launchUrl);
     const assetTab = await openOrReloadTab(assetTargetUrl, options.tabId);
     const heartbeatTabId = assetTab.id ?? options.tabId;
 
@@ -66,12 +66,32 @@ export async function runAssetAccess(options: RunAssetAccessOptions): Promise<Ex
   return assetResponse;
 }
 
-async function resolveAssetTargetUrl(platform: AssetPlatform): Promise<string> {
+async function resolveAssetTargetUrl(platform: AssetPlatform, launchUrl: string | null): Promise<string> {
   if (platform === "tradingview") {
-    return resolveTradingViewAssetTargetUrl();
+    return resolveTradingViewAssetTargetUrl(launchUrl);
   }
 
-  return getAssetPlatformConfig(platform).targetUrl;
+  return normalizeHttpLaunchUrl(launchUrl) ?? getAssetPlatformConfig(platform).targetUrl;
+}
+
+function normalizeHttpLaunchUrl(value: string | null): string | null {
+  const normalizedValue = value?.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(normalizedValue);
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return null;
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return null;
+  }
 }
 
 export async function prepareAssetAccessSession(

@@ -35,6 +35,7 @@ export type ExtensionUser = {
 };
 
 export type ExtensionAssetSummary = {
+  launchUrl?: string | null;
   mode: ExtensionMode;
   nextMode?: "private";
   platform: AssetPlatform;
@@ -110,6 +111,7 @@ export type ExtensionCookiePayload = {
 
 export type ExtensionAssetReadyResponse = {
   cookies: ExtensionCookiePayload[];
+  launchUrl: string | null;
   mode: ExtensionMode;
   platform: AssetPlatform;
   proxy?: string;

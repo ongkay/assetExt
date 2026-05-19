@@ -11,6 +11,7 @@ const readyAssetResponse: ExtensionAssetReadyResponse = {
       value: "abc",
     },
   ],
+  launchUrl: "OWN123",
   mode: "private",
   platform: "tradingview",
   revision: "extr1_ready",
@@ -35,7 +36,7 @@ describe("background asset access", () => {
     ).resolves.toEqual(readyAssetResponse);
 
     expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith(
-      "https://www.tradingview.com/chart/ceqTNBkY/",
+      "https://www.tradingview.com/chart/OWN123/",
       undefined,
     );
     expect(testRuntime.syncAssetPlatformProxy.mock.invocationCallOrder[0]).toBeLessThan(
@@ -101,6 +102,57 @@ describe("background asset access", () => {
 
     expect(testRuntime.openOrReloadTab).not.toHaveBeenCalled();
     expect(testRuntime.startHeartbeat).toHaveBeenCalledWith(789, "tradingview");
+  });
+
+  it("uses launchUrl directly for non-tradingview assets", async () => {
+    const testRuntime = await importAssetAccessTestRuntime({
+      assetResponses: [
+        {
+          cookies: [],
+          launchUrl: "https://forextester.com/workspace/custom",
+          mode: "share",
+          platform: "fxtester",
+          revision: "extr1_fx",
+          status: "ready",
+          updatedAt: "2026-05-08T10:00:00.000Z",
+        },
+      ],
+      openedTabId: 456,
+    });
+
+    await testRuntime.assetAccess.runAssetAccess({
+      platform: "fxtester",
+      shouldNavigate: true,
+    });
+
+    expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith(
+      "https://forextester.com/workspace/custom",
+      undefined,
+    );
+  });
+
+  it("falls back to the platform default when non-tradingview launchUrl is invalid", async () => {
+    const testRuntime = await importAssetAccessTestRuntime({
+      assetResponses: [
+        {
+          cookies: [],
+          launchUrl: "not-a-valid-url",
+          mode: "share",
+          platform: "fxtester",
+          revision: "extr1_fx",
+          status: "ready",
+          updatedAt: "2026-05-08T10:00:00.000Z",
+        },
+      ],
+      openedTabId: 456,
+    });
+
+    await testRuntime.assetAccess.runAssetAccess({
+      platform: "fxtester",
+      shouldNavigate: true,
+    });
+
+    expect(testRuntime.openOrReloadTab).toHaveBeenCalledWith("https://forextester.com/", undefined);
   });
 });
 

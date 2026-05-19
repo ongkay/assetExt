@@ -108,10 +108,12 @@ Authenticated active/processed response:
 {
   "assets": [
     {
+      "launchUrl": "TVSHARE01",
       "mode": "private",
       "platform": "tradingview"
     },
     {
+      "launchUrl": null,
       "mode": "share",
       "platform": "fxtester"
     }
@@ -198,6 +200,14 @@ Catatan penting untuk `tradingViewOwnedLayouts`:
 - layout yang sudah dihapus tidak lagi dikirim sebagai tombstone atau deleted row,
 - client extension harus treat field ini sebagai bootstrap snapshot durable, bukan sebagai pemicu manipulasi UI TradingView.
 
+Catatan penting untuk `assets[].launchUrl`:
+
+- field ini opsional dan bisa `null`,
+- field ini adalah launch target runtime untuk asset aktif yang sedang dipilih server,
+- untuk `TradingView`, value boleh berupa full URL chart seperti `https://www.tradingview.com/chart/ABC123/` atau raw `chartId` seperti `ABC123`,
+- extension akan menormalkan value `TradingView` ke full chart URL sebelum dipakai,
+- untuk user `TradingView share`, value ini dipakai sebagai fallback setelah `owned layout terakhir`, sebelum kembali ke default hardcoded lama.
+
 `asset`, `asset/sync`, `redeem`, dan `heartbeat` membutuhkan sesi aktif. Pada verifikasi manual/Postman, sertakan `x-ext-dev-app-session` atau gunakan cookie web aktif yang setara.
 
 ## `GET /api/ext/asset`
@@ -227,6 +237,7 @@ Response saat mode platform sudah di-resolve oleh server:
       "value": "seed-browser-tv-processed"
     }
   ],
+  "launchUrl": "TVSHARE01",
   "mode": "share",
   "platform": "tradingview",
   "proxy": "http://192.168.0.100:60002",
@@ -241,6 +252,8 @@ Notes:
 - Mode asset final ditentukan server. Client tidak perlu lagi memilih antara `private` atau `share`.
 - `revision` adalah token opaque deterministik dari runtime asset efektif server. Jangan diasumsikan bisa di-decode di client.
 - `updatedAt` adalah timestamp row asset yang dipakai untuk runtime saat ini.
+- `launchUrl` adalah target navigasi runtime dari asset aktif saat ini.
+- Untuk `TradingView`, `launchUrl` bisa datang sebagai full chart URL atau raw `chartId`; extension harus menormalkannya ke `https://www.tradingview.com/chart/<chartId>/` sebelum navigasi jika value yang diterima bukan URL penuh.
 - `cookies` dikirim pass-through dari setiap object cookie di `asset_json`.
 - Server hanya membuang field `id` jika field itu ada pada cookie source.
 - Selain `id`, field lain tidak dipangkas dan tidak ditambahi fallback/default baru oleh server.

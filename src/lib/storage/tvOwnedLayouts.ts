@@ -217,12 +217,19 @@ export async function clearPendingTvOwnedLayoutIntent(publicId: string): Promise
 }
 
 export async function resolveLastOpenedTvOwnedLayoutUrl(publicId: string): Promise<string> {
+  return resolveLastOpenedTvOwnedLayoutUrlWithFallback(publicId, defaultTradingViewChartUrl);
+}
+
+export async function resolveLastOpenedTvOwnedLayoutUrlWithFallback(
+  publicId: string,
+  fallbackUrl: string | null,
+): Promise<string> {
   const state = await readTvOwnedLayoutState(publicId);
   const lastOpenedLayout = state.lastOpenedChartId
     ? (state.layouts.find((layout) => layout.chartId === state.lastOpenedChartId) ?? null)
     : null;
 
-  return lastOpenedLayout?.url ?? defaultTradingViewChartUrl;
+  return lastOpenedLayout?.url ?? fallbackUrl ?? defaultTradingViewChartUrl;
 }
 
 export function buildExtensionTradingViewOwnedLayoutsSnapshot(

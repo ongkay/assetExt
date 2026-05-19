@@ -14,6 +14,7 @@ import {
   removeTvOwnedLayout,
   renameTvOwnedLayout,
   resolveLastOpenedTvOwnedLayoutUrl,
+  resolveLastOpenedTvOwnedLayoutUrlWithFallback,
   setLastOpenedTvOwnedLayout,
   setPendingTvOwnedLayoutIntent,
   tvOwnedLayoutsStorageKey,
@@ -120,6 +121,12 @@ describe("tv owned layouts storage", () => {
       lastOpenedChartId: null,
       layouts: [expect.objectContaining({ chartId: "CCC333", title: "Layout Kedua" })],
     });
+  });
+
+  it("falls back to a provided launch url before using the hardcoded default", async () => {
+    await expect(
+      resolveLastOpenedTvOwnedLayoutUrlWithFallback(publicId, "https://www.tradingview.com/chart/FALL999/"),
+    ).resolves.toBe("https://www.tradingview.com/chart/FALL999/");
   });
 
   it("stores pending create intent and clears it cleanly", async () => {

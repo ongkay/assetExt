@@ -20,3 +20,23 @@ export function getRestrictedTradingViewPublicId(
 
   return publicId;
 }
+
+export function getRestrictedTradingViewLaunchUrl(
+  bootstrapCacheRecord: BootstrapCacheRecord | null,
+): string | null {
+  const bootstrapSnapshot = bootstrapCacheRecord?.snapshot;
+
+  if (!bootstrapSnapshot || bootstrapSnapshot.auth.status !== "authenticated") {
+    return null;
+  }
+
+  const tradingViewAsset = bootstrapSnapshot.assets?.find(
+    (assetSummary) => assetSummary.platform === "tradingview",
+  );
+
+  if (tradingViewAsset?.mode !== "share") {
+    return null;
+  }
+
+  return tradingViewAsset.launchUrl?.trim() || null;
+}

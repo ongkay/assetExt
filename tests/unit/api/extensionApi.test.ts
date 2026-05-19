@@ -237,6 +237,7 @@ describe("extension API client", () => {
 
   it("exports plan-aligned API response type names and shapes", () => {
     const assetSummary: ExtensionAssetSummary = {
+      launchUrl: "https://www.tradingview.com/chart/OWN123/",
       mode: "share",
       nextMode: "private",
       platform: "tradingview",
@@ -265,6 +266,7 @@ describe("extension API client", () => {
     };
     const assetResponseWithoutProxy: ExtensionAssetResponse = {
       cookies: [cookiePayload],
+      launchUrl: null,
       mode: "share",
       platform: "tradingview",
       revision: "extr1_asset",

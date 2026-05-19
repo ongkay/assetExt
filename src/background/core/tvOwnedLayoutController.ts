@@ -12,7 +12,7 @@ import {
   readTvOwnedLayoutState,
   removeTvOwnedLayout,
   renameTvOwnedLayout,
-  resolveLastOpenedTvOwnedLayoutUrl,
+  resolveLastOpenedTvOwnedLayoutUrlWithFallback,
   rememberTvOwnedLayout,
   setLastOpenedTvOwnedLayout,
   setPendingTvOwnedLayoutIntent,
@@ -23,11 +23,13 @@ import {
   createTradingViewChartUrl,
   defaultTradingViewChartUrl,
   getTradingViewChartId,
-  isDefaultTradingViewChartUrl,
   isTradingViewChartPath,
   isTradingViewHostname,
+  normalizeTradingViewChartUrl,
+  resolveTradingViewLaunchUrl,
 } from "@/lib/tradingview/tvChartUrl";
 import { syncTradingViewOwnedLayouts } from "./tvOwnedLayoutSync";
+import { getRestrictedTradingViewLaunchUrl } from "@/lib/tradingview/tvAccessState";
 
 type TvOwnedLayoutRouteStatus = {
   currentChartId: string | null;
@@ -73,15 +75,20 @@ type InvalidateTvOwnedLayoutPageInput = {
   publicId: string;
 };
 
-export async function resolveTradingViewAssetTargetUrl(): Promise<string> {
+export async function resolveTradingViewAssetTargetUrl(
+  assetLaunchUrl: string | null = null,
+): Promise<string> {
   const bootstrapCacheRecord = await readBootstrapCache();
   const publicId = getRestrictedTradingViewPublicId(bootstrapCacheRecord);
+  const fallbackLaunchUrl = resolveTradingViewLaunchUrl(
+    assetLaunchUrl ?? getRestrictedTradingViewLaunchUrl(bootstrapCacheRecord),
+  );
 
   if (!publicId) {
-    return defaultTradingViewChartUrl;
+    return fallbackLaunchUrl ?? defaultTradingViewChartUrl;
   }
 
-  return resolvePreferredTradingViewRedirectUrl(publicId);
+  return resolvePreferredTradingViewRedirectUrl(publicId, fallbackLaunchUrl);
 }
 
 export async function resolveRestrictedTradingViewRouteStatus(
@@ -97,20 +104,25 @@ export async function resolveRestrictedTradingViewRouteStatus(
 
   const bootstrapCacheRecord = await readBootstrapCache();
   const publicId = getRestrictedTradingViewPublicId(bootstrapCacheRecord);
+  const fallbackLaunchUrl = resolveTradingViewLaunchUrl(
+    getRestrictedTradingViewLaunchUrl(bootstrapCacheRecord),
+  );
 
   if (!publicId) {
     return createRouteStatus({ isRestricted: false, shouldAllow: true });
   }
 
+  const preferredRedirectUrl = await resolvePreferredTradingViewRedirectUrl(publicId, fallbackLaunchUrl);
+
   if (!isTradingViewChartPath(parsedUrl.pathname)) {
     return createRouteStatus({
       isRestricted: true,
-      redirectUrl: await resolvePreferredTradingViewRedirectUrl(publicId),
+      redirectUrl: preferredRedirectUrl,
       shouldAllow: false,
     });
   }
 
-  if (isDefaultTradingViewChartUrl(parsedUrl.toString())) {
+  if (normalizeTradingViewChartUrl(parsedUrl.toString()) === preferredRedirectUrl) {
     return createRouteStatus({
       currentChartId: getTradingViewChartId(parsedUrl.pathname),
       isRestricted: true,
@@ -123,7 +135,7 @@ export async function resolveRestrictedTradingViewRouteStatus(
   if (!currentChartId) {
     return createRouteStatus({
       isRestricted: true,
-      redirectUrl: await resolveLastOpenedTvOwnedLayoutUrl(publicId),
+      redirectUrl: await resolveLastOpenedTvOwnedLayoutUrlWithFallback(publicId, fallbackLaunchUrl),
       shouldAllow: false,
     });
   }
@@ -144,7 +156,7 @@ export async function resolveRestrictedTradingViewRouteStatus(
     return createRouteStatus({
       currentChartId,
       isRestricted: true,
-      redirectUrl: await resolvePreferredTradingViewRedirectUrl(publicId),
+      redirectUrl: preferredRedirectUrl,
       shouldAllow: false,
     });
   }
@@ -167,7 +179,7 @@ export async function resolveRestrictedTradingViewRouteStatus(
     return createRouteStatus({
       currentChartId,
       isRestricted: true,
-      redirectUrl: await resolvePreferredTradingViewRedirectUrl(publicId),
+      redirectUrl: preferredRedirectUrl,
       shouldAllow: false,
     });
   }
@@ -285,7 +297,7 @@ export async function invalidateTradingViewOwnedLayoutPage(
 
   if (ownedLayoutState.layouts.some((layout) => layout.chartId === input.chartId)) {
     await removeTvOwnedLayout(input.publicId, input.chartId);
-    return defaultTradingViewChartUrl;
+    return resolveTradingViewAssetTargetUrl();
   }
 
   const matchingOperation =
@@ -293,10 +305,10 @@ export async function invalidateTradingViewOwnedLayoutPage(
 
   if (matchingOperation) {
     await clearActiveTvOwnedLayoutOperationById(matchingOperation.operationId, input.publicId);
-    return defaultTradingViewChartUrl;
+    return resolveTradingViewAssetTargetUrl();
   }
 
-  return resolveLastOpenedTvOwnedLayoutUrl(input.publicId);
+  return resolveTradingViewAssetTargetUrl();
 }
 
 export async function clearTradingViewOwnedLayoutOperation(publicId: string, tabId?: number): Promise<void> {
@@ -539,7 +551,10 @@ async function readActiveTvOwnedLayoutOperations(publicId: string): Promise<TvOw
   );
 }
 
-async function resolvePreferredTradingViewRedirectUrl(publicId: string): Promise<string> {
+async function resolvePreferredTradingViewRedirectUrl(
+  publicId: string,
+  fallbackLaunchUrl: string | null,
+): Promise<string> {
   const activeOperations = await readActiveTvOwnedLayoutOperations(publicId);
   const provisionalChartId =
     activeOperations.find((activeOperation) => activeOperation.provisionalChartId)?.provisionalChartId ??
@@ -549,7 +564,7 @@ async function resolvePreferredTradingViewRedirectUrl(publicId: string): Promise
     return createTradingViewChartUrl(provisionalChartId);
   }
 
-  return resolveLastOpenedTvOwnedLayoutUrl(publicId);
+  return resolveLastOpenedTvOwnedLayoutUrlWithFallback(publicId, fallbackLaunchUrl);
 }
 
 async function persistActiveTvOwnedLayoutOperation(operation: TvOwnedLayoutOperation): Promise<void> {
