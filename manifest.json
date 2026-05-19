@@ -49,7 +49,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["proxy-blocked.html", "ext-1-blocked.html", "assets/*"],
+      "resources": ["proxy-blocked.html", "ext-1-blocked.html", "cookies-blocked.html", "assets/*"],
       "matches": [
         "https://www.tradingview.com/*",
         "https://*.tradingview.com/*",

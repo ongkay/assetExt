@@ -1,19 +1,20 @@
-import type { AssetProxyConflictExtensionCandidate } from "@/lib/proxy/assetProxy";
+import { getCookieGuardExcludedExtensionIds } from "@/lib/cookie-guard/cookieGuardConfig";
+import type { CookieGuardExtensionCandidate } from "@/lib/cookie-guard/cookieGuardState";
 
-const proxyPermissionName = "proxy";
+const cookiesPermissionName = "cookies";
 const extensionTypeName = "extension";
 const extensionManagementUnavailableMessage = "Kontrol extension browser tidak tersedia.";
 
-export async function readProxyExtensionCandidates(): Promise<AssetProxyConflictExtensionCandidate[]> {
+export async function readCookieGuardExtensionCandidates(): Promise<CookieGuardExtensionCandidate[]> {
   if (typeof chrome === "undefined" || !chrome.management?.getAll) {
     return [];
   }
 
+  const excludedExtensionIds = getCookieGuardExcludedExtensionIds();
   const extensionInfos = await getAllManagedExtensions();
-  const selfExtensionId = chrome.runtime?.id ?? null;
 
   return extensionInfos
-    .filter((extensionInfo) => isProxyExtensionCandidate(extensionInfo, selfExtensionId))
+    .filter((extensionInfo) => isCookieGuardExtensionCandidate(extensionInfo, excludedExtensionIds))
     .map((extensionInfo) => ({
       iconUrl: getExtensionIconUrl(extensionInfo),
       id: extensionInfo.id,
@@ -30,53 +31,15 @@ export async function readProxyExtensionCandidates(): Promise<AssetProxyConflict
     });
 }
 
-export async function disableManagedExtension(extensionId: string): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.management?.setEnabled) {
-    throw new Error(extensionManagementUnavailableMessage);
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    chrome.management.setEnabled(extensionId, false, () => {
-      const runtimeError = chrome.runtime.lastError;
-
-      if (runtimeError) {
-        reject(new Error(runtimeError.message));
-        return;
-      }
-
-      resolve();
-    });
-  });
-}
-
-export async function uninstallManagedExtension(extensionId: string): Promise<void> {
-  if (typeof chrome === "undefined" || !chrome.management?.uninstall) {
-    throw new Error(extensionManagementUnavailableMessage);
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    chrome.management.uninstall(extensionId, () => {
-      const runtimeError = chrome.runtime.lastError;
-
-      if (runtimeError) {
-        reject(new Error(runtimeError.message));
-        return;
-      }
-
-      resolve();
-    });
-  });
-}
-
-function isProxyExtensionCandidate(
+function isCookieGuardExtensionCandidate(
   extensionInfo: chrome.management.ExtensionInfo,
-  selfExtensionId: string | null,
+  excludedExtensionIds: ReadonlySet<string>,
 ): boolean {
   return (
     extensionInfo.enabled &&
     extensionInfo.type === extensionTypeName &&
-    extensionInfo.id !== selfExtensionId &&
-    extensionInfo.permissions.includes(proxyPermissionName)
+    !excludedExtensionIds.has(extensionInfo.id) &&
+    extensionInfo.permissions.includes(cookiesPermissionName)
   );
 }
 

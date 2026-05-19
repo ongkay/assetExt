@@ -72,6 +72,17 @@ describe("proxy extension management", () => {
       expect.any(Function),
     );
   });
+
+  it("delegates uninstall requests to chrome.management.uninstall", async () => {
+    const chromeRuntime = installManagementChromeStub();
+    const proxyExtensionManagement = await import("@/lib/proxy/proxyExtensionManagement");
+
+    await expect(
+      proxyExtensionManagement.uninstallManagedExtension("proxy-extension"),
+    ).resolves.toBeUndefined();
+
+    expect(chromeRuntime.managementUninstall).toHaveBeenCalledWith("proxy-extension", expect.any(Function));
+  });
 });
 
 function installManagementChromeStub(options?: { managedExtensions?: chrome.management.ExtensionInfo[] }) {
@@ -82,11 +93,15 @@ function installManagementChromeStub(options?: { managedExtensions?: chrome.mana
   const managementSetEnabled = vi.fn((_id: string, _enabled: boolean, callback: (() => void) | undefined) => {
     callback?.();
   });
+  const managementUninstall = vi.fn((_id: string, callback: (() => void) | undefined) => {
+    callback?.();
+  });
 
   vi.stubGlobal("chrome", {
     management: {
       getAll: managementGetAll,
       setEnabled: managementSetEnabled,
+      uninstall: managementUninstall,
     },
     runtime: {
       id: "asset-manager-extension",
@@ -97,6 +112,7 @@ function installManagementChromeStub(options?: { managedExtensions?: chrome.mana
   return {
     managementGetAll,
     managementSetEnabled,
+    managementUninstall,
   };
 }
 

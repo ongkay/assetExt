@@ -32,7 +32,11 @@ describe("extension manifest", () => {
     expect(manifest.web_accessible_resources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          resources: expect.arrayContaining(["proxy-blocked.html", "ext-1-blocked.html"]),
+          resources: expect.arrayContaining([
+            "proxy-blocked.html",
+            "ext-1-blocked.html",
+            "cookies-blocked.html",
+          ]),
         }),
       ]),
     );

@@ -9,6 +9,7 @@ type BuildOutputRenameChunk = {
 type BuildOutputRenameBundle = Record<string, BuildOutputRenameChunk>;
 
 const buildOutputHtmlRenameEntries = [
+  ["cookies-blocked.html", "cb.html"],
   ["popup.html", "p.html"],
   ["options.html", "o.html"],
   ["ext-1-blocked.html", "w1.html"],

@@ -104,6 +104,10 @@ export async function markExtensionSessionUnauthenticated(loginUrl?: string | nu
 }
 
 export async function clearExtensionSessionArtifactsForPeerGuard(): Promise<void> {
+  await clearExtensionSessionArtifactsForSecurityBlock();
+}
+
+export async function clearExtensionSessionArtifactsForSecurityBlock(): Promise<void> {
   latestExplicitBootstrapCache = null;
   bootstrapWriteRevision += 1;
   extensionSessionLifecycleRevision += 1;

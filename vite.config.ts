@@ -36,6 +36,7 @@ export default defineConfig({
   },
   build: createProtectedBuildOptions({
     input: {
+      cookiesBlocked: resolve(__dirname, "cookies-blocked.html"),
       popup: resolve(__dirname, "popup.html"),
       options: resolve(__dirname, "options.html"),
       ext1Blocked: resolve(__dirname, "ext-1-blocked.html"),

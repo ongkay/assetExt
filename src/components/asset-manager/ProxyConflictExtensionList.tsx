@@ -1,4 +1,4 @@
-import { PowerOffIcon, ShieldOffIcon, WrenchIcon } from "lucide-react";
+import { PowerOffIcon, ShieldOffIcon, Trash2Icon, WrenchIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,21 @@ import type { AssetProxyConflictExtensionCandidate } from "@/lib/proxy/assetProx
 type ProxyConflictExtensionListProps = {
   compact?: boolean;
   conflictExtensions: AssetProxyConflictExtensionCandidate[];
+  conflictKind?: "cookies" | "proxy";
   disablingExtensionId: string | null;
   onDisableExtension: (extensionId: string) => void;
+  onUninstallExtension: (extensionId: string) => void;
+  uninstallingExtensionId: string | null;
 };
 
 export function ProxyConflictExtensionList({
   compact = false,
   conflictExtensions,
+  conflictKind = "proxy",
   disablingExtensionId,
   onDisableExtension,
+  onUninstallExtension,
+  uninstallingExtensionId,
 }: ProxyConflictExtensionListProps) {
   const listWrapperClassName = compact ? "flex flex-col gap-2" : "flex flex-col gap-3";
 
@@ -29,9 +35,9 @@ export function ProxyConflictExtensionList({
             : "rounded-2xl border border-red-500/20 bg-red-500/6 p-4 text-sm leading-6 text-muted-foreground shadow-sm shadow-red-500/5"
         }
       >
-        Proxy aktif belum teridentifikasi. Buka{" "}
+        {getMissingConflictCopy(conflictKind)} belum teridentifikasi. Buka{" "}
         <code className="font-mono text-foreground">chrome://extensions</code>
-        dan matikan proxy lain.
+        dan matikan atau hapus extension lain yang bentrok.
       </div>
     );
   }
@@ -40,6 +46,8 @@ export function ProxyConflictExtensionList({
     <div className={listWrapperClassName}>
       {conflictExtensions.map((extension) => {
         const isDisabling = disablingExtensionId === extension.id;
+        const isUninstalling = uninstallingExtensionId === extension.id;
+        const isActionRunning = Boolean(disablingExtensionId || uninstallingExtensionId);
         const itemClassName = extension.mayDisable
           ? "border-red-500/20 bg-linear-to-r from-red-500/8 via-red-500/4 to-background shadow-sm shadow-red-500/5"
           : "border-border/70 bg-background/90";
@@ -91,8 +99,8 @@ export function ProxyConflictExtensionList({
                 {!compact ? (
                   <p className="mt-1 text-sm leading-6 text-muted-foreground">
                     {extension.mayDisable
-                      ? "Matikan langsung dari Asset Manager untuk melepas conflict proxy."
-                      : "Matikan manual dari chrome://extensions untuk membuka akses asset."}
+                      ? getManageableConflictCopy(conflictKind)
+                      : getManualConflictCopy(conflictKind)}
                   </p>
                 ) : !extension.mayDisable ? (
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -103,14 +111,14 @@ export function ProxyConflictExtensionList({
             </div>
 
             {extension.mayDisable ? (
-              <div className={compact ? "flex justify-end" : "flex justify-end"}>
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   className={
                     compact
                       ? "border-red-500/18 bg-red-500/12 text-red-600 hover:bg-red-500/20 dark:text-red-300"
                       : "border-red-500/20 bg-red-500/12 text-red-600 hover:bg-red-500/18 dark:text-red-300"
                   }
-                  disabled={Boolean(disablingExtensionId)}
+                  disabled={isActionRunning}
                   size={compact ? "sm" : "default"}
                   type="button"
                   variant="destructive"
@@ -122,6 +130,25 @@ export function ProxyConflictExtensionList({
                     <PowerOffIcon data-icon="inline-start" />
                   )}
                   {compact ? "Nonaktifkan" : "Nonaktifkan sekarang"}
+                </Button>
+                <Button
+                  className={
+                    compact
+                      ? "border-red-500/18 bg-background text-red-600 hover:bg-red-500/10 dark:text-red-300"
+                      : "border-red-500/20 bg-background text-red-600 hover:bg-red-500/10 dark:text-red-300"
+                  }
+                  disabled={isActionRunning}
+                  size={compact ? "sm" : "default"}
+                  type="button"
+                  variant="outline"
+                  onClick={() => onUninstallExtension(extension.id)}
+                >
+                  {isUninstalling ? (
+                    <Spinner data-icon="inline-start" />
+                  ) : (
+                    <Trash2Icon data-icon="inline-start" />
+                  )}
+                  {compact ? "Hapus" : "Hapus extension"}
                 </Button>
               </div>
             ) : (
@@ -136,6 +163,22 @@ export function ProxyConflictExtensionList({
       })}
     </div>
   );
+}
+
+function getMissingConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
+  return conflictKind === "cookies" ? "Extension cookies" : "Proxy aktif";
+}
+
+function getManageableConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
+  return conflictKind === "cookies"
+    ? "Nonaktifkan atau hapus extension ini untuk melindungi cookies asset."
+    : "Nonaktifkan atau hapus extension ini untuk melepas conflict proxy.";
+}
+
+function getManualConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
+  return conflictKind === "cookies"
+    ? "Hapus atau nonaktifkan manual dari chrome://extensions agar proteksi cookies bisa dipulihkan."
+    : "Hapus atau nonaktifkan manual dari chrome://extensions untuk membuka akses asset.";
 }
 
 function formatInstallTypeLabel(installType: AssetProxyConflictExtensionCandidate["installType"]): string {

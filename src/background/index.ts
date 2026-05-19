@@ -5,6 +5,7 @@ import {
   type AssetSessionEnsureRuntimeResponse,
   type BootstrapRefreshRuntimeResponse,
   type BootstrapRuntimeResponse,
+  type CookieGuardRuntimeResponse,
   type LogoutRuntimeResponse,
   type PeerGuardRuntimeResponse,
   type ProxyConflictRefreshRuntimeResponse,
@@ -24,6 +25,11 @@ import {
 } from "./core/bootstrap";
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
+import {
+  ensureCookieGuardAccess,
+  initializeCookieGuard,
+  refreshCookieGuardState,
+} from "@/ext-1/background/core/cookieGuard";
 import {
   ensurePeerGuardAccess,
   initializePeerGuard,
@@ -53,6 +59,7 @@ import { readBootstrapCache } from "@/lib/storage/bootstrapCache";
 import { getRestrictedTradingViewPublicId } from "@/lib/tradingview/tvAccessState";
 
 void ensureProductionOriginHeaderRuleReady().catch(() => undefined);
+void initializeCookieGuard().catch(() => undefined);
 void ensureProxyControllerReady().catch(() => undefined);
 void initializePeerGuard().catch(() => undefined);
 initializeTvOwnedLayoutRedirectListener();
@@ -73,6 +80,20 @@ async function handleRuntimeMessage(
 ): Promise<RuntimeResponse<unknown>> {
   switch (message.type) {
     case runtimeMessageType.bootstrapRequested: {
+      const cookieGuardState = await refreshCookieGuardState();
+
+      if (cookieGuardState.isBlocked) {
+        return {
+          ok: true,
+          value: {
+            cache: null,
+            cookieGuardState,
+            isSyncing: false,
+            peerGuardState: await readCurrentPeerGuardState(),
+          },
+        } satisfies BootstrapRuntimeResponse;
+      }
+
       const peerGuardState = await refreshPeerGuardState();
 
       if (peerGuardState.isBlocked) {
@@ -80,6 +101,7 @@ async function handleRuntimeMessage(
           ok: true,
           value: {
             cache: null,
+            cookieGuardState,
             isSyncing: false,
             peerGuardState,
           },
@@ -92,12 +114,14 @@ async function handleRuntimeMessage(
         ok: true,
         value: {
           ...bootstrapState,
+          cookieGuardState,
           peerGuardState,
         },
       } satisfies BootstrapRuntimeResponse;
     }
 
     case runtimeMessageType.bootstrapRefreshRequested: {
+      await ensureCookieGuardAccess();
       await ensurePeerGuardAccess();
       const currentBootstrapCache = await readBootstrapCache();
 
@@ -114,6 +138,7 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.redeemCdKeyRequested: {
+      await ensureCookieGuardAccess();
       await ensurePeerGuardAccess();
       await ensureProductionOriginHeaderRuleReady();
       const redeemResult = await redeemExtensionCdKey(createExtensionApiConfig(), message.code);
@@ -140,6 +165,7 @@ async function handleRuntimeMessage(
     }
 
     case runtimeMessageType.assetAccessRequested: {
+      await ensureCookieGuardAccess();
       await ensurePeerGuardAccess();
 
       try {
@@ -178,6 +204,20 @@ async function handleRuntimeMessage(
       } satisfies PeerGuardRuntimeResponse;
     }
 
+    case runtimeMessageType.cookieGuardStatusRequested: {
+      return {
+        ok: true,
+        value: await refreshCookieGuardState(),
+      } satisfies CookieGuardRuntimeResponse;
+    }
+
+    case runtimeMessageType.cookieGuardRefreshRequested: {
+      return {
+        ok: true,
+        value: await refreshCookieGuardState(),
+      } satisfies CookieGuardRuntimeResponse;
+    }
+
     case runtimeMessageType.peerGuardRefreshRequested: {
       return {
         ok: true,
@@ -196,6 +236,13 @@ async function handleRuntimeMessage(
 
     case runtimeMessageType.heartbeatStarted: {
       const tabId = message.tabId ?? sender.tab?.id;
+
+      if ((await refreshCookieGuardState()).isBlocked) {
+        return {
+          ok: true,
+          value: null,
+        } satisfies RuntimeResponse<null>;
+      }
 
       if ((await refreshPeerGuardState()).isBlocked) {
         return {

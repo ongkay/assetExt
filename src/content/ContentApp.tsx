@@ -92,7 +92,10 @@ export function ContentApp({ themeRoot }: ContentAppProps) {
         return;
       }
 
-      if (ensureResult.value.action === "peer_required") {
+      if (
+        ensureResult.value.action === "cookie_guard_blocked" ||
+        ensureResult.value.action === "peer_required"
+      ) {
         if (ensureResult.value.redirectTo) {
           window.location.assign(ensureResult.value.redirectTo);
           return;

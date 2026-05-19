@@ -6,6 +6,7 @@ import type {
 } from "@/lib/api/extensionApiTypes";
 import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
+import type { CookieGuardState } from "@/lib/cookie-guard/cookieGuardState";
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
 
 export const runtimeMessageType = {
@@ -13,6 +14,8 @@ export const runtimeMessageType = {
   bootstrapRefreshRequested: "BOOTSTRAP_REFRESH_REQUESTED",
   assetAccessRequested: "ASSET_ACCESS_REQUESTED",
   assetSessionEnsureRequested: "ASSET_SESSION_ENSURE_REQUESTED",
+  cookieGuardStatusRequested: "COOKIE_GUARD_STATUS_REQUESTED",
+  cookieGuardRefreshRequested: "COOKIE_GUARD_REFRESH_REQUESTED",
   proxyConflictRefreshRequested: "PROXY_CONFLICT_REFRESH_REQUESTED",
   redeemCdKeyRequested: "REDEEM_CD_KEY_REQUESTED",
   logoutRequested: "LOGOUT_REQUESTED",
@@ -55,6 +58,14 @@ export type AssetSessionEnsureRequestedMessage = {
 
 export type ProxyConflictRefreshRequestedMessage = {
   type: (typeof runtimeMessageType)["proxyConflictRefreshRequested"];
+};
+
+export type CookieGuardStatusRequestedMessage = {
+  type: (typeof runtimeMessageType)["cookieGuardStatusRequested"];
+};
+
+export type CookieGuardRefreshRequestedMessage = {
+  type: (typeof runtimeMessageType)["cookieGuardRefreshRequested"];
 };
 
 export type RedeemCdKeyRequestedMessage = {
@@ -168,7 +179,13 @@ export type OverlayStateChangedMessage = {
 };
 
 export type AssetSessionEnsureResult = {
-  action: "none" | "peer_required" | "proxy_blocked" | "reload_required" | "redirect_login";
+  action:
+    | "none"
+    | "cookie_guard_blocked"
+    | "peer_required"
+    | "proxy_blocked"
+    | "reload_required"
+    | "redirect_login";
   message: string | null;
   redirectTo: string | null;
   shouldStartHeartbeat: boolean;
@@ -179,6 +196,8 @@ export type RuntimeMessage =
   | BootstrapRefreshRequestedMessage
   | AssetAccessRequestedMessage
   | AssetSessionEnsureRequestedMessage
+  | CookieGuardStatusRequestedMessage
+  | CookieGuardRefreshRequestedMessage
   | ProxyConflictRefreshRequestedMessage
   | RedeemCdKeyRequestedMessage
   | LogoutRequestedMessage
@@ -213,6 +232,7 @@ export type RuntimeResponse<TValue> = RuntimeSuccessResponse<TValue> | RuntimeEr
 
 export type BootstrapRuntimeValue = {
   cache: BootstrapCacheRecord | null;
+  cookieGuardState: CookieGuardState;
   isSyncing: boolean;
   peerGuardState: PeerGuardState;
 };
@@ -222,6 +242,8 @@ export type BootstrapRefreshRuntimeResponse = RuntimeResponse<BootstrapCacheReco
 export type AssetAccessRuntimeResponse = RuntimeResponse<ExtensionAssetResponse>;
 export type AssetSessionEnsureRuntimeResponse = RuntimeResponse<AssetSessionEnsureResult>;
 export type ProxyConflictRefreshRuntimeResponse = RuntimeResponse<AssetProxyState>;
+export type CookieGuardRuntimeValue = CookieGuardState;
+export type CookieGuardRuntimeResponse = RuntimeResponse<CookieGuardRuntimeValue>;
 export type RedeemCdKeyRuntimeResponse = RuntimeResponse<ExtensionBootstrap>;
 export type LogoutRuntimeResponse = RuntimeResponse<{ redirectTo: string }>;
 export type PeerGuardRuntimeValue = PeerGuardState;

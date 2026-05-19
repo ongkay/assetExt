@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { type AssetProxyState, assetProxyConflictMessage } from "@/lib/proxy/assetProxy";
-import { disableManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
+import { disableManagedExtension, uninstallManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
 import { runtimeMessageType } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
 import { assetProxyStateStorageKey, readAssetProxyState } from "@/lib/storage/assetProxyState";
@@ -17,6 +17,7 @@ import { assetProxyStateStorageKey, readAssetProxyState } from "@/lib/storage/as
 export function ProxyBlockedApp() {
   const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
   const [disablingProxyExtensionId, setDisablingProxyExtensionId] = useState<string | null>(null);
+  const [uninstallingProxyExtensionId, setUninstallingProxyExtensionId] = useState<string | null>(null);
   const [proxyConflictActionErrorMessage, setProxyConflictActionErrorMessage] = useState<string | null>(null);
   const [isRefreshingConflict, setIsRefreshingConflict] = useState(false);
   const isLoadingProxyState = assetProxyState === null;
@@ -57,6 +58,7 @@ export function ProxyBlockedApp() {
   useEffect(() => {
     if (!proxyConflictState?.isActive) {
       setDisablingProxyExtensionId(null);
+      setUninstallingProxyExtensionId(null);
       setProxyConflictActionErrorMessage(null);
     }
   }, [proxyConflictState?.isActive]);
@@ -155,9 +157,12 @@ export function ProxyBlockedApp() {
                     ) : null}
 
                     <ProxyConflictExtensionList
+                      conflictKind="proxy"
                       conflictExtensions={proxyConflictState.extensions}
                       disablingExtensionId={disablingProxyExtensionId}
                       onDisableExtension={handleDisableProxyExtension}
+                      onUninstallExtension={handleUninstallProxyExtension}
+                      uninstallingExtensionId={uninstallingProxyExtensionId}
                     />
                   </div>
                 </section>
@@ -186,6 +191,20 @@ export function ProxyBlockedApp() {
       setProxyConflictActionErrorMessage(getErrorMessage(error));
     } finally {
       setDisablingProxyExtensionId(null);
+    }
+  }
+
+  async function handleUninstallProxyExtension(extensionId: string) {
+    setUninstallingProxyExtensionId(extensionId);
+    setProxyConflictActionErrorMessage(null);
+
+    try {
+      await uninstallManagedExtension(extensionId);
+      await handleRefreshConflict();
+    } catch (error) {
+      setProxyConflictActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setUninstallingProxyExtensionId(null);
     }
   }
 

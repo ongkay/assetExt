@@ -21,15 +21,17 @@ import type {
   ExtensionAssetSummary,
   ExtensionBootstrap,
 } from "@/lib/api/extensionApiTypes";
+import { createUnblockedCookieGuardState, type CookieGuardState } from "@/lib/cookie-guard/cookieGuardState";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
 import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import { createUnblockedPeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import { isSubscriptionActive } from "@/lib/asset-access/subscription";
-import { disableManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
+import { disableManagedExtension, uninstallManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
 import { runtimeMessageType, type BootstrapRuntimeValue } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
+import { cookieGuardStateStorageKey } from "@/lib/cookie-guard/cookieGuardConfig";
 import { peerGuardStateStorageKey } from "@/lib/peer-guard/peerGuardConfig";
 import {
   bootstrapCacheStorageKey,
@@ -49,18 +51,25 @@ export function PopupApp() {
   const apiBaseUrl = getExtensionApiBaseUrl();
   const [bootstrapValue, setBootstrapValue] = useState<BootstrapRuntimeValue | null>(null);
   const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
+  const [cookieGuardState, setCookieGuardState] = useState<CookieGuardState | null>(null);
   const [peerGuardState, setPeerGuardState] = useState<PeerGuardState | null>(null);
   const [popupView, setPopupView] = useState<PopupView>("main");
   const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
   const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
   const [disablingProxyExtensionId, setDisablingProxyExtensionId] = useState<string | null>(null);
+  const [uninstallingProxyExtensionId, setUninstallingProxyExtensionId] = useState<string | null>(null);
   const [proxyConflictActionErrorMessage, setProxyConflictActionErrorMessage] = useState<string | null>(null);
+  const [disablingCookieExtensionId, setDisablingCookieExtensionId] = useState<string | null>(null);
+  const [uninstallingCookieExtensionId, setUninstallingCookieExtensionId] = useState<string | null>(null);
+  const [cookieGuardActionErrorMessage, setCookieGuardActionErrorMessage] = useState<string | null>(null);
   const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshingCookieGuard, setIsRefreshingCookieGuard] = useState(false);
   const snapshot = bootstrapValue?.cache?.snapshot ?? null;
   const isSyncing = Boolean(bootstrapValue?.isSyncing || isRefreshing);
+  const isCookieGuardBlocked = cookieGuardState?.isBlocked === true;
   const isPeerGuardBlocked = peerGuardState?.isBlocked === true;
   const proxyConflictMessage = assetProxyState?.conflict.isActive ? assetProxyState.conflict.message : null;
 
@@ -110,10 +119,24 @@ export function PopupApp() {
 
         setBootstrapValue((currentBootstrapValue) => ({
           cache: nextCache ?? null,
+          cookieGuardState: currentBootstrapValue?.cookieGuardState ?? createUnblockedCookieGuardState(),
           isSyncing: false,
           peerGuardState: currentBootstrapValue?.peerGuardState ?? createUnblockedPeerGuardState("ext-1"),
         }));
         setIsRefreshing(false);
+      }
+
+      if (cookieGuardStateStorageKey in changes) {
+        const nextCookieGuardState = changes[cookieGuardStateStorageKey]?.newValue as
+          | CookieGuardState
+          | undefined;
+
+        setCookieGuardState(nextCookieGuardState ?? null);
+
+        if (nextCookieGuardState && !nextCookieGuardState.isBlocked) {
+          void requestBootstrap();
+          void requestAssetProxyState();
+        }
       }
 
       if (assetProxyStateStorageKey in changes) {
@@ -144,8 +167,17 @@ export function PopupApp() {
   }, []);
 
   useEffect(() => {
+    if (!cookieGuardState?.isBlocked) {
+      setDisablingCookieExtensionId(null);
+      setUninstallingCookieExtensionId(null);
+      setCookieGuardActionErrorMessage(null);
+    }
+  }, [cookieGuardState?.isBlocked]);
+
+  useEffect(() => {
     if (!assetProxyState?.conflict.isActive) {
       setDisablingProxyExtensionId(null);
+      setUninstallingProxyExtensionId(null);
       setProxyConflictActionErrorMessage(null);
     }
   }, [assetProxyState?.conflict.isActive]);
@@ -212,6 +244,29 @@ export function PopupApp() {
     }
   };
 
+  const handleUninstallProxyExtension = async (extensionId: string) => {
+    setUninstallingProxyExtensionId(extensionId);
+    setProxyConflictActionErrorMessage(null);
+
+    try {
+      await uninstallManagedExtension(extensionId);
+
+      const refreshResult = await sendRuntimeMessage<AssetProxyState>({
+        type: runtimeMessageType.proxyConflictRefreshRequested,
+      });
+
+      if (!refreshResult.value) {
+        throw new Error(refreshResult.errorMessage ?? "Status konflik proxy belum bisa diperbarui.");
+      }
+
+      setAssetProxyState(refreshResult.value);
+    } catch (error) {
+      setProxyConflictActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setUninstallingProxyExtensionId(null);
+    }
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
 
@@ -223,6 +278,10 @@ export function PopupApp() {
     setPopupView("main");
     await requestBootstrap();
   };
+
+  if (isCookieGuardBlocked) {
+    return renderCookieGuardBlockedState();
+  }
 
   if (isPeerGuardBlocked) {
     return renderPeerGuardBlockedState();
@@ -403,6 +462,7 @@ export function PopupApp() {
 
     if (nextBootstrapValue.value) {
       setBootstrapValue(nextBootstrapValue.value);
+      setCookieGuardState(nextBootstrapValue.value.cookieGuardState);
       setPeerGuardState(nextBootstrapValue.value.peerGuardState);
     }
   }
@@ -424,6 +484,7 @@ export function PopupApp() {
   function updateBootstrapCache(cache: BootstrapCacheRecord) {
     setBootstrapValue((currentBootstrapValue) => ({
       cache,
+      cookieGuardState: currentBootstrapValue?.cookieGuardState ?? createUnblockedCookieGuardState(),
       isSyncing: false,
       peerGuardState: currentBootstrapValue?.peerGuardState ?? createUnblockedPeerGuardState("ext-1"),
     }));
@@ -473,9 +534,12 @@ export function PopupApp() {
 
             <ProxyConflictExtensionList
               compact
+              conflictKind="proxy"
               conflictExtensions={conflictExtensions}
               disablingExtensionId={disablingProxyExtensionId}
               onDisableExtension={handleDisableProxyExtension}
+              onUninstallExtension={handleUninstallProxyExtension}
+              uninstallingExtensionId={uninstallingProxyExtensionId}
             />
           </div>
         </section>
@@ -500,6 +564,116 @@ export function PopupApp() {
         </Empty>
       </PopupShell>
     );
+  }
+
+  function renderCookieGuardBlockedState() {
+    const conflictExtensions = cookieGuardState?.extensions ?? [];
+
+    return (
+      <PopupShell isThemeReady={isThemeReady}>
+        <div className="flex min-h-[350px] flex-col gap-3 rounded-2xl border border-red-500/16 bg-card/96 px-4 py-5 shadow-lg shadow-red-500/5">
+          <div className="flex items-start gap-3 rounded-2xl border border-red-500/12 bg-red-500/5 px-4 py-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-red-500/15 bg-red-500/[0.08] text-red-500">
+              <ShieldAlertIcon className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground">Akses diblokir demi proteksi cookies</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {cookieGuardState?.message ??
+                  "Extension lain dengan permission cookies terdeteksi. Nonaktifkan extension tersebut untuk lanjut."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 px-1">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Extension terdeteksi</p>
+              <p className="text-xs leading-5 text-muted-foreground">
+                Matikan extension cookies selain allowlist internal.
+              </p>
+            </div>
+            <Button
+              className="border-red-500/15 bg-background/90 hover:bg-red-500/6"
+              disabled={isRefreshingCookieGuard}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => void handleRefreshCookieGuard()}
+            >
+              {isRefreshingCookieGuard ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <RefreshCcwIcon data-icon="inline-start" />
+              )}
+              Periksa ulang
+            </Button>
+          </div>
+
+          {cookieGuardActionErrorMessage ? (
+            <StatusNotice message={cookieGuardActionErrorMessage} title="Aksi gagal" tone="warning" />
+          ) : null}
+
+          <ProxyConflictExtensionList
+            compact
+            conflictKind="cookies"
+            conflictExtensions={conflictExtensions}
+            disablingExtensionId={disablingCookieExtensionId}
+            onDisableExtension={(extensionId) => void handleDisableCookieExtension(extensionId)}
+            onUninstallExtension={(extensionId) => void handleUninstallCookieExtension(extensionId)}
+            uninstallingExtensionId={uninstallingCookieExtensionId}
+          />
+        </div>
+      </PopupShell>
+    );
+  }
+
+  async function handleDisableCookieExtension(extensionId: string) {
+    setDisablingCookieExtensionId(extensionId);
+    setCookieGuardActionErrorMessage(null);
+
+    try {
+      await disableManagedExtension(extensionId);
+      await handleRefreshCookieGuard();
+    } catch (error) {
+      setCookieGuardActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setDisablingCookieExtensionId(null);
+    }
+  }
+
+  async function handleUninstallCookieExtension(extensionId: string) {
+    setUninstallingCookieExtensionId(extensionId);
+    setCookieGuardActionErrorMessage(null);
+
+    try {
+      await uninstallManagedExtension(extensionId);
+      await handleRefreshCookieGuard();
+    } catch (error) {
+      setCookieGuardActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setUninstallingCookieExtensionId(null);
+    }
+  }
+
+  async function handleRefreshCookieGuard() {
+    setIsRefreshingCookieGuard(true);
+    setCookieGuardActionErrorMessage(null);
+
+    try {
+      const refreshResult = await sendRuntimeMessage<CookieGuardState>({
+        type: runtimeMessageType.cookieGuardRefreshRequested,
+      });
+
+      if (!refreshResult.value) {
+        throw new Error(refreshResult.errorMessage ?? "Status conflict cookies belum bisa diperbarui.");
+      }
+
+      setCookieGuardState(refreshResult.value);
+    } catch (error) {
+      setCookieGuardActionErrorMessage(getErrorMessage(error));
+    } finally {
+      setIsRefreshingCookieGuard(false);
+    }
   }
 }
 

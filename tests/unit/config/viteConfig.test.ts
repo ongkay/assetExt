@@ -50,6 +50,7 @@ describe("Vite dev server config", () => {
     expect(viteConfig.build?.outDir).toBe("dist/ext-1");
     expect(viteConfig.build?.minify).toBe("terser");
     expect(viteConfig.build?.sourcemap).toBe(false);
+    expect(buildInput?.cookiesBlocked).toContain("cookies-blocked.html");
     expect(buildInput?.ext1Blocked).toContain("ext-1-blocked.html");
     expect(buildInput?.proxyBlocked).toContain("proxy-blocked.html");
     expect(buildOutput).toMatchObject(protectedBuildOutputFileNames);

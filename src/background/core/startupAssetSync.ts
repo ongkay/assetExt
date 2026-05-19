@@ -11,6 +11,11 @@ import { ExtensionApiRequestError, fetchAssetSessionSync, prepareAssetAccessSess
 import { markExtensionSessionUnauthenticated, readBootstrapState } from "./bootstrap";
 import { clearAssetPlatformCookies } from "./cookies";
 import {
+  CookieGuardBlockedError,
+  ensureCookieGuardAccess,
+  getCookieGuardWarningPageUrl,
+} from "@/ext-1/background/core/cookieGuard";
+import {
   ensurePeerGuardAccess,
   getPeerGuardWarningPageUrl,
   PeerGuardBlockedError,
@@ -24,6 +29,7 @@ import {
 
 export type AssetSessionEnsureAction =
   | "none"
+  | "cookie_guard_blocked"
   | "peer_required"
   | "proxy_blocked"
   | "reload_required"
@@ -82,6 +88,16 @@ async function runAssetSessionEnsureForPage(
   platform: AssetPlatform,
   tabId?: number,
 ): Promise<AssetSessionEnsureResult> {
+  try {
+    await ensureCookieGuardAccess();
+  } catch (error) {
+    if (error instanceof CookieGuardBlockedError) {
+      return createEnsureResult("cookie_guard_blocked", error.message, getCookieGuardWarningPageUrl());
+    }
+
+    throw error;
+  }
+
   try {
     await ensurePeerGuardAccess();
   } catch (error) {

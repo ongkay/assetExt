@@ -281,11 +281,30 @@ describe("background startup asset sync", () => {
     expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
     expect(testRuntime.prepareAssetAccessSession).not.toHaveBeenCalled();
   });
+
+  it("redirects to the cookies blocked page when another cookies extension is active", async () => {
+    const testRuntime = await importStartupAssetSyncTestRuntime({
+      cookieGuardError: new Error("Extension cookies lain terdeteksi"),
+      cookieGuardWarningPageUrl: "chrome-extension://runtime-id/cookies-blocked.html",
+    });
+
+    await expect(testRuntime.startupAssetSync.ensureAssetSessionForPage("tradingview")).resolves.toEqual({
+      action: "cookie_guard_blocked",
+      message: "Extension cookies lain terdeteksi",
+      redirectTo: "chrome-extension://runtime-id/cookies-blocked.html",
+      shouldStartHeartbeat: false,
+    });
+
+    expect(testRuntime.fetchAssetSessionSync).not.toHaveBeenCalled();
+    expect(testRuntime.prepareAssetAccessSession).not.toHaveBeenCalled();
+  });
 });
 
 async function importStartupAssetSyncTestRuntime({
   assetSessionSyncState = createEmptyAssetSessionSyncState(),
   assetProxyState = createKnownAssetProxyState(),
+  cookieGuardError = null,
+  cookieGuardWarningPageUrl = "chrome-extension://runtime-id/cookies-blocked.html",
   proxyAccessError = null,
   proxyBlockedPageUrl = "chrome-extension://runtime-id/proxy-blocked.html",
   peerGuardError = null,
@@ -298,6 +317,8 @@ async function importStartupAssetSyncTestRuntime({
 }: {
   assetSessionSyncState?: AssetSessionSyncState;
   assetProxyState?: AssetProxyState;
+  cookieGuardError?: Error | null;
+  cookieGuardWarningPageUrl?: string;
   proxyAccessError?: Error | null;
   proxyBlockedPageUrl?: string;
   peerGuardError?: Error | null;
@@ -349,6 +370,25 @@ async function importStartupAssetSyncTestRuntime({
   vi.doMock("@/background/core/cookies", () => ({
     clearAssetPlatformCookies: vi.fn(() => Promise.resolve()),
   }));
+  vi.doMock("@/ext-1/background/core/cookieGuard", () => {
+    class MockCookieGuardBlockedError extends Error {
+      constructor(message: string) {
+        super(message);
+      }
+    }
+
+    return {
+      CookieGuardBlockedError: MockCookieGuardBlockedError,
+      ensureCookieGuardAccess: vi.fn(() => {
+        if (cookieGuardError) {
+          return Promise.reject(new MockCookieGuardBlockedError(cookieGuardError.message));
+        }
+
+        return Promise.resolve();
+      }),
+      getCookieGuardWarningPageUrl: vi.fn(() => cookieGuardWarningPageUrl),
+    };
+  });
   vi.doMock("@/background/core/proxy", () => {
     class MockProxyConflictError extends Error {
       constructor(message: string) {
