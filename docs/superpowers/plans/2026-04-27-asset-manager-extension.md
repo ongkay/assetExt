@@ -1,5 +1,4 @@
 # Asset Manager Extension Implementation Plan
-
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Membangun browser extension Asset Manager sesuai `.docs/PRD.md`, `.docs/wireframe.md`, `.docs/extension-v2-api.md`, dan spec desain `docs/superpowers/specs/2026-04-27-asset-manager-extension-design.md`.
@@ -11,7 +10,6 @@
 ---
 
 ## Catatan Eksekusi
-
 - Gunakan Node `24` dan pnpm `10+` sesuai `.nvmrc` dan `package.json`.
 - Jangan membuat commit kecuali user meminta eksplisit. Jika plan menyebut checkpoint git, artinya hanya cek `git status --short`.
 - Jangan memakai `<all_urls>` untuk content script.
@@ -20,9 +18,7 @@
 - Untuk Chrome MV3, host permissions dipisah ke `host_permissions`; `cookies` membutuhkan permission `cookies` dan host permission domain target.
 
 ## Struktur File Target
-
 File yang dibuat:
-
 - `src/lib/asset-access/platforms.ts`: mapping platform, host detection, target URL, dan domain cookie utama.
 - `src/lib/asset-access/subscription.ts`: helper status subscription, near-expiry, countdown, dan formatter tanggal.
 - `src/lib/api/extensionApiConfig.ts`: base URL dan version config.
@@ -61,7 +57,6 @@ File yang dibuat:
 - `tests/integration/access-overlay.spec.ts`: Playwright test overlay Shadow DOM dan chooser.
 
 File yang dimodifikasi:
-
 - `manifest.json`: metadata, permissions, host permissions, content script matches.
 - `src/background/index.ts`: message router utama.
 - `src/popup/PopupApp.tsx`: composition popup final.
@@ -73,7 +68,6 @@ File yang dimodifikasi:
 - `README.md`: update struktur dan quick tour dari template demo menjadi Asset Manager.
 
 File yang dihapus:
-
 - `src/component/Logo.tsx`: setelah `Logo` dipindah ke `src/components/asset-manager/Logo.tsx` dan semua import sudah diganti.
 - `src/background/core/badge.ts`: jika demo badge sudah tidak dipakai.
 - `src/popup/ui/ActionButton.tsx`: jika sudah diganti `Button` shadcn langsung.
@@ -82,9 +76,7 @@ File yang dihapus:
 ---
 
 ## Task 1: Siapkan shadcn Components Tambahan dan Manifest
-
 **Files:**
-
 - Modify: `manifest.json`
 - Modify: `src/lib/styles/globals.css`
 - Create: `src/components/ui/avatar.tsx` via shadcn CLI
@@ -220,9 +212,7 @@ Expected: terlihat perubahan manifest, globals, dan primitive shadcn baru. Janga
 ---
 
 ## Task 2: Domain Types, Platform Mapping, dan Subscription Helpers
-
 **Files:**
-
 - Create: `src/lib/asset-access/platforms.ts`
 - Create: `src/lib/asset-access/subscription.ts`
 - Test: `tests/unit/asset-access/platforms.test.ts`
@@ -276,7 +266,6 @@ pnpm test tests/unit/asset-access/platforms.test.ts
 ```
 
 Expected: FAIL karena `@/lib/asset-access/platforms` belum ada.
-
 - [ ] **Step 3: Implementasi platform mapping**
 
 Buat `src/lib/asset-access/platforms.ts`:
@@ -393,7 +382,6 @@ pnpm test tests/unit/asset-access/subscription.test.ts
 ```
 
 Expected: FAIL karena `@/lib/asset-access/subscription` belum ada.
-
 - [ ] **Step 6: Implementasi subscription helper**
 
 Buat `src/lib/asset-access/subscription.ts`:
@@ -469,7 +457,6 @@ pnpm test tests/unit/asset-access/platforms.test.ts tests/unit/asset-access/subs
 ```
 
 Expected: PASS.
-
 - [ ] **Step 8: Jalankan typecheck**
 
 Run:
@@ -483,9 +470,7 @@ Expected: Exit code 0.
 ---
 
 ## Task 3: API Contract dan API Client
-
 **Files:**
-
 - Create: `src/lib/api/extensionApiConfig.ts`
 - Create: `src/lib/api/extensionApiTypes.ts`
 - Create: `src/lib/api/extensionApi.ts`
@@ -576,7 +561,6 @@ pnpm test tests/unit/api/extensionApi.test.ts
 ```
 
 Expected: FAIL karena file API belum ada.
-
 - [ ] **Step 3: Buat API config**
 
 Buat `src/lib/api/extensionApiConfig.ts`:
@@ -868,7 +852,6 @@ pnpm test tests/unit/api/extensionApi.test.ts
 ```
 
 Expected: PASS.
-
 - [ ] **Step 7: Jalankan typecheck**
 
 Run:
@@ -882,9 +865,7 @@ Expected: Exit code 0.
 ---
 
 ## Task 4: Storage Helpers dan Bootstrap Cache
-
 **Files:**
-
 - Create: `src/lib/storage/chromeStorage.ts`
 - Create: `src/lib/storage/bootstrapCache.ts`
 - Create: `src/lib/storage/deviceIdentity.ts`
@@ -936,7 +917,6 @@ pnpm test tests/unit/storage/bootstrapCache.test.ts
 ```
 
 Expected: FAIL karena file cache belum ada.
-
 - [ ] **Step 3: Buat chrome storage wrapper**
 
 Buat `src/lib/storage/chromeStorage.ts`:
@@ -1082,7 +1062,6 @@ pnpm test tests/unit/storage/bootstrapCache.test.ts
 ```
 
 Expected: PASS.
-
 - [ ] **Step 8: Jalankan typecheck**
 
 Run:
@@ -1096,9 +1075,7 @@ Expected: Exit code 0.
 ---
 
 ## Task 5: Runtime Message Contract
-
 **Files:**
-
 - Replace: `src/lib/runtime/messages.ts`
 
 - [ ] **Step 1: Ganti kontrak runtime message demo**
@@ -1225,7 +1202,6 @@ pnpm typecheck
 ```
 
 Expected: FAIL karena `toggleUi`, `incrementBadge`, dan `resetBadge` masih dipakai di popup/content/background/options.
-
 - [ ] **Step 3: Catat file yang perlu disesuaikan di task berikutnya**
 
 File yang seharusnya gagal:
@@ -1242,9 +1218,7 @@ Jangan betulkan file ini di task ini kecuali error berasal dari tipe message bar
 ---
 
 ## Task 6: Background Bootstrap, Logout, dan Message Router Dasar
-
 **Files:**
-
 - Create: `src/background/core/bootstrap.ts`
 - Create: `src/background/core/tabs.ts`
 - Modify: `src/background/index.ts`
@@ -1494,9 +1468,7 @@ Expected: masih bisa FAIL karena popup/content belum diganti dari demo message. 
 ---
 
 ## Task 7: Background Cookie Injection, Asset Access, dan Heartbeat
-
 **Files:**
-
 - Create: `src/background/core/cookies.ts`
 - Create: `src/background/core/assetAccess.ts`
 - Create: `src/background/core/heartbeat.ts`
@@ -1713,9 +1685,7 @@ Expected: masih bisa FAIL karena popup/content belum diganti. Error background c
 ---
 
 ## Task 8: Komponen Reusable Asset Manager
-
 **Files:**
-
 - Create: `src/components/asset-manager/Logo.tsx`
 - Create: `src/components/asset-manager/UserAvatar.tsx`
 - Create: `src/components/asset-manager/ExtensionHeader.tsx`
@@ -1763,7 +1733,6 @@ export function Logo({ className, id = "asset-manager-logo", title = "Asset Mana
 ```
 
 Catatan implementasi: jika ingin mempertahankan detail path logo lama, salin semua path dari file lama dan ubah `fill="#61DAFB"` menjadi `fill="currentColor"` agar theme-aware.
-
 - [ ] **Step 2: Buat UserAvatar**
 
 Buat `src/components/asset-manager/UserAvatar.tsx`:
@@ -2423,7 +2392,6 @@ export function VersionGatePanel({ downloadUrl = "https://github.com", version }
 ```
 
 Gunakan `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Badge`, `Button`, `Alert`, `Separator`, dan `Empty` sesuai kode di atas. Jangan memakai `space-y-*`; gunakan `flex flex-col gap-*`.
-
 - [ ] **Step 12: Update import Logo lama**
 
 Ganti semua import:
@@ -2441,7 +2409,6 @@ import { Logo } from "@/components/asset-manager/Logo";
 - [ ] **Step 13: Hapus file Logo lama jika sudah tidak ada import**
 
 Gunakan Grep untuk memastikan tidak ada `@/component/Logo`. Jika tidak ada, hapus `src/component/Logo.tsx` memakai apply_patch delete.
-
 - [ ] **Step 14: Jalankan typecheck**
 
 Run:
@@ -2455,9 +2422,7 @@ Expected: error yang tersisa hanya dari `PopupApp.tsx` atau `ContentApp.tsx` jik
 ---
 
 ## Task 9: Popup App State Machine dan Bootstrap Cache UI
-
 **Files:**
-
 - Create: `src/popup/ui/PopupShell.tsx`
 - Replace: `src/popup/PopupApp.tsx`
 
@@ -2764,9 +2729,7 @@ Expected: error popup selesai; error content mungkin masih ada.
 ---
 
 ## Task 10: Content Overlay, Auto Access, dan Mode Chooser
-
 **Files:**
-
 - Create: `src/content/ui/AccessOverlay.tsx`
 - Replace: `src/content/ContentApp.tsx`
 - Test: `tests/integration/access-overlay.spec.ts`
@@ -2820,7 +2783,6 @@ pnpm test:web tests/integration/access-overlay.spec.ts
 ```
 
 Expected: PASS karena test memverifikasi prinsip Shadow DOM. Jika command tidak menerima path di repo ini, jalankan `pnpm test:web`.
-
 - [ ] **Step 3: Buat AccessOverlay**
 
 Buat `src/content/ui/AccessOverlay.tsx`:
@@ -3015,7 +2977,6 @@ export type AutoAccessRequestedMessage = {
 ```
 
 Di `src/background/index.ts`, pass `mode: message.mode` ke branch `assetAccessRequested` dan `autoAccessRequested`. Branch `assetAccessRequested` tetap `shouldNavigate: true` untuk flow popup. Branch `autoAccessRequested` tetap `shouldNavigate: false` untuk flow content script karena content script yang melakukan `window.location.reload()`.
-
 - [ ] **Step 6: Jalankan typecheck dan Playwright**
 
 Run:
@@ -3030,9 +2991,7 @@ Expected: typecheck PASS, Playwright PASS.
 ---
 
 ## Task 11: Final Cleanup Demo Template dan README
-
 **Files:**
-
 - Modify: `README.md`
 - Delete: `src/background/core/badge.ts` jika tidak dipakai
 - Delete: `src/popup/ui/ActionButton.tsx` jika tidak dipakai
@@ -3048,7 +3007,6 @@ incrementBadge|resetBadge|toggleUi|Badge \+|Overlay|My Extension|Popup tools
 ```
 
 Expected: tidak ada sisa di source kecuali README lama sebelum diedit.
-
 - [ ] **Step 2: Hapus file demo yang tidak dipakai**
 
 Gunakan `apply_patch` untuk delete file yang tidak punya import:
@@ -3110,9 +3068,7 @@ Expected: PASS.
 ---
 
 ## Task 12: Full Quality Gate dan Manual Verification Local Seed
-
 **Files:**
-
 - Read: `.docs/dev-seed.md`
 - Read: `.docs/extension-v2-api.md`
 - No code changes unless a verification failure identifies a bug.
@@ -3130,7 +3086,6 @@ pnpm build
 ```
 
 Expected: semua command exit code 0.
-
 - [ ] **Step 2: Load extension build di Chrome**
 
 Run dev/build sesuai kebutuhan:
@@ -3140,7 +3095,6 @@ pnpm build
 ```
 
 Lalu load folder `dist` di `chrome://extensions`.
-
 - [ ] **Step 3: Verifikasi unauthenticated state**
 
 Pastikan web app local belum login. Buka popup extension.
@@ -3259,7 +3213,6 @@ Expected: daftar file yang berubah sesuai task. Jangan commit kecuali user memin
 ---
 
 ## Self-Review Plan
-
 - Spec coverage: plan mencakup folder reusable, theme light/dark, bootstrap stale-while-revalidate, API contract, manifest domain-only, popup states, asset flow, chooser conditional, content automation, heartbeat, logout, tests, dan seed verification.
 - Placeholder scan: tidak ada marker pekerjaan kosong atau instruksi tanpa detail. Komponen utama diberi kode konkret atau props typed yang langsung dipakai oleh task integrasi.
 - Type consistency: platform memakai `AssetPlatform`, mode memakai `ExtensionMode`, bootstrap memakai `ExtensionBootstrap` dan `BootstrapCacheRecord`, runtime response memakai `RuntimeResponse<TValue>`.

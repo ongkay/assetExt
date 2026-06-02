@@ -1,9 +1,7 @@
 # Asset Manager Extension
-
 Chrome extension Asset Manager built with React 19, TypeScript, Vite, and Tailwind CSS.
 
 ## Quick Start
-
 ```bash
 # Install dependencies
 pnpm install
@@ -13,7 +11,6 @@ pnpm dev
 ```
 
 ## Configuration
-
 - Server allowlist untuk endpoint `/api/ext/*` dibaca dari root project `.env.local` melalui `EXTENSION_ALLOWED_IDS` dan `EXTENSION_ALLOWED_ORIGINS`.
 - Jika allowlist berubah, restart app utama agar env terbaca ulang.
 - Base URL API untuk extension dibaca dari env Vite `VITE_EXT_API_BASE_URL` di folder `extasset`.
@@ -21,14 +18,12 @@ pnpm dev
 - Setelah mengubah env extension, build ulang lalu reload unpacked extension dari `dist`.
 
 ## Load in Chrome
-
 1. Open `chrome://extensions`
 2. Enable "Developer mode" (top right)
 3. Click "Load unpacked"
 4. Select the `dist` folder
 
 ## Project Structure
-
 ```text
 ├── popup.html              # Popup page entry
 ├── options.html            # Options page entry
@@ -57,7 +52,6 @@ pnpm dev
 ```
 
 ## Scripts
-
 | Command | Description |
 |---------|-------------|
 | `pnpm dev` | Start development server with HMR |
@@ -67,7 +61,6 @@ pnpm dev
 | `pnpm test:web` | Run Playwright browser tests |
 
 ## Customizing Icons
-
 Replace the files in `public/icons/` with your own icon set:
 
 ```json
@@ -80,7 +73,6 @@ Replace the files in `public/icons/` with your own icon set:
 ```
 
 ## Asset Manager Flow
-
 1. Login ke web app local `http://localhost:3000` memakai akun seed di `.docs/dev-seed.md`.
 2. Buka popup extension untuk melihat bootstrap state, subscription, package, dan asset access.
 3. Klik asset untuk clear cookie, fetch payload `/api/ext/asset`, inject cookie, menyimpan `revision`, lalu membuka domain target.
@@ -90,7 +82,6 @@ Replace the files in `public/icons/` with your own icon set:
 ## Customization
 
 ### Change Content Script URL Pattern
-
 Edit `manifest.json` to change which pages the content script runs on:
 
 ```json
@@ -103,7 +94,6 @@ Edit `manifest.json` to change which pages the content script runs on:
 ```
 
 ### Add Permissions
-
 Asset Manager currently uses MV3 permissions for alarms, cookies, storage, and tabs. Update
 `manifest.json` when adding a new privileged browser capability:
 
@@ -112,7 +102,6 @@ Asset Manager currently uses MV3 permissions for alarms, cookies, storage, and t
 ```
 
 ## Tech Stack
-
 - [React 19](https://react.dev)
 - [TypeScript](https://www.typescriptlang.org)
 - [Vite](https://vite.dev)
@@ -121,5 +110,4 @@ Asset Manager currently uses MV3 permissions for alarms, cookies, storage, and t
 - [ESLint](https://eslint.org)
 
 ## License
-
 MIT
