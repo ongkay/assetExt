@@ -43,5 +43,5 @@ export function createBlockedCookieGuardState(
 }
 
 export function createCookieGuardBlockedMessage(extensionCount: number): string {
-  return `Ada ${extensionCount} extension aktif dengan permission cookies. Session lokal dibersihkan dan akses asset dihentikan sampai extension tersebut dinonaktifkan.`;
+  return `Ada ${extensionCount} extension aktif yang tidak suopport accsess tvlink.`;
 }

@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import { ShieldAlertIcon } from "lucide-react";
+import { PlugZapIcon } from "lucide-react";
 
-import { Logo } from "@/components/asset-manager/Logo";
-import { StatusNotice } from "@/components/asset-manager/StatusNotice";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Spinner } from "@/components/ui/spinner";
 import { runtimeMessageType, type PeerGuardRuntimeValue } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
 import { peerGuardStateStorageKey } from "@/lib/peer-guard/peerGuardConfig";
@@ -17,14 +12,11 @@ type PeerGuardWarningPageProps = {
 
 export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPageProps) {
   const [peerGuardState, setPeerGuardState] = useState<PeerGuardState | null>(null);
-  const [statusErrorMessage, setStatusErrorMessage] = useState<string | null>(null);
   const isLoading = peerGuardState === null;
   const isBlocked = peerGuardState?.isBlocked === true;
 
   useEffect(() => {
-    void requestPeerGuardState(runtimeMessageType.peerGuardStatusRequested).catch((error: unknown) => {
-      setStatusErrorMessage(getErrorMessage(error));
-    });
+    void requestPeerGuardState(runtimeMessageType.peerGuardStatusRequested).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -64,69 +56,46 @@ export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPagePro
   }
 
   return (
-    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.08),_transparent_34%),linear-gradient(to_bottom,var(--background),color-mix(in_oklab,var(--background)_97%,rgb(15_23_42)_3%))] px-5 py-6 text-foreground sm:px-6 sm:py-10">
-      <div className="mx-auto flex max-w-lg flex-col gap-4">
-        <Card className="overflow-hidden border-border/80 bg-card/97 shadow-2xl shadow-black/5 ring-1 ring-black/5 backdrop-blur-sm">
-          <CardHeader className="gap-4 border-b border-border/70 pb-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-2xl border border-red-500/15 bg-linear-to-br from-red-500/12 to-background text-red-500 shadow-sm shadow-red-500/5">
-                  <Logo className="size-6" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <Badge
-                    className="w-fit border border-red-500/12 bg-red-500/8 text-red-600 hover:bg-red-500/8 dark:text-red-400"
-                    variant="secondary"
-                  >
-                    {isLoading ? "Memeriksa" : "Guard aktif"}
-                  </Badge>
-                  <CardTitle className="text-xl tracking-tight text-foreground sm:text-[1.35rem]">
-                    {isLoading ? `Memeriksa ${extensionLabel}` : "Akses dihentikan"}
-                  </CardTitle>
-                  <CardDescription className="max-w-lg text-sm leading-6">
-                    {isLoading
-                      ? "Status extension pasangan sedang diperiksa."
-                      : getBlockedHeroCopy(peerGuardState)}
-                  </CardDescription>
-                </div>
-              </div>
-              {isLoading ? (
-                <Spinner className="size-8 shrink-0" />
-              ) : (
-                <ShieldAlertIcon className="size-8 shrink-0 text-red-500" />
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 py-5">
-            {statusErrorMessage ? (
-              <StatusNotice message={statusErrorMessage} title="Status belum tersedia" tone="warning" />
-            ) : null}
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,_#ecf6ff_0%,_#e6f2ff_45%,_#dcecff_100%)] p-4 text-[#2d4962] antialiased [font-family:ui-sans-serif,system-ui,sans-serif]">
+      <section
+        aria-labelledby="warning-title"
+        className="mx-auto flex min-h-[calc(100dvh-32px)] w-full max-w-[360px] items-center justify-center"
+      >
+        <article className="w-full overflow-hidden rounded-2xl border border-[#fed7aa] bg-white shadow-[0_18px_34px_rgba(217,119,6,0.18)]">
+          <div className="relative px-6 pb-6 pt-7 text-center [background:radial-gradient(circle_at_top,rgba(251,191,36,0.28),transparent_48%),linear-gradient(180deg,#ffffff_0%,#fffaf0_100%)]">
+            <div className="pointer-events-none absolute left-5 top-5 size-2 rounded-full bg-[#d97706]/35" />
+            <div className="pointer-events-none absolute right-7 top-9 size-3 rounded-full bg-[#d97706]/25" />
+            <div className="pointer-events-none absolute bottom-6 left-8 size-2.5 rounded-full bg-[#d97706]/20" />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                  Status
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">
-                  Pasangan {peerGuardState?.peerLabel ?? "ext-2"} tidak aktif
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                  Tindakan
-                </p>
-                <p className="mt-1 text-sm font-medium text-foreground">
-                  Aktifkan pair. Tab ini akan tertutup otomatis.
-                </p>
-              </div>
+            <div className="mx-auto mb-5 grid size-[76px] place-items-center rounded-2xl border border-[#fed7aa] bg-[#fff7ed] text-[#d97706] shadow-[0_12px_24px_rgba(22,50,74,0.08)]">
+              <WarningTriangleIcon />
             </div>
 
-            <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.035] px-4 py-3 text-sm leading-6 text-muted-foreground">
-              Session lama sudah direset agar akses tidak berjalan parsial.
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#92400e]">
+              access denied
+            </p>
+            <h1 id="warning-title" className="sr-only">
+              TvLink access denied for {extensionLabel}
+            </h1>
+            <p className="mx-auto max-w-[285px] text-sm font-medium leading-6 text-[#5a6f85]">
+              Silakan aktifkan semua extension untuk bisa akses tvlink.
+            </p>
+          </div>
+
+          <div className="border-t border-[#fed7aa] bg-[#fff7ed]/70 px-4 py-4">
+            <div className="flex items-start gap-3 rounded-xl border border-[#fed7aa] bg-white/90 p-3.5 text-left shadow-sm">
+              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#ffedd5] text-[#92400e]">
+                <PlugZapIcon aria-hidden="true" className="size-4" strokeWidth={2.25} />
+              </div>
+
+              <div className="min-w-0">
+                <p className="mb-1 text-sm font-bold leading-5 text-[#18324a]">Periksa extension tvlink</p>
+                <p className="text-xs leading-5 text-[#6e8297]">Pastikan 2 extension terinstall dan aktif.</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </article>
+      </section>
     </main>
   );
 
@@ -147,14 +116,6 @@ export function PeerGuardWarningPage({ extensionLabel }: PeerGuardWarningPagePro
   }
 }
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return "Permintaan gagal diproses.";
-}
-
 async function closeCurrentWarningTab(): Promise<void> {
   if (typeof chrome === "undefined" || !chrome.tabs?.getCurrent || !chrome.tabs?.remove) {
     return;
@@ -167,10 +128,11 @@ async function closeCurrentWarningTab(): Promise<void> {
   }
 }
 
-function getBlockedHeroCopy(peerGuardState: PeerGuardState | null): string {
-  if (peerGuardState?.reason === "peer_missing") {
-    return `${peerGuardState.peerLabel} belum tersedia. Akses ditahan sampai pair lengkap.`;
-  }
-
-  return `${peerGuardState?.peerLabel ?? "Extension pasangan"} dimatikan. Session lokal sudah dibersihkan.`;
+function WarningTriangleIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" viewBox="0 0 32 32">
+      <path d="M16 3 30 28H2z" fill="currentColor" />
+      <path d="M15 11h2v9h-2zm0 12h2v2h-2z" fill="#ffffff" />
+    </svg>
+  );
 }

@@ -2,7 +2,7 @@ import type { AssetPlatform } from "@/lib/asset-access/platforms";
 
 export const assetProxySchemes = ["http", "https", "socks5"] as const;
 export const assetProxyConflictMessage =
-  "Proxy lain terdeteksi. Nonaktifkan proxy lain untuk melanjutkan akses asset.";
+  "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.";
 export type AssetProxyLevelOfControl = chrome.types.ChromeSettingGetResultDetails["levelOfControl"];
 
 export type AssetProxyScheme = (typeof assetProxySchemes)[number];
@@ -55,7 +55,7 @@ export function parseAssetProxy(proxyValue: string | null | undefined): AssetPro
   const firstSeparatorIndex = normalizedProxyValue.indexOf(":");
 
   if (firstSeparatorIndex <= 0) {
-    throw new Error("Format proxy asset tidak valid.");
+    throw new Error("Format VPN asset tidak valid.");
   }
 
   const schemeValue = normalizedProxyValue.slice(0, firstSeparatorIndex);
@@ -65,7 +65,7 @@ export function parseAssetProxy(proxyValue: string | null | undefined): AssetPro
     .split(":");
 
   if (proxyParts.length !== 2 && proxyParts.length !== 4) {
-    throw new Error("Format proxy asset tidak valid.");
+    throw new Error("Format VPN asset tidak valid.");
   }
 
   const [hostValue, portValue, usernameValue, passwordValue] = proxyParts;
@@ -73,13 +73,13 @@ export function parseAssetProxy(proxyValue: string | null | undefined): AssetPro
   const host = hostValue.trim();
 
   if (!host) {
-    throw new Error("Host proxy asset tidak valid.");
+    throw new Error("Host VPN asset tidak valid.");
   }
 
   const port = Number.parseInt(portValue, 10);
 
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
-    throw new Error("Port proxy asset tidak valid.");
+    throw new Error("Port VPN asset tidak valid.");
   }
 
   const credentials =
@@ -104,18 +104,18 @@ function parseAssetProxyScheme(schemeValue: string): AssetProxyScheme {
     return normalizedScheme;
   }
 
-  throw new Error("Skema proxy asset tidak didukung.");
+  throw new Error("Skema VPN asset tidak didukung.");
 }
 
 function parseAssetProxyCredentials(
   usernameValue: string | undefined,
   passwordValue: string | undefined,
 ): AssetProxyCredentials {
-  const username = decodeAssetProxyComponent(usernameValue, "Username proxy asset tidak valid.");
-  const password = decodeAssetProxyComponent(passwordValue, "Password proxy asset tidak valid.");
+  const username = decodeAssetProxyComponent(usernameValue, "Username VPN asset tidak valid.");
+  const password = decodeAssetProxyComponent(passwordValue, "Password VPN asset tidak valid.");
 
   if (!username || !password) {
-    throw new Error("Credential proxy asset tidak lengkap.");
+    throw new Error("Credential VPN asset tidak lengkap.");
   }
 
   return {

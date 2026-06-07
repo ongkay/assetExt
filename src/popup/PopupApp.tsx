@@ -86,16 +86,14 @@ export function PopupApp() {
     setAccessingPlatform(null);
 
     if (!assetResult.value) {
-      setAssetAccessErrorMessage(
-        assetResult.errorMessage ?? "Asset belum bisa dibuka. Coba refresh lalu akses ulang.",
-      );
+      setAssetAccessErrorMessage(assetResult.errorMessage ?? "Silahkan coba lagi");
       return;
     }
 
     const assetResponse = assetResult.value;
 
     if (assetResponse.status === "forbidden") {
-      setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka akses.");
+      setAssetAccessErrorMessage("Subscription not active");
       return;
     }
   }, []);
@@ -196,7 +194,7 @@ export function PopupApp() {
     const mode = getAutomaticAssetMode(asset);
 
     if (!mode) {
-      setAssetAccessErrorMessage("Asset belum memiliki mode akses yang siap dipakai.");
+      setAssetAccessErrorMessage("Ada masalah teknis, tnggu beberapa saat atau silahkan hub. admin");
       return;
     }
 
@@ -215,7 +213,9 @@ export function PopupApp() {
     setIsRedeeming(false);
 
     if (!redeemResult.value) {
-      setRedeemErrorMessage(redeemResult.errorMessage ?? "CD Key gagal diproses. Coba lagi beberapa saat.");
+      setRedeemErrorMessage(
+        redeemResult.errorMessage ?? "Redeem code gagal diproses. Coba lagi beberapa saat.",
+      );
       return;
     }
 
@@ -234,7 +234,7 @@ export function PopupApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status konflik proxy belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diperbarui.");
       }
 
       setAssetProxyState(refreshResult.value);
@@ -257,7 +257,7 @@ export function PopupApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status konflik proxy belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diperbarui.");
       }
 
       setAssetProxyState(refreshResult.value);
@@ -319,7 +319,7 @@ export function PopupApp() {
     return (
       <PopupShell isThemeReady={isThemeReady}>
         <StatusNotice
-          message="Data user atau subscription belum tersedia dari TvLink. Refresh data untuk mencoba sinkron ulang."
+          message="Data terbaru belum tersedia. Refresh data untuk mencoba sinkron ulang."
           title="Data belum lengkap"
           tone="warning"
         />
@@ -363,7 +363,7 @@ export function PopupApp() {
 
         {snapshot.version.status === "update_available" ? (
           <StatusNotice
-            message={`Versi ${snapshot.version.latestVersion} tersedia. Update untuk mendapatkan perbaikan terbaru.`}
+            message={`Versi ${snapshot.version.latestVersion} tersedia. Update untuk bisa akses versi terbaru`}
             title="Update tersedia"
             tone="info"
           />
@@ -372,7 +372,7 @@ export function PopupApp() {
         {bootstrapValue?.cache?.lastErrorMessage ? (
           <StatusNotice
             message={bootstrapValue.cache.lastErrorMessage}
-            title="Menggunakan cache terakhir"
+            title="Filed to sync data"
             tone="warning"
           />
         ) : null}
@@ -381,14 +381,14 @@ export function PopupApp() {
 
         {hasProcessedSubscription ? (
           <StatusNotice
-            message="Pembayaran sedang diproses. Akses akan aktif setelah konfirmasi selesai."
+            message="Akses tv premium full private sedang diproses. untuk sementara silahkan gunakan tv semiprivate terlebih dahulu."
             title="Subscription diproses"
             tone="info"
           />
         ) : null}
 
         {assetAccessErrorMessage ? (
-          <StatusNotice message={assetAccessErrorMessage} title="Akses asset gagal" tone="danger" />
+          <StatusNotice message={assetAccessErrorMessage} title="Access Failed" tone="danger" />
         ) : null}
 
         {proxyConflictMessage ? renderProxyConflictPanel() : null}
@@ -509,8 +509,8 @@ export function PopupApp() {
     return (
       <div className="flex flex-col gap-3">
         <StatusNotice
-          message={proxyConflictMessage ?? "Proxy lain aktif."}
-          title="Proxy lain aktif"
+          message={proxyConflictMessage ?? "VPN lain aktif."}
+          title="VPN lain aktif"
           tone="danger"
         />
 
@@ -529,9 +529,7 @@ export function PopupApp() {
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs leading-5 text-tvlink-muted">
-                  Nonaktifkan proxy lain untuk lanjut.
-                </p>
+                <p className="mt-1 text-xs leading-5 text-tvlink-muted">Nonaktifkan VPN lain untuk lanjut.</p>
               </div>
             </div>
 
@@ -584,9 +582,7 @@ export function PopupApp() {
               <ShieldAlertIcon className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-tvlink-text-strong">
-                Akses diblokir demi proteksi cookies
-              </p>
+              <p className="text-sm font-semibold text-tvlink-text-strong">Akses diblokir</p>
               <p className="mt-1 text-sm leading-6 text-tvlink-muted">
                 {cookieGuardState?.message ??
                   "Extension lain dengan permission cookies terdeteksi. Nonaktifkan extension tersebut untuk lanjut."}
@@ -597,9 +593,7 @@ export function PopupApp() {
           <div className="flex items-center justify-between gap-2 px-1">
             <div>
               <p className="text-sm font-semibold text-tvlink-text-strong">Extension terdeteksi</p>
-              <p className="text-xs leading-5 text-tvlink-muted">
-                Matikan extension cookies selain allowlist internal.
-              </p>
+              <p className="text-xs leading-5 text-tvlink-muted">Matikan extension dibawah ini.</p>
             </div>
             <Button
               className="rounded-tvlink-button border-tvlink-danger-border bg-tvlink-card-bg text-tvlink-danger hover:bg-tvlink-danger-hover-bg hover:text-tvlink-danger-hover"
@@ -674,7 +668,7 @@ export function PopupApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status conflict cookies belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status conflict belum bisa update.");
       }
 
       setCookieGuardState(refreshResult.value);
@@ -688,10 +682,10 @@ export function PopupApp() {
 
 function getBlockedPopupSummary(peerGuardState: PeerGuardState | null): string {
   if (peerGuardState?.reason === "peer_missing") {
-    return `${peerGuardState.peerLabel} belum aktif. Aktifkan pair.`;
+    return `${peerGuardState.peerLabel} belum aktif. Aktifkan server.`;
   }
 
-  return `${peerGuardState?.peerLabel ?? "Extension pasangan"} dimatikan. Aktifkan pair.`;
+  return `${peerGuardState?.peerLabel ?? "Extension server"} dimatikan. silahkan aktifkan.`;
 }
 
 function getAbsoluteApiUrl(apiBaseUrl: string, path: string): string {

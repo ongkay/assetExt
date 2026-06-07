@@ -194,7 +194,7 @@ describe("background proxy controller", () => {
     const proxyCore = await import("@/background/core/proxy");
 
     await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
-      "Proxy lain terdeteksi. Nonaktifkan proxy lain untuk melanjutkan akses asset.",
+      "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.",
     );
 
     expect(chromeRuntime.updateDynamicRules).toHaveBeenCalledWith(
@@ -248,7 +248,7 @@ describe("background proxy controller", () => {
     const assetProxyState = await import("@/lib/storage/assetProxyState");
 
     await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
-      "Proxy lain terdeteksi. Nonaktifkan proxy lain untuk melanjutkan akses asset.",
+      "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.",
     );
 
     await expect(assetProxyState.readAssetProxyState()).resolves.toMatchObject({

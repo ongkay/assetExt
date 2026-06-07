@@ -34,10 +34,10 @@ describe("asset proxy parser", () => {
   });
 
   it("throws for unsupported scheme", () => {
-    expect(() => parseAssetProxy("socks4:1.2.3.4:1080")).toThrow("Skema proxy asset tidak didukung.");
+    expect(() => parseAssetProxy("socks4:1.2.3.4:1080")).toThrow("Skema VPN asset tidak didukung.");
   });
 
   it("throws for invalid port", () => {
-    expect(() => parseAssetProxy("https:1.2.3.4:0")).toThrow("Port proxy asset tidak valid.");
+    expect(() => parseAssetProxy("https:1.2.3.4:0")).toThrow("Port VPN asset tidak valid.");
   });
 });

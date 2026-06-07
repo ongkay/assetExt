@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { RefreshCcwIcon, ShieldAlertIcon, ShieldCheckIcon } from "lucide-react";
+import { PlugZapIcon, RefreshCcwIcon } from "lucide-react";
 
 import { ProxyConflictExtensionList } from "@/components/asset-manager/ProxyConflictExtensionList";
 import { StatusNotice } from "@/components/asset-manager/StatusNotice";
-import { Logo } from "@/components/asset-manager/Logo";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { type AssetProxyState, assetProxyConflictMessage } from "@/lib/proxy/assetProxy";
 import { disableManagedExtension, uninstallManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
@@ -26,6 +23,16 @@ export function ProxyBlockedApp() {
   const proxyConflictMessage = proxyConflictState?.isActive
     ? (proxyConflictState.message ?? assetProxyConflictMessage)
     : null;
+  const pageStatusLabel = isLoadingProxyState
+    ? "checking"
+    : isProxyConflictActive
+      ? "access denied"
+      : "access restored";
+  const pageMessage = isLoadingProxyState
+    ? "TvLink sedang memeriksa status VPN."
+    : isProxyConflictActive
+      ? (proxyConflictMessage ?? "VPN lain sedang aktif. Nonaktifkan agar akses kembali.")
+      : "Akses sudah dipulihkan.";
 
   useEffect(() => {
     void readAssetProxyState().then(setAssetProxyState);
@@ -64,119 +71,107 @@ export function ProxyBlockedApp() {
   }, [proxyConflictState?.isActive]);
 
   return (
-    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.14),_transparent_32%),linear-gradient(to_bottom,var(--background),color-mix(in_oklab,var(--background)_94%,rgb(239_68_68)_6%))] px-5 py-6 text-foreground sm:px-6 sm:py-8">
-      <div className="mx-auto flex max-w-2xl flex-col gap-5">
-        <Card className="overflow-hidden border-red-500/30 bg-card/96 shadow-xl shadow-red-500/10 ring-1 ring-red-500/10 backdrop-blur-sm">
-          <CardHeader className="gap-4 border-b border-red-500/10 pb-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-2xl border border-red-500/20 bg-linear-to-br from-red-500/18 to-red-500/6 text-red-500 shadow-sm shadow-red-500/10">
-                  <Logo className="size-6" />
+    <main className="min-h-dvh bg-[radial-gradient(circle_at_top,_#ecf6ff_0%,_#e6f2ff_45%,_#dcecff_100%)] p-4 text-[#2d4962] antialiased [font-family:ui-sans-serif,system-ui,sans-serif]">
+      <section
+        aria-labelledby="proxy-warning-title"
+        className="mx-auto flex min-h-[calc(100dvh-32px)] w-full max-w-[420px] items-center justify-center"
+      >
+        <article className="w-full overflow-hidden rounded-2xl border border-[#fed7aa] bg-white shadow-[0_18px_34px_rgba(217,119,6,0.18)]">
+          <div className="relative px-6 pb-6 pt-7 text-center [background:radial-gradient(circle_at_top,rgba(251,191,36,0.28),transparent_48%),linear-gradient(180deg,#ffffff_0%,#fffaf0_100%)]">
+            <div className="pointer-events-none absolute left-5 top-5 size-2 rounded-full bg-[#d97706]/35" />
+            <div className="pointer-events-none absolute right-7 top-9 size-3 rounded-full bg-[#d97706]/25" />
+            <div className="pointer-events-none absolute bottom-6 left-8 size-2.5 rounded-full bg-[#d97706]/20" />
+
+            <div className="mx-auto mb-5 grid size-[76px] place-items-center rounded-2xl border border-[#fed7aa] bg-[#fff7ed] text-[#d97706] shadow-[0_12px_24px_rgba(22,50,74,0.08)]">
+              <WarningTriangleIcon />
+            </div>
+
+            <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.22em] text-[#92400e]">
+              {pageStatusLabel}
+            </p>
+            <h1 id="proxy-warning-title" className="sr-only">
+              TvLink VPN warning
+            </h1>
+            <p className="mx-auto max-w-[300px] text-sm font-medium leading-6 text-[#5a6f85]">
+              {pageMessage}
+            </p>
+          </div>
+
+          <div className="border-t border-[#fed7aa] bg-[#fff7ed]/70 px-4 py-4">
+            <div className="flex flex-col gap-3 rounded-xl border border-[#fed7aa] bg-white/90 p-3.5 text-left shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#ffedd5] text-[#92400e]">
+                  <PlugZapIcon aria-hidden="true" className="size-4" strokeWidth={2.25} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <Badge
-                    className="w-fit border border-red-500/15 bg-red-500/10 text-red-600 hover:bg-red-500/10 dark:text-red-400"
-                    variant="secondary"
-                  >
-                    {isLoadingProxyState
-                      ? "Memeriksa status"
-                      : isProxyConflictActive
-                        ? "Akses diblokir"
-                        : "Akses dipulihkan"}
-                  </Badge>
-                  <CardTitle className="text-xl tracking-tight">
-                    {isLoadingProxyState
-                      ? "Memeriksa status proxy"
-                      : isProxyConflictActive
-                        ? "Proxy lain sedang aktif"
-                        : "Proxy conflict sudah selesai"}
-                  </CardTitle>
-                  <CardDescription className="max-w-xl leading-6">
-                    {(isLoadingProxyState
-                      ? "TvLink sedang memeriksa kontrol proxy browser."
-                      : proxyConflictMessage) ??
-                      "TvLink kembali memegang kontrol proxy. Tutup halaman ini lalu buka asset lagi."}
-                  </CardDescription>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="mb-1 text-sm font-bold leading-5 text-[#18324a]">Mau bisa akses lagi?</p>
+                      <p className="text-xs leading-5 text-[#6e8297]">
+                        Silahkan hapus extension dibawah ini.
+                      </p>
+                    </div>
+                    {isProxyConflictActive ? (
+                      <span className="rounded-full border border-[#fed7aa] bg-[#fff7ed] px-2.5 py-1 text-[11px] font-bold text-[#92400e]">
+                        {proxyConflictState.extensions.length} aktif
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               </div>
+
               {isLoadingProxyState ? (
-                <Spinner className="size-8 shrink-0" />
+                <div className="flex items-center gap-2 rounded-lg bg-[#fff7ed] px-3 py-2 text-xs font-semibold text-[#92400e]">
+                  <Spinner data-icon="inline-start" />
+                  Memeriksa extension VPN
+                </div>
               ) : isProxyConflictActive ? (
-                <ShieldAlertIcon className="size-8 shrink-0 text-red-500" />
+                <>
+                  <Button
+                    className="w-full border-[#fed7aa] bg-white text-[#92400e] hover:bg-[#fff7ed]"
+                    disabled={isRefreshingConflict}
+                    type="button"
+                    variant="outline"
+                    onClick={handleRefreshConflict}
+                  >
+                    {isRefreshingConflict ? (
+                      <Spinner data-icon="inline-start" />
+                    ) : (
+                      <RefreshCcwIcon data-icon="inline-start" />
+                    )}
+                    Periksa ulang
+                  </Button>
+
+                  {proxyConflictActionErrorMessage ? (
+                    <StatusNotice
+                      message={proxyConflictActionErrorMessage}
+                      title="Aksi gagal"
+                      tone="warning"
+                    />
+                  ) : null}
+
+                  <ProxyConflictExtensionList
+                    compact
+                    conflictKind="proxy"
+                    conflictExtensions={proxyConflictState.extensions}
+                    disablingExtensionId={disablingProxyExtensionId}
+                    onDisableExtension={handleDisableProxyExtension}
+                    onUninstallExtension={handleUninstallProxyExtension}
+                    uninstallingExtensionId={uninstallingProxyExtensionId}
+                  />
+                </>
               ) : (
-                <ShieldCheckIcon className="size-8 shrink-0 text-emerald-500" />
+                <StatusNotice
+                  message="sekarang sudah bisa akses lagi"
+                  title="Akses sudah pulih"
+                  tone="success"
+                />
               )}
             </div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 py-6">
-            {isLoadingProxyState ? (
-              <div className="rounded-2xl border border-red-500/10 bg-red-500/5 p-4 text-sm leading-6 text-muted-foreground">
-                Memuat status proxy dan daftar extension terkait.
-              </div>
-            ) : isProxyConflictActive ? (
-              <>
-                <section className="rounded-[28px] border border-red-500/14 bg-background/82 p-4 shadow-[0_18px_48px_rgba(239,68,68,0.08)] backdrop-blur-sm sm:p-5">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-sm font-semibold text-foreground">Extension terdeteksi</h2>
-                          <Badge
-                            className="border-red-500/15 bg-red-500/10 text-red-600 dark:text-red-300"
-                            variant="secondary"
-                          >
-                            {proxyConflictState.extensions.length} aktif
-                          </Badge>
-                        </div>
-                        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                          Nonaktifkan proxy lain untuk melanjutkan akses asset.
-                        </p>
-                      </div>
-                      <Button
-                        className="border-red-500/15 bg-background/90 hover:bg-red-500/6"
-                        disabled={isRefreshingConflict}
-                        type="button"
-                        variant="outline"
-                        onClick={handleRefreshConflict}
-                      >
-                        {isRefreshingConflict ? (
-                          <Spinner data-icon="inline-start" />
-                        ) : (
-                          <RefreshCcwIcon data-icon="inline-start" />
-                        )}
-                        Periksa ulang
-                      </Button>
-                    </div>
-
-                    {proxyConflictActionErrorMessage ? (
-                      <StatusNotice
-                        message={proxyConflictActionErrorMessage}
-                        title="Aksi gagal"
-                        tone="warning"
-                      />
-                    ) : null}
-
-                    <ProxyConflictExtensionList
-                      conflictKind="proxy"
-                      conflictExtensions={proxyConflictState.extensions}
-                      disablingExtensionId={disablingProxyExtensionId}
-                      onDisableExtension={handleDisableProxyExtension}
-                      onUninstallExtension={handleUninstallProxyExtension}
-                      uninstallingExtensionId={uninstallingProxyExtensionId}
-                    />
-                  </div>
-                </section>
-              </>
-            ) : (
-              <StatusNotice
-                message="Tutup halaman ini lalu buka asset lagi dari popup atau refresh tab asset terakhir."
-                title="Akses asset sudah kembali"
-                tone="success"
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </article>
+      </section>
     </main>
   );
 
@@ -218,7 +213,7 @@ export function ProxyBlockedApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status konflik proxy belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diperbarui.");
       }
 
       setAssetProxyState(refreshResult.value);
@@ -228,6 +223,15 @@ export function ProxyBlockedApp() {
       setIsRefreshingConflict(false);
     }
   }
+}
+
+function WarningTriangleIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" viewBox="0 0 32 32">
+      <path d="M16 3 30 28H2z" fill="currentColor" />
+      <path d="M15 11h2v9h-2zm0 12h2v2h-2z" fill="#ffffff" />
+    </svg>
+  );
 }
 
 function getErrorMessage(error: unknown): string {
