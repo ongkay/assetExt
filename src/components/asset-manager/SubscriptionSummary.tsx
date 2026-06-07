@@ -21,7 +21,7 @@ export function SubscriptionSummary({ subscription }: SubscriptionSummaryProps) 
     <div className="flex flex-col gap-2">
       <section className="mb-4 rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg p-4 shadow-tvlink-soft">
         <div className="mb-3 flex items-center justify-between border-b border-tvlink-app-border pb-3">
-          <div className="text-xs font-semibold uppercase tracking-[0.16em] text-tvlink-muted-strong">
+          <div className="text-xs font-semibold uppercase tracking-wider text-tvlink-muted-strong">
             Subscription
           </div>
           <div

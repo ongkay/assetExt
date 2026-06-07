@@ -80,7 +80,7 @@ export function AssetAccessList({
 
             {asset.platform === "fxtester" ? (
               <button
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={true}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
@@ -89,7 +89,7 @@ export function AssetAccessList({
               </button>
             ) : (
               <button
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
                 type="button"
                 onClick={() => void onAccessAsset(asset)}
