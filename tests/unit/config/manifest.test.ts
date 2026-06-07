@@ -6,8 +6,8 @@ import manifest from "../../../manifest.json";
 
 describe("extension manifest", () => {
   it("brands the main extension as ext-1 for the paired install flow", () => {
-    expect(manifest.name).toBe("Asset Manager ext-1");
-    expect(manifest.action.default_title).toBe("Asset Manager ext-1");
+    expect(manifest.name).toBe("TvLink ext-1");
+    expect(manifest.action.default_title).toBe("TvLink ext-1");
   });
 
   it("runs asset content script at document_start so manual reload can be intercepted", () => {

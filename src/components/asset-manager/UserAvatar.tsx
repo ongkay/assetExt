@@ -1,6 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { getAvatarFallbackStyle, getAvatarInitials } from "@/lib/avatar";
 import type { ExtensionUser } from "@/lib/api/extensionApiTypes";
 
 type UserAvatarProps = {
@@ -10,38 +9,25 @@ type UserAvatarProps = {
 };
 
 export function UserAvatar({ isLoading = false, onOpenProfile, user }: UserAvatarProps) {
+  const avatarFallbackStyle = getAvatarFallbackStyle(user);
+
   return (
-    <Button
-      aria-label="Buka profile user"
+    <button
+      aria-label="Buka profil pengguna"
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-tvlink-panel-border bg-tvlink-card-bg text-sm font-semibold shadow-tvlink-avatar transition-transform duration-150 hover:-translate-y-0.5"
       disabled={isLoading}
-      size="icon-sm"
       type="button"
-      variant="ghost"
       onClick={onOpenProfile}
     >
       {isLoading ? (
         <Spinner />
+      ) : user.avatarUrl ? (
+        <img alt={user.username} className="h-10 w-10 rounded-full object-cover" src={user.avatarUrl} />
       ) : (
-        <Avatar size="sm">
-          {user.avatarUrl ? <AvatarImage alt={user.username} src={user.avatarUrl} /> : null}
-          <AvatarFallback>{getUserInitials(user)}</AvatarFallback>
-        </Avatar>
+        <span className="grid h-10 w-10 place-items-center rounded-full" style={avatarFallbackStyle}>
+          {getAvatarInitials(user).charAt(0) || "A"}
+        </span>
       )}
-    </Button>
+    </button>
   );
-}
-
-function getUserInitials(user: ExtensionUser): string {
-  const displayName = user.username.trim() || user.email.trim();
-
-  if (!displayName) {
-    return "AM";
-  }
-
-  return displayName
-    .split(/[\s._-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((namePart) => namePart[0]?.toUpperCase() ?? "")
-    .join("");
 }

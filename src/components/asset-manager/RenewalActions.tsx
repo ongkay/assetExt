@@ -30,9 +30,9 @@ export function RenewalActions({
   const [renewalActionMode, setRenewalActionMode] = useState<RenewalActionMode>("packages");
 
   return (
-    <section className="flex flex-col gap-3" aria-label="Renewal actions">
+    <section aria-label="Renewal actions" className="flex flex-col gap-3">
       <ToggleGroup
-        className="w-full rounded-xl bg-zinc-100 p-1 shadow-inner ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/5"
+        className="w-full rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg p-1 shadow-tvlink-soft"
         spacing={1}
         value={[renewalActionMode]}
         onValueChange={(nextRenewalActionModes) => {
@@ -44,14 +44,14 @@ export function RenewalActions({
         }}
       >
         <ToggleGroupItem
-          className="flex-1 rounded-lg text-zinc-500 transition-all hover:text-zinc-700 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-black/5 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-pressed:bg-zinc-800 dark:aria-pressed:text-zinc-50 dark:aria-pressed:ring-white/10"
+          className="flex-1 rounded-tvlink-button text-tvlink-muted transition-all hover:text-tvlink-text-strong aria-pressed:bg-tvlink-primary-soft aria-pressed:text-tvlink-primary-hover aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-tvlink-primary-border"
           value="packages"
         >
           <PackageIcon data-icon="inline-start" />
           Paket
         </ToggleGroupItem>
         <ToggleGroupItem
-          className="flex-1 rounded-lg text-zinc-500 transition-all hover:text-zinc-700 aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-black/5 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-pressed:bg-zinc-800 dark:aria-pressed:text-zinc-50 dark:aria-pressed:ring-white/10"
+          className="flex-1 rounded-tvlink-button text-tvlink-muted transition-all hover:text-tvlink-text-strong aria-pressed:bg-tvlink-primary-soft aria-pressed:text-tvlink-primary-hover aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-tvlink-primary-border"
           disabled={!isRedeemEnabled}
           value="redeem"
         >

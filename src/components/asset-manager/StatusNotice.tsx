@@ -18,13 +18,12 @@ const statusNoticeIcons = {
 } satisfies Record<StatusNoticeTone, typeof InfoIcon>;
 
 const statusNoticeStyles = {
-  danger:
-    "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 [&_svg]:text-red-600 dark:[&_svg]:text-red-400",
-  info: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400 [&_svg]:text-blue-600 dark:[&_svg]:text-blue-400",
+  danger: "border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger [&_svg]:text-tvlink-danger",
+  info: "border-tvlink-primary-border bg-tvlink-primary-soft text-tvlink-primary-hover [&_svg]:text-tvlink-primary-hover",
   success:
-    "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 [&_svg]:text-emerald-600 dark:[&_svg]:text-emerald-400",
+    "border-tvlink-success-border bg-tvlink-success-bg text-tvlink-success [&_svg]:text-tvlink-success",
   warning:
-    "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 [&_svg]:text-amber-600 dark:[&_svg]:text-amber-400",
+    "border-tvlink-warning-border bg-tvlink-warning-bg text-tvlink-warning [&_svg]:text-tvlink-warning",
 } satisfies Record<StatusNoticeTone, string>;
 
 export function StatusNotice({ message, title, tone = "info" }: StatusNoticeProps) {
@@ -33,12 +32,12 @@ export function StatusNotice({ message, title, tone = "info" }: StatusNoticeProp
 
   return (
     <Alert
+      className={`rounded-tvlink-card border px-4 py-3 backdrop-blur-sm ${styleClass}`}
       variant="default"
-      className={`backdrop-blur-md transition-all duration-300 hover:shadow-sm ${styleClass}`}
     >
       <Icon />
-      <AlertTitle className="font-semibold">{title}</AlertTitle>
-      <AlertDescription className="opacity-90">{message}</AlertDescription>
+      <AlertTitle className="font-semibold text-current">{title}</AlertTitle>
+      <AlertDescription className="text-current/90">{message}</AlertDescription>
     </Alert>
   );
 }

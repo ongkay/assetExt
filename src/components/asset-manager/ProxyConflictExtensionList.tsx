@@ -31,8 +31,8 @@ export function ProxyConflictExtensionList({
       <div
         className={
           compact
-            ? "rounded-2xl border border-red-500/16 bg-red-500/6 px-3.5 py-3 text-sm leading-6 text-muted-foreground"
-            : "rounded-2xl border border-red-500/20 bg-red-500/6 p-4 text-sm leading-6 text-muted-foreground shadow-sm shadow-red-500/5"
+            ? "rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-danger-bg px-3.5 py-3 text-sm leading-6 text-tvlink-muted"
+            : "rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-danger-bg p-4 text-sm leading-6 text-tvlink-muted shadow-tvlink-soft"
         }
       >
         {getMissingConflictCopy(conflictKind)} belum teridentifikasi. Buka{" "}
@@ -49,29 +49,29 @@ export function ProxyConflictExtensionList({
         const isUninstalling = uninstallingExtensionId === extension.id;
         const isActionRunning = Boolean(disablingExtensionId || uninstallingExtensionId);
         const itemClassName = extension.mayDisable
-          ? "border-red-500/20 bg-linear-to-r from-red-500/8 via-red-500/4 to-background shadow-sm shadow-red-500/5"
-          : "border-border/70 bg-background/90";
+          ? "border-tvlink-danger-border bg-tvlink-card-bg shadow-tvlink-soft"
+          : "border-tvlink-app-border bg-tvlink-card-bg";
         const iconClassName = extension.mayDisable
-          ? "border-red-500/20 bg-red-500/10 text-red-500"
-          : "border-border/70 bg-muted/60 text-muted-foreground";
+          ? "border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger"
+          : "border-tvlink-app-border bg-tvlink-surface-soft text-tvlink-muted";
 
         return (
           <div
             key={extension.id}
-            className={`rounded-2xl border p-4 transition-colors ${compact ? "flex flex-col gap-3" : "flex flex-col gap-3.5"} ${itemClassName}`}
+            className={`rounded-tvlink-card border p-4 transition-colors ${compact ? "flex flex-col gap-3" : "flex flex-col gap-3.5"} ${itemClassName}`}
           >
             <div className="flex items-start gap-3">
               {extension.iconUrl ? (
                 <img
                   alt={`${extension.name} icon`}
-                  className="size-10 rounded-xl border border-white/10 bg-background object-cover shadow-xs"
+                  className="size-10 rounded-tvlink-card border border-white/10 bg-background object-cover shadow-xs"
                   height={40}
                   src={extension.iconUrl}
                   width={40}
                 />
               ) : (
                 <div
-                  className={`flex size-10 items-center justify-center rounded-xl border ${iconClassName}`}
+                  className={`flex size-10 items-center justify-center rounded-tvlink-card border ${iconClassName}`}
                 >
                   <ShieldOffIcon className="size-4" />
                 </div>
@@ -79,13 +79,13 @@ export function ProxyConflictExtensionList({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="truncate text-sm font-semibold text-foreground">{extension.name}</p>
+                  <p className="truncate text-sm font-semibold text-tvlink-text-strong">{extension.name}</p>
                   {!compact ? (
                     <Badge
                       className={
                         extension.mayDisable
-                          ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-300"
-                          : "border-border/70 bg-muted/70 text-muted-foreground"
+                          ? "border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger"
+                          : "border-tvlink-app-border bg-tvlink-surface-soft text-tvlink-muted"
                       }
                       variant="secondary"
                     >
@@ -97,14 +97,14 @@ export function ProxyConflictExtensionList({
                   ) : null}
                 </div>
                 {!compact ? (
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  <p className="mt-1 text-sm leading-6 text-tvlink-muted">
                     {extension.mayDisable
                       ? getManageableConflictCopy(conflictKind)
                       : getManualConflictCopy(conflictKind)}
                   </p>
                 ) : !extension.mayDisable ? (
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Manual via <span className="font-mono text-foreground">chrome://extensions</span>
+                  <p className="mt-1 text-xs leading-5 text-tvlink-muted">
+                    Manual via <span className="font-mono text-tvlink-text-strong">chrome://extensions</span>
                   </p>
                 ) : null}
               </div>
@@ -113,11 +113,7 @@ export function ProxyConflictExtensionList({
             {extension.mayDisable ? (
               <div className="flex flex-wrap justify-end gap-2">
                 <Button
-                  className={
-                    compact
-                      ? "border-red-500/18 bg-red-500/12 text-red-600 hover:bg-red-500/20 dark:text-red-300"
-                      : "border-red-500/20 bg-red-500/12 text-red-600 hover:bg-red-500/18 dark:text-red-300"
-                  }
+                  className="border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger hover:bg-tvlink-danger-hover-bg hover:text-tvlink-danger-hover"
                   disabled={isActionRunning}
                   size={compact ? "sm" : "default"}
                   type="button"
@@ -132,11 +128,7 @@ export function ProxyConflictExtensionList({
                   {compact ? "Nonaktifkan" : "Nonaktifkan sekarang"}
                 </Button>
                 <Button
-                  className={
-                    compact
-                      ? "border-red-500/18 bg-background text-red-600 hover:bg-red-500/10 dark:text-red-300"
-                      : "border-red-500/20 bg-background text-red-600 hover:bg-red-500/10 dark:text-red-300"
-                  }
+                  className="border-tvlink-danger-border bg-tvlink-card-bg text-tvlink-danger hover:bg-tvlink-danger-hover-bg hover:text-tvlink-danger-hover"
                   disabled={isActionRunning}
                   size={compact ? "sm" : "default"}
                   type="button"
@@ -152,9 +144,9 @@ export function ProxyConflictExtensionList({
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-tvlink-muted">
                 <WrenchIcon className="size-4 text-amber-500" />
-                Buka <code className="font-mono text-foreground">chrome://extensions</code>
+                Buka <code className="font-mono text-tvlink-text-strong">chrome://extensions</code>
                 untuk menonaktifkan extension ini.
               </div>
             )}

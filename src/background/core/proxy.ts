@@ -24,7 +24,7 @@ import {
 } from "@/lib/storage/assetProxyState";
 
 const proxyUnsupportedMessage =
-  "Kontrol proxy browser tidak tersedia. Asset Manager tidak dapat memastikan koneksi asset berjalan aman.";
+  "Kontrol proxy browser tidak tersedia. TvLink tidak dapat memastikan koneksi asset berjalan aman.";
 const protectedMainFrameRedirectRuleBaseId = 2100;
 const protectedSubresourceBlockRuleBaseId = 2200;
 const proxyBlockedPagePath = "proxy-blocked.html";

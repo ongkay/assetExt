@@ -1,8 +1,5 @@
-import { ExternalLinkIcon, CandlestickChartIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
+import { BarChart3Icon, ExternalLinkIcon, TrendingUpIcon } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import type { ExtensionAssetSummary } from "@/lib/api/extensionApiTypes";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
@@ -18,22 +15,22 @@ type AssetAccessListProps = {
 function getPlatformIcon(platform: string) {
   switch (platform) {
     case "fxtester":
-      return <CandlestickChartIcon className="size-5 text-primary dark:text-blue-400" />;
+      return <BarChart3Icon className="h-5 w-5" strokeWidth={2} />;
     case "tradingview":
-      return <TrendingUpIcon className="size-5 text-primary dark:text-blue-400" />;
+      return <TrendingUpIcon className="h-5 w-5" strokeWidth={2} />;
     default:
-      return <BarChart3Icon className="size-5 text-primary dark:text-blue-400" />;
+      return <TrendingUpIcon className="h-5 w-5" strokeWidth={2} />;
   }
 }
 
-function getPlatformDescription(platform: string, defaultDesc: string) {
+function getPlatformDescription(platform: string, defaultDescription: string) {
   switch (platform) {
     case "fxtester":
-      return "Akses simulasi backtesting tools";
+      return "Access backtesting tools";
     case "tradingview":
-      return "Akses Tradingview Premium";
+      return "Access TradingView Premium";
     default:
-      return defaultDesc;
+      return defaultDescription;
   }
 }
 
@@ -45,12 +42,10 @@ export function AssetAccessList({
 }: AssetAccessListProps) {
   if (assets.length === 0) {
     return (
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>Asset belum tersedia</CardTitle>
-          <CardDescription>Belum ada platform asset yang dapat diakses.</CardDescription>
-        </CardHeader>
-      </Card>
+      <article className="rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg p-4 shadow-tvlink-soft">
+        <div className="text-sm font-bold text-tvlink-text-strong">Asset belum tersedia</div>
+        <div className="mt-1 text-xs text-tvlink-muted">Belum ada platform asset yang dapat diakses.</div>
+      </article>
     );
   }
 
@@ -61,57 +56,44 @@ export function AssetAccessList({
   });
 
   return (
-    <div className="flex flex-col gap-3">
+    <section className="grid gap-3">
       {sortedAssets.map((asset) => {
         const platformConfig = getAssetPlatformConfig(asset.platform);
-        const modeLabel = asset.mode === "private" ? "Private" : "Share";
-        const modeHint = asset.nextMode === "private" ? "Sementara share, akan beralih ke Private." : null;
 
         return (
-          <Card
+          <article
             key={asset.platform}
-            size="sm"
-            className="group relative overflow-hidden border-border/60 bg-card shadow-sm p-4 flex flex-col gap-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-primary/40"
+            className="rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg p-4 shadow-tvlink-soft"
           >
-            <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-            <div className="relative z-10 flex items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 dark:bg-blue-500/20 text-primary dark:text-blue-400 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:bg-primary/20">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-tvlink-card bg-tvlink-icon-tile-bg text-tvlink-primary">
                 {getPlatformIcon(asset.platform)}
               </div>
-              <div className="flex min-w-0 flex-col gap-0.5 justify-center mt-0.5">
-                <div className="flex items-center gap-2 text-sm font-bold text-foreground">
-                  <span>{platformConfig.label}</span>
-                  <Badge className="rounded-full px-2 py-0 text-[10px]" variant="secondary">
-                    {modeLabel}
-                  </Badge>
-                </div>
-                <div className="text-[12px] text-muted-foreground leading-snug pr-2">
-                  {modeHint ?? getPlatformDescription(asset.platform, platformConfig.targetUrl)}
+
+              <div>
+                <div className="mb-0.5 text-sm font-bold text-tvlink-text-strong">{platformConfig.label}</div>
+                <div className="text-xs text-tvlink-muted">
+                  {getPlatformDescription(asset.platform, platformConfig.targetUrl)}
                 </div>
               </div>
             </div>
-            <div className="relative z-10">
-              <Button
-                className="w-full relative overflow-hidden bg-linear-to-r! from-blue-600! to-indigo-600! hover:from-blue-500! hover:to-indigo-500! text-white! font-medium shadow-md shadow-blue-500/20 border-0! transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/40 active:scale-[0.98] active:translate-y-0 group/btn"
-                disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
-                type="button"
-                onClick={() => void onAccessAsset(asset)}
-              >
-                {isAccessingPlatform === asset.platform ? (
-                  <Spinner data-icon="inline-start" className="mr-2" />
-                ) : null}
-                <span className="relative z-10 flex items-center">
-                  Akses {platformConfig.label}
-                  {isAccessingPlatform !== asset.platform ? (
-                    <ExternalLinkIcon className="ml-2 size-4 opacity-90 transition-transform duration-300 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />
-                  ) : null}
-                </span>
-                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent translate-x-[-150%] group-hover/btn:translate-x-[150%] transition-transform duration-1000 ease-in-out" />
-              </Button>
-            </div>
-          </Card>
+
+            <button
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
+              type="button"
+              onClick={() => void onAccessAsset(asset)}
+            >
+              <span>Open Now</span>
+              {isAccessingPlatform === asset.platform ? (
+                <Spinner data-icon="inline-end" />
+              ) : (
+                <ExternalLinkIcon className="h-4 w-4" strokeWidth={2} />
+              )}
+            </button>
+          </article>
         );
       })}
-    </div>
+    </section>
   );
 }

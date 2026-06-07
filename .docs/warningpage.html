@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TVLink Warning</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23d97706' d='M16 3 30 28H2z'/%3E%3Cpath fill='white' d='M15 11h2v9h-2zm0 12h2v2h-2z'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#009cff',
+            primaryHover: '#0087e6',
+            primarySoft: '#e8f6ff',
+            primaryBorder: '#bde8ff',
+            appBg: '#f3fbff',
+            appBorder: '#d8e8f1',
+            textStrong: '#18324a',
+            textBase: '#2d4962',
+            muted: '#6e8297',
+            mutedStrong: '#5a6f85',
+            warning: '#d97706',
+            warningStrong: '#92400e',
+            warningBg: '#fff7ed',
+            warningSoft: '#ffedd5',
+            warningBorder: '#fed7aa',
+          },
+          boxShadow: {
+            app: '0 20px 44px rgba(22, 50, 74, 0.12)',
+            soft: '0 12px 24px rgba(22, 50, 74, 0.08)',
+            warning: '0 18px 34px rgba(217, 119, 6, 0.18)',
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="m-0 min-h-screen bg-appBg p-4 font-sans text-textBase antialiased" style="background: radial-gradient(circle at top, #ecf6ff 0%, #e6f2ff 45%, #dcecff 100%);">
+  <main class="mx-auto flex min-h-[calc(100vh-32px)] w-full max-w-[360px] items-center justify-center">
+    <section class="w-full" aria-labelledby="warning-title">
+      <article class="overflow-hidden rounded-2xl border border-warningBorder bg-white shadow-warning">
+        <div class="relative px-6 pb-6 pt-7 text-center" style="background: radial-gradient(circle at top, rgba(251, 191, 36, 0.28), transparent 48%), linear-gradient(180deg, #ffffff 0%, #fffaf0 100%);">
+          <div class="pointer-events-none absolute left-5 top-5 h-2 w-2 rounded-full bg-warning/35"></div>
+          <div class="pointer-events-none absolute right-7 top-9 h-3 w-3 rounded-full bg-warning/25"></div>
+          <div class="pointer-events-none absolute bottom-6 left-8 h-2.5 w-2.5 rounded-full bg-warning/20"></div>
+
+          <div class="mx-auto mb-5 grid h-[76px] w-[76px] place-items-center rounded-2xl border border-warningBorder bg-warningBg text-warning shadow-soft">
+            <i class="fa-solid fa-triangle-exclamation text-[36px] leading-none" aria-hidden="true"></i>
+          </div>
+
+          <p class="mb-2 text-[11px] font-extrabold uppercase tracking-[0.22em] text-warningStrong">access denied</p>
+          <!-- <h1 id="warning-title" class="mx-auto mb-3  font-extrabold leading-[1.18] text-textStrong">Aktifkan Semua Extension</h1> -->
+          <p class="mx-auto max-w-[285px] text-sm font-medium leading-6 text-mutedStrong">
+            Silakan aktifkan semua extension untuk bisa akses tvlink.
+          </p>
+        </div>
+
+        <div class="border-t border-warningBorder bg-warningBg/70 px-4 py-4">
+          <div class="flex items-start gap-3 rounded-xl border border-warningBorder bg-white/90 p-3.5 text-left shadow-sm">
+            <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warningSoft text-warningStrong">
+              <i class="fa-solid fa-plug-circle-exclamation text-sm" aria-hidden="true"></i>
+            </div>
+
+            <div class="min-w-0">
+              <p class="mb-1 text-sm font-bold leading-5 text-textStrong">Periksa extension tvlink</p>
+              <p class="text-xs leading-5 text-muted">
+                Pastikan 2 extension terinstall dan aktif.
+              </p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

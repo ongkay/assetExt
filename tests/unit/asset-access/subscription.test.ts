@@ -4,6 +4,7 @@ import {
   formatDateForPopup,
   getSubscriptionStatusLabel,
   isRenewalWarningActive,
+  isSubscriptionInactive,
 } from "@/lib/asset-access/subscription";
 
 describe("subscription helpers", () => {
@@ -23,6 +24,14 @@ describe("subscription helpers", () => {
     expect(getSubscriptionStatusLabel("expired")).toBe("Expired");
     expect(getSubscriptionStatusLabel("canceled")).toBe("Canceled");
     expect(getSubscriptionStatusLabel("none")).toBe("None");
+  });
+
+  it("detects inactive subscription statuses", () => {
+    expect(isSubscriptionInactive("expired")).toBe(true);
+    expect(isSubscriptionInactive("canceled")).toBe(true);
+    expect(isSubscriptionInactive("none")).toBe(true);
+    expect(isSubscriptionInactive("active")).toBe(false);
+    expect(isSubscriptionInactive("processed")).toBe(false);
   });
 
   it("formats subscription dates for the popup", () => {

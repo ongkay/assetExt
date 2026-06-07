@@ -93,9 +93,9 @@ export function ProxyBlockedApp() {
                   </CardTitle>
                   <CardDescription className="max-w-xl leading-6">
                     {(isLoadingProxyState
-                      ? "Asset Manager sedang memeriksa kontrol proxy browser."
+                      ? "TvLink sedang memeriksa kontrol proxy browser."
                       : proxyConflictMessage) ??
-                      "Asset Manager kembali memegang kontrol proxy. Tutup halaman ini lalu buka asset lagi."}
+                      "TvLink kembali memegang kontrol proxy. Tutup halaman ini lalu buka asset lagi."}
                   </CardDescription>
                 </div>
               </div>

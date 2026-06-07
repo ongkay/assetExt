@@ -19,6 +19,10 @@ export function isSubscriptionActive(status: SubscriptionStatus): boolean {
   return status === "active" || status === "processed";
 }
 
+export function isSubscriptionInactive(status: SubscriptionStatus): boolean {
+  return status === "expired" || status === "canceled" || status === "none";
+}
+
 export function isRenewalWarningActive(endAt: string | null, now = new Date()): boolean {
   if (!endAt) {
     return false;

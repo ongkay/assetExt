@@ -30,10 +30,10 @@ export function OptionsApp() {
               <Logo className="h-5 w-5 shrink-0" title="Extension logo" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">Asset Manager Settings</h1>
+              <h1 className="text-xl font-semibold tracking-tight">TvLink Settings</h1>
               <p className="text-sm text-muted-foreground">Version {extensionVersion}</p>
               <p className="text-sm text-muted-foreground">
-                Atur preferensi tampilan ekstensi agar tetap nyaman dipakai di semua permukaan Asset Manager.
+                Atur preferensi tampilan ekstensi agar tetap nyaman dipakai di semua permukaan TvLink.
               </p>
             </div>
           </div>

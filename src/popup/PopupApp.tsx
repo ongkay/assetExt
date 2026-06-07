@@ -4,6 +4,7 @@ import { LogOutIcon, RefreshCcwIcon, ShieldAlertIcon } from "lucide-react";
 import { AssetAccessList } from "@/components/asset-manager/AssetAccessList";
 import { BootstrapSkeleton } from "@/components/asset-manager/BootstrapSkeleton";
 import { ExtensionHeader } from "@/components/asset-manager/ExtensionHeader";
+import { InactiveSubscriptionPanel } from "@/components/asset-manager/InactiveSubscriptionPanel";
 import { ProxyConflictExtensionList } from "@/components/asset-manager/ProxyConflictExtensionList";
 import { ProfilePanel } from "@/components/asset-manager/ProfilePanel";
 import { RenewalActions } from "@/components/asset-manager/RenewalActions";
@@ -27,7 +28,7 @@ import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import { createUnblockedPeerGuardState } from "@/lib/peer-guard/peerGuardState";
 import { getAutomaticAssetMode } from "@/lib/asset-access/mode";
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
-import { isSubscriptionActive } from "@/lib/asset-access/subscription";
+import { isSubscriptionActive, isSubscriptionInactive } from "@/lib/asset-access/subscription";
 import { disableManagedExtension, uninstallManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
 import { runtimeMessageType, type BootstrapRuntimeValue } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
@@ -94,7 +95,7 @@ export function PopupApp() {
     const assetResponse = assetResult.value;
 
     if (assetResponse.status === "forbidden") {
-      setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka asset ini.");
+      setAssetAccessErrorMessage("Subscription aktif diperlukan untuk membuka akses.");
       return;
     }
   }, []);
@@ -318,7 +319,7 @@ export function PopupApp() {
     return (
       <PopupShell isThemeReady={isThemeReady}>
         <StatusNotice
-          message="Data user atau subscription belum tersedia dari Asset Manager. Refresh data untuk mencoba sinkron ulang."
+          message="Data user atau subscription belum tersedia dari TvLink. Refresh data untuk mencoba sinkron ulang."
           title="Data belum lengkap"
           tone="warning"
         />
@@ -347,13 +348,14 @@ export function PopupApp() {
   const packages = snapshot.packages ?? [];
   const hasProcessedSubscription = snapshot.subscription.status === "processed";
   const hasActiveSubscription = isSubscriptionActive(snapshot.subscription.status);
+  const hasInactiveSubscription = isSubscriptionInactive(snapshot.subscription.status);
 
   return (
     <PopupShell isThemeReady={isThemeReady}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-1 flex-col">
         <ExtensionHeader
-          subtitle="Akses asset langsung dari extension."
-          title="Asset Manager"
+          subtitle="TradingView Premium Solution"
+          title="TvLink Extension"
           user={snapshot.user}
           version={getExtensionVersion()}
           onOpenProfile={() => setPopupView("profile")}
@@ -391,7 +393,18 @@ export function PopupApp() {
 
         {proxyConflictMessage ? renderProxyConflictPanel() : null}
 
-        {packages.length > 0 ? (
+        {hasInactiveSubscription ? (
+          <InactiveSubscriptionPanel
+            apiBaseUrl={apiBaseUrl}
+            errorMessage={redeemErrorMessage ?? undefined}
+            isRedeeming={isRedeeming}
+            redeem={snapshot.redeem}
+            subscription={snapshot.subscription}
+            onRedeemCdKey={handleRedeemCdKey}
+          />
+        ) : null}
+
+        {!hasInactiveSubscription && packages.length > 0 ? (
           <RenewalActions
             apiBaseUrl={apiBaseUrl}
             errorMessage={redeemErrorMessage ?? undefined}
@@ -403,19 +416,17 @@ export function PopupApp() {
         ) : null}
 
         {hasActiveSubscription ? (
-          <div className="flex flex-col gap-2 mt-1">
-            <AssetAccessList
-              assets={assets}
-              isAccessBlocked={Boolean(proxyConflictMessage)}
-              isAccessingPlatform={accessingPlatform}
-              onAccessAsset={handleAccessAsset}
-            />
-          </div>
+          <AssetAccessList
+            assets={assets}
+            isAccessBlocked={Boolean(proxyConflictMessage)}
+            isAccessingPlatform={accessingPlatform}
+            onAccessAsset={handleAccessAsset}
+          />
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button
-            className="relative overflow-hidden bg-white! hover:bg-muted! text-foreground! font-medium border! border-border/60! shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.98] active:translate-y-0 group/refresh"
+        <footer className="mt-auto grid grid-cols-2 gap-2.5 border-t border-tvlink-app-border pt-4">
+          <button
+            className="group inline-flex h-10 items-center justify-center gap-2 rounded-tvlink-button border border-tvlink-app-border bg-tvlink-card-bg text-sm font-semibold text-tvlink-text-strong shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-tvlink-primary-border hover:bg-tvlink-primary-soft hover:text-tvlink-primary-hover hover:shadow-tvlink-soft active:translate-y-0"
             disabled={isSyncing}
             type="button"
             onClick={handleRefreshBootstrap}
@@ -424,18 +435,14 @@ export function PopupApp() {
               <Spinner data-icon="inline-start" />
             ) : (
               <RefreshCcwIcon
-                className={
-                  isSyncing
-                    ? "animate-spin"
-                    : "transition-transform duration-500 group-hover/refresh:rotate-180"
-                }
-                data-icon="inline-start"
+                className="h-4 w-4 transition duration-200 group-hover:rotate-45"
+                strokeWidth={2}
               />
             )}
-            Refresh
-          </Button>
-          <Button
-            className="relative overflow-hidden bg-destructive/10! hover:bg-destructive/20! text-destructive! font-medium border! border-destructive/20! shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.98] active:translate-y-0 group/logout"
+            <span>Refresh</span>
+          </button>
+          <button
+            className="group inline-flex h-10 items-center justify-center gap-2 rounded-tvlink-button border border-tvlink-danger-border bg-tvlink-danger-bg text-sm font-semibold text-tvlink-danger shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-tvlink-danger-hover-bg hover:text-tvlink-danger-hover hover:shadow-tvlink-soft active:translate-y-0"
             disabled={isLoggingOut}
             type="button"
             onClick={() => void handleLogout()}
@@ -444,13 +451,13 @@ export function PopupApp() {
               <Spinner data-icon="inline-start" />
             ) : (
               <LogOutIcon
-                className="transition-transform duration-300 group-hover/logout:-translate-x-1"
-                data-icon="inline-start"
+                className="h-4 w-4 transition duration-200 group-hover:translate-x-0.5"
+                strokeWidth={2}
               />
             )}
-            Logout
-          </Button>
-        </div>
+            <span>Logout</span>
+          </button>
+        </footer>
       </div>
     </PopupShell>
   );
@@ -507,22 +514,22 @@ export function PopupApp() {
           tone="danger"
         />
 
-        <section className="rounded-[24px] border border-red-500/16 bg-linear-to-b from-red-500/[0.08] via-red-500/[0.03] to-background p-3.5 shadow-sm shadow-red-500/5">
+        <section className="rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-card-bg p-4 shadow-tvlink-soft">
           <div className="flex flex-col gap-3">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-sm font-semibold text-foreground">Extension terdeteksi</h2>
+                  <h2 className="text-sm font-semibold text-tvlink-text-strong">Extension terdeteksi</h2>
                   {conflictExtensions.length > 0 ? (
                     <Badge
-                      className="border-red-500/15 bg-red-500/10 text-red-600 dark:text-red-300"
+                      className="border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger"
                       variant="secondary"
                     >
                       {conflictExtensions.length} aktif
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                <p className="mt-1 text-xs leading-5 text-tvlink-muted">
                   Nonaktifkan proxy lain untuk lanjut.
                 </p>
               </div>
@@ -550,10 +557,10 @@ export function PopupApp() {
   function renderPeerGuardBlockedState() {
     return (
       <PopupShell isThemeReady={isThemeReady}>
-        <Empty className="min-h-[350px] gap-3 rounded-2xl border border-border/80 bg-card/96 px-6 py-10 shadow-lg shadow-black/5">
+        <Empty className="min-h-[350px] gap-3 rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg px-6 py-10 shadow-tvlink-soft">
           <EmptyHeader className="gap-3">
             <EmptyMedia
-              className="size-11 rounded-2xl border border-red-500/15 bg-red-500/[0.08] text-red-500 [&_svg:not([class*='size-'])]:size-5"
+              className="size-11 rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-danger-bg text-tvlink-danger [&_svg:not([class*='size-'])]:size-5"
               variant="icon"
             >
               <ShieldAlertIcon />
@@ -571,14 +578,16 @@ export function PopupApp() {
 
     return (
       <PopupShell isThemeReady={isThemeReady}>
-        <div className="flex min-h-[350px] flex-col gap-3 rounded-2xl border border-red-500/16 bg-card/96 px-4 py-5 shadow-lg shadow-red-500/5">
-          <div className="flex items-start gap-3 rounded-2xl border border-red-500/12 bg-red-500/5 px-4 py-4">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-red-500/15 bg-red-500/[0.08] text-red-500">
+        <div className="flex min-h-[350px] flex-col gap-3 rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-card-bg px-4 py-5 shadow-tvlink-soft">
+          <div className="flex items-start gap-3 rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-danger-bg px-4 py-4">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-tvlink-card border border-tvlink-danger-border bg-tvlink-card-bg text-tvlink-danger">
               <ShieldAlertIcon className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">Akses diblokir demi proteksi cookies</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="text-sm font-semibold text-tvlink-text-strong">
+                Akses diblokir demi proteksi cookies
+              </p>
+              <p className="mt-1 text-sm leading-6 text-tvlink-muted">
                 {cookieGuardState?.message ??
                   "Extension lain dengan permission cookies terdeteksi. Nonaktifkan extension tersebut untuk lanjut."}
               </p>
@@ -587,13 +596,13 @@ export function PopupApp() {
 
           <div className="flex items-center justify-between gap-2 px-1">
             <div>
-              <p className="text-sm font-semibold text-foreground">Extension terdeteksi</p>
-              <p className="text-xs leading-5 text-muted-foreground">
+              <p className="text-sm font-semibold text-tvlink-text-strong">Extension terdeteksi</p>
+              <p className="text-xs leading-5 text-tvlink-muted">
                 Matikan extension cookies selain allowlist internal.
               </p>
             </div>
             <Button
-              className="border-red-500/15 bg-background/90 hover:bg-red-500/6"
+              className="rounded-tvlink-button border-tvlink-danger-border bg-tvlink-card-bg text-tvlink-danger hover:bg-tvlink-danger-hover-bg hover:text-tvlink-danger-hover"
               disabled={isRefreshingCookieGuard}
               size="sm"
               type="button"

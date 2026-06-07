@@ -1,7 +1,9 @@
 import { isValidElement, type ReactElement, type ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { Button } from "@/components/ui/button";
+import { InactiveSubscriptionPanel } from "@/components/asset-manager/InactiveSubscriptionPanel";
 import { PackageList } from "@/components/asset-manager/PackageList";
 import { UnauthenticatedPanel } from "@/components/asset-manager/UnauthenticatedPanel";
 import { VersionGatePanel } from "@/components/asset-manager/VersionGatePanel";
@@ -44,6 +46,24 @@ describe("asset manager link buttons", () => {
 
     expect(linkButtons).toHaveLength(3);
     expect(linkButtons.every((button) => button.props.nativeButton === false)).toBe(true);
+  });
+
+  it("renders inactive subscription Buy Now as a checkout anchor", () => {
+    const panelHtml = renderToStaticMarkup(
+      <InactiveSubscriptionPanel
+        apiBaseUrl="http://localhost:3000"
+        redeem={{ enabled: true }}
+        subscription={{
+          endAt: null,
+          packageName: null,
+          status: "expired",
+        }}
+        onRedeemCdKey={() => {}}
+      />,
+    );
+
+    expect(panelHtml).toContain('href="http://localhost:3000/checkout/"');
+    expect(panelHtml).toContain("Buy Now");
   });
 });
 

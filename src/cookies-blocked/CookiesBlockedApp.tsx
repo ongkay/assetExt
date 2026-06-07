@@ -93,7 +93,7 @@ export function CookiesBlockedApp() {
                   </CardTitle>
                   <CardDescription className="max-w-xl leading-6">
                     {(isLoadingCookieGuardState
-                      ? "Asset Manager sedang memeriksa extension lain yang memiliki akses cookies."
+                      ? "TvLink sedang memeriksa extension lain yang memiliki akses cookies."
                       : cookieGuardState?.message) ??
                       "Akses asset dapat dibuka kembali. Tutup halaman ini lalu buka asset lagi dari popup."}
                   </CardDescription>

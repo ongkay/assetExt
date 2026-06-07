@@ -1,4 +1,5 @@
 import type { BootstrapCacheRecord } from "@/lib/storage/bootstrapCache";
+import { getAvatarLabel, resolveAvatarImageUrl } from "@/lib/avatar";
 
 import {
   desktopPopupMenuSelector,
@@ -44,7 +45,6 @@ import {
   disableButton,
   disableFavoriteButton,
   disableFavoriteIcon,
-  escapeHtml,
   getMenuItemContainer,
   hidePersistentElement,
   normalizeText,
@@ -494,38 +494,12 @@ function isRelevantTvNode(node: Node) {
 }
 
 function getAvatarSource(avatarUrl: string | null, publicId: string, username: string, email: string) {
-  if (avatarUrl) {
-    return avatarUrl;
-  }
-
-  const avatarLabel = getAvatarLabel(username, email, publicId);
-  const avatarSeed = publicId || username || email;
-
-  return createFallbackAvatarUrl(avatarSeed, avatarLabel);
-}
-
-function getAvatarLabel(...labelCandidates: Array<string | null | undefined>) {
-  const labelSource = labelCandidates.find((candidate) => Boolean(candidate?.trim()))?.trim() ?? "A";
-
-  return labelSource.charAt(0).toUpperCase();
-}
-
-function createFallbackAvatarUrl(seed: string, label: string) {
-  const backgroundColor = getAvatarColor(seed);
-  const svgMarkup = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="24" fill="${backgroundColor}"/><text x="24" y="24" dominant-baseline="central" text-anchor="middle" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">${escapeHtml(label)}</text></svg>`;
-
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgMarkup)}`;
-}
-
-function getAvatarColor(seed: string) {
-  const palette = ["#2563eb", "#7c3aed", "#db2777", "#ea580c", "#059669", "#0891b2", "#ca8a04", "#4f46e5"];
-  let hash = 0;
-
-  for (const character of seed) {
-    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
-  }
-
-  return palette[hash % palette.length];
+  return resolveAvatarImageUrl({
+    avatarUrl,
+    email,
+    publicId,
+    username,
+  });
 }
 
 function ensureTvShellBootstrapStyle() {
