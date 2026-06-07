@@ -31,6 +31,12 @@ describe("proxy extension management", () => {
           name: "Fast Proxy",
         }),
         createManagedExtension({
+          id: "vpn-provider-ext",
+          mayDisable: true,
+          name: "VPN Provider",
+          permissions: ["vpnProvider", "storage"],
+        }),
+        createManagedExtension({
           id: "theme-extension",
           name: "Theme Extension",
           permissions: ["storage"],
@@ -47,6 +53,13 @@ describe("proxy extension management", () => {
         installType: "normal",
         mayDisable: true,
         name: "Fast Proxy",
+      },
+      {
+        iconUrl: null,
+        id: "vpn-provider-ext",
+        installType: "normal",
+        mayDisable: true,
+        name: "VPN Provider",
       },
       {
         iconUrl: null,

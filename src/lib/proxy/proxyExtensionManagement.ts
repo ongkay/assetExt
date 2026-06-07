@@ -1,6 +1,6 @@
 import type { AssetProxyConflictExtensionCandidate } from "@/lib/proxy/assetProxy";
 
-const proxyPermissionName = "proxy";
+const proxyPermissionNames = ["proxy", "vpnProvider"] as const;
 const extensionTypeName = "extension";
 const extensionManagementUnavailableMessage = "Kontrol extension browser tidak tersedia.";
 
@@ -76,7 +76,7 @@ function isProxyExtensionCandidate(
     extensionInfo.enabled &&
     extensionInfo.type === extensionTypeName &&
     extensionInfo.id !== selfExtensionId &&
-    extensionInfo.permissions.includes(proxyPermissionName)
+    proxyPermissionNames.some((permissionName) => extensionInfo.permissions.includes(permissionName))
   );
 }
 

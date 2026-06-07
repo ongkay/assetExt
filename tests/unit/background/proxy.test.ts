@@ -194,7 +194,7 @@ describe("background proxy controller", () => {
     const proxyCore = await import("@/background/core/proxy");
 
     await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
-      "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.",
+      "Extension VPN/proxy lain terdeteksi. Nonaktifkan extension tersebut untuk melanjutkan akses asset.",
     );
 
     expect(chromeRuntime.updateDynamicRules).toHaveBeenCalledWith(
@@ -208,6 +208,60 @@ describe("background proxy controller", () => {
           }),
         ]),
       }),
+    );
+  });
+
+  it("blocks access when another enabled extension has proxy permission", async () => {
+    const chromeRuntime = installProxyChromeStub({
+      initialLevelOfControl: "controllable_by_this_extension",
+      managedExtensions: [
+        createManagedExtension({
+          id: "asset-manager-extension",
+          name: "Asset Manager",
+        }),
+        createManagedExtension({
+          id: "proxy-ext",
+          name: "Proxy Switcher",
+        }),
+      ],
+    });
+    const proxyCore = await import("@/background/core/proxy");
+
+    await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
+      "Extension VPN/proxy lain terdeteksi. Nonaktifkan extension tersebut untuk melanjutkan akses asset.",
+    );
+
+    expect(chromeRuntime.proxySet).not.toHaveBeenCalled();
+    expect(chromeRuntime.updateDynamicRules).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addRules: expect.arrayContaining([
+          expect.objectContaining({
+            action: expect.objectContaining({ type: "redirect" }),
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("blocks access when another enabled extension has vpnProvider permission", async () => {
+    installProxyChromeStub({
+      initialLevelOfControl: "controllable_by_this_extension",
+      managedExtensions: [
+        createManagedExtension({
+          id: "asset-manager-extension",
+          name: "Asset Manager",
+        }),
+        createManagedExtension({
+          id: "vpn-provider-ext",
+          name: "VPN Provider",
+          permissions: ["vpnProvider", "storage"],
+        }),
+      ],
+    });
+    const proxyCore = await import("@/background/core/proxy");
+
+    await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
+      "Extension VPN/proxy lain terdeteksi. Nonaktifkan extension tersebut untuk melanjutkan akses asset.",
     );
   });
 
@@ -248,7 +302,7 @@ describe("background proxy controller", () => {
     const assetProxyState = await import("@/lib/storage/assetProxyState");
 
     await expect(proxyCore.ensureProxyAccessAvailable()).rejects.toThrow(
-      "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.",
+      "Extension VPN/proxy lain terdeteksi. Nonaktifkan extension tersebut untuk melanjutkan akses asset.",
     );
 
     await expect(assetProxyState.readAssetProxyState()).resolves.toMatchObject({
@@ -274,6 +328,24 @@ describe("background proxy controller", () => {
 
     expect(chromeRuntime.managementGetAll).toHaveBeenCalled();
   });
+
+  it("refreshes proxy state when extension lifecycle events fire", async () => {
+    const chromeRuntime = installProxyChromeStub();
+
+    await import("@/background/core/proxy");
+
+    expect(chromeRuntime.getOnManagementEnabledListener()).not.toBeNull();
+    chromeRuntime.getOnManagementEnabledListener()?.(
+      createManagedExtension({
+        id: "proxy-ext",
+        name: "Proxy Switcher",
+      }),
+    );
+
+    await vi.waitFor(() => {
+      expect(chromeRuntime.managementGetAll).toHaveBeenCalled();
+    });
+  });
 });
 
 function installProxyChromeStub(options?: {
@@ -294,6 +366,7 @@ function installProxyChromeStub(options?: {
     | null = null;
   let onCompletedListener: ((details: chrome.webRequest.WebResponseCacheDetails) => void) | null = null;
   let onErrorOccurredListener: ((details: chrome.webRequest.WebResponseErrorDetails) => void) | null = null;
+  let onManagementEnabledListener: ((info: chrome.management.ExtensionInfo) => void) | null = null;
 
   const proxySet = vi.fn((details: { value: unknown }, callback: (() => void) | undefined) => {
     currentLevelOfControl = "controlled_by_this_extension";
@@ -347,6 +420,20 @@ function installProxyChromeStub(options?: {
     },
     management: {
       getAll: managementGetAll,
+      onDisabled: {
+        addListener: vi.fn(),
+      },
+      onEnabled: {
+        addListener: vi.fn((listener) => {
+          onManagementEnabledListener = listener;
+        }),
+      },
+      onInstalled: {
+        addListener: vi.fn(),
+      },
+      onUninstalled: {
+        addListener: vi.fn(),
+      },
       setEnabled: managementSetEnabled,
     },
     proxy: {
@@ -396,6 +483,9 @@ function installProxyChromeStub(options?: {
     },
     getOnErrorOccurredListener() {
       return onErrorOccurredListener;
+    },
+    getOnManagementEnabledListener() {
+      return onManagementEnabledListener;
     },
     managementGetAll,
     managementSetEnabled,

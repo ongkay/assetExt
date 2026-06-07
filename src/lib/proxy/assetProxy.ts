@@ -2,7 +2,7 @@ import type { AssetPlatform } from "@/lib/asset-access/platforms";
 
 export const assetProxySchemes = ["http", "https", "socks5"] as const;
 export const assetProxyConflictMessage =
-  "VPN lain terdeteksi. Nonaktifkan VPN lain untuk melanjutkan akses asset.";
+  "Extension VPN/proxy lain terdeteksi. Nonaktifkan extension tersebut untuk melanjutkan akses asset.";
 export type AssetProxyLevelOfControl = chrome.types.ChromeSettingGetResultDetails["levelOfControl"];
 
 export type AssetProxyScheme = (typeof assetProxySchemes)[number];

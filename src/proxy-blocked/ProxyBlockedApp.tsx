@@ -9,7 +9,7 @@ import { type AssetProxyState, assetProxyConflictMessage } from "@/lib/proxy/ass
 import { disableManagedExtension, uninstallManagedExtension } from "@/lib/proxy/proxyExtensionManagement";
 import { runtimeMessageType } from "@/lib/runtime/messages";
 import { sendRuntimeMessage } from "@/lib/runtime/sendRuntimeMessage";
-import { assetProxyStateStorageKey, readAssetProxyState } from "@/lib/storage/assetProxyState";
+import { assetProxyStateStorageKey } from "@/lib/storage/assetProxyState";
 
 export function ProxyBlockedApp() {
   const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
@@ -35,7 +35,7 @@ export function ProxyBlockedApp() {
       : "Akses sudah dipulihkan.";
 
   useEffect(() => {
-    void readAssetProxyState().then(setAssetProxyState);
+    void handleRefreshConflict();
   }, []);
 
   useEffect(() => {

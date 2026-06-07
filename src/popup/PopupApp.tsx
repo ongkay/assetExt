@@ -39,7 +39,7 @@ import {
   createBootstrapCacheRecord,
   type BootstrapCacheRecord,
 } from "@/lib/storage/bootstrapCache";
-import { assetProxyStateStorageKey, readAssetProxyState } from "@/lib/storage/assetProxyState";
+import { assetProxyStateStorageKey } from "@/lib/storage/assetProxyState";
 import { useThemePreference } from "@/lib/useThemePreference";
 
 import { PopupShell } from "./ui/PopupShell";
@@ -498,9 +498,13 @@ export function PopupApp() {
   }
 
   async function requestAssetProxyState() {
-    const nextAssetProxyState = await readAssetProxyState();
+    const nextAssetProxyState = await sendRuntimeMessage<AssetProxyState>({
+      type: runtimeMessageType.proxyConflictRefreshRequested,
+    });
 
-    setAssetProxyState(nextAssetProxyState);
+    if (nextAssetProxyState.value) {
+      setAssetProxyState(nextAssetProxyState.value);
+    }
   }
 
   function renderProxyConflictPanel() {
@@ -509,8 +513,8 @@ export function PopupApp() {
     return (
       <div className="flex flex-col gap-3">
         <StatusNotice
-          message={proxyConflictMessage ?? "VPN lain aktif."}
-          title="VPN lain aktif"
+          message={proxyConflictMessage ?? "Extension VPN/proxy lain aktif."}
+          title="Extension VPN/proxy aktif"
           tone="danger"
         />
 
@@ -529,7 +533,9 @@ export function PopupApp() {
                     </Badge>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs leading-5 text-tvlink-muted">Nonaktifkan VPN lain untuk lanjut.</p>
+                <p className="mt-1 text-xs leading-5 text-tvlink-muted">
+                  Nonaktifkan extension VPN/proxy lain untuk lanjut.
+                </p>
               </div>
             </div>
 

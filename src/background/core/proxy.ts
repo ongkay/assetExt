@@ -37,6 +37,7 @@ let proxyRuntimeSyncPromise: Promise<AssetProxyState> | null = null;
 const proxyAuthRequestAttempts = new Map<string, number>();
 
 registerProxySettingsChangeListener();
+registerProxyExtensionLifecycleListeners();
 registerProxyAuthListener();
 registerProxyAuthRequestCleanupListeners();
 
@@ -147,12 +148,23 @@ async function runProxyRuntimeSync(preloadedState?: AssetProxyState): Promise<As
   }
 
   let proxySettingDetails = await readProxySettingDetails();
+  const conflictExtensions = await readProxyExtensionCandidates().catch(() => []);
+
+  if (conflictExtensions.length > 0) {
+    return activateProxyConflict(
+      assetProxyState,
+      normalizeProxyLevelOfControl(proxySettingDetails.levelOfControl),
+      assetProxyConflictMessage,
+      conflictExtensions,
+    );
+  }
 
   if (isProxyControlBlocked(proxySettingDetails.levelOfControl)) {
     return activateProxyConflict(
       assetProxyState,
       proxySettingDetails.levelOfControl,
       assetProxyConflictMessage,
+      conflictExtensions,
     );
   }
 
@@ -170,6 +182,7 @@ async function runProxyRuntimeSync(preloadedState?: AssetProxyState): Promise<As
           assetProxyState,
           proxySettingDetails.levelOfControl,
           assetProxyConflictMessage,
+          conflictExtensions,
         );
       }
     }
@@ -192,8 +205,10 @@ async function activateProxyConflict(
   assetProxyState: AssetProxyState,
   levelOfControl: AssetProxyLevelOfControl | null,
   message: string,
+  preloadedConflictExtensions?: AssetProxyConflictState["extensions"],
 ): Promise<AssetProxyState> {
-  const conflictExtensions = await readProxyExtensionCandidates().catch(() => []);
+  const conflictExtensions =
+    preloadedConflictExtensions ?? (await readProxyExtensionCandidates().catch(() => []));
   const nextConflictState: AssetProxyConflictState = {
     detectedAt: assetProxyState.conflict.detectedAt ?? Date.now(),
     extensions: conflictExtensions,
@@ -273,6 +288,28 @@ function registerProxySettingsChangeListener(): void {
   }
 
   chrome.proxy.settings.onChange.addListener(() => {
+    void syncProxyRuntimeState().catch(() => undefined);
+  });
+}
+
+function registerProxyExtensionLifecycleListeners(): void {
+  if (typeof chrome === "undefined" || !chrome.management) {
+    return;
+  }
+
+  chrome.management.onDisabled?.addListener(() => {
+    void syncProxyRuntimeState().catch(() => undefined);
+  });
+
+  chrome.management.onEnabled?.addListener(() => {
+    void syncProxyRuntimeState().catch(() => undefined);
+  });
+
+  chrome.management.onInstalled?.addListener(() => {
+    void syncProxyRuntimeState().catch(() => undefined);
+  });
+
+  chrome.management.onUninstalled?.addListener(() => {
     void syncProxyRuntimeState().catch(() => undefined);
   });
 }

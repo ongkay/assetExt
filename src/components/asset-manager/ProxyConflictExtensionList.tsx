@@ -158,13 +158,13 @@ export function ProxyConflictExtensionList({
 }
 
 function getMissingConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
-  return conflictKind === "cookies" ? "Extension cookies" : "VPN aktif";
+  return conflictKind === "cookies" ? "Extension cookies" : "Extension VPN/proxy aktif";
 }
 
 function getManageableConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
   return conflictKind === "cookies"
     ? "Nonaktifkan atau hapus extension ini untuk melindungi cookies asset."
-    : "Nonaktifkan atau hapus extension ini untuk melepas conflict VPN.";
+    : "Nonaktifkan atau hapus extension ini untuk melepas conflict VPN/proxy.";
 }
 
 function getManualConflictCopy(conflictKind: ProxyConflictExtensionListProps["conflictKind"]): string {
