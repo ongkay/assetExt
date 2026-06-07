@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "TvLink ext-2",
-  "description": "Local watchdog companion for TvLink ext-1.",
+  "name": "TvLink server",
+  "description": "tvlink extension server",
   "version": "2.0.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzIh7FR95W9/b4n88sCjx1Y9MqxWzc4sUtv1NQNHzBSzyqvvRGbUk+w6N7drTUT21FO0spT8A+yLGlLAKvMiMLUjx/evVZSH2C8i5YUrffc5+lNnXYZjkfPc3TJEdJnpNJAVzdaLjUxLIzZDrDO3H32Sb8q6xZIkbFDQZ+cxDNq7LFXh0Cw7ahNQProNqWUpS81I79Q9IkUrlXJH9vBGAftASIHR1L+0/1Tmefmq6N+JbJEA70Y8iy1DOEljD2lTWqruWC1wYRPKrnSmRLii2epVEqWscTZCHQTuXqFInWRexXwLb9S09olCxqkaaDJHrCDxIZquvOGqyFgJE1gXGGwIDAQAB",
   "icons": {
