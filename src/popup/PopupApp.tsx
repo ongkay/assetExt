@@ -234,7 +234,7 @@ export function PopupApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diupdate.");
       }
 
       setAssetProxyState(refreshResult.value);
@@ -257,7 +257,7 @@ export function PopupApp() {
       });
 
       if (!refreshResult.value) {
-        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diperbarui.");
+        throw new Error(refreshResult.errorMessage ?? "Status konflik VPN belum bisa diupdate.");
       }
 
       setAssetProxyState(refreshResult.value);

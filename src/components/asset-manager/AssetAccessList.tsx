@@ -43,8 +43,8 @@ export function AssetAccessList({
   if (assets.length === 0) {
     return (
       <article className="rounded-tvlink-card border border-tvlink-app-border bg-tvlink-card-bg p-4 shadow-tvlink-soft">
-        <div className="text-sm font-bold text-tvlink-text-strong">Asset belum tersedia</div>
-        <div className="mt-1 text-xs text-tvlink-muted">Belum ada platform asset yang dapat diakses.</div>
+        <div className="text-sm font-bold text-tvlink-text-strong">Akses belum tersedia</div>
+        <div className="mt-1 text-xs text-tvlink-muted">Belum ada platform yang dapat diakses.</div>
       </article>
     );
   }
@@ -78,19 +78,30 @@ export function AssetAccessList({
               </div>
             </div>
 
-            <button
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
-              type="button"
-              onClick={() => void onAccessAsset(asset)}
-            >
-              <span>Open Now</span>
-              {isAccessingPlatform === asset.platform ? (
-                <Spinner data-icon="inline-end" />
-              ) : (
-                <ExternalLinkIcon className="h-4 w-4" strokeWidth={2} />
-              )}
-            </button>
+            {asset.platform === "fxtester" ? (
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={true}
+                type="button"
+                onClick={() => void onAccessAsset(asset)}
+              >
+                <span>Coming Soon</span>
+              </button>
+            ) : (
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-tvlink-button bg-[linear-gradient(135deg,var(--tvlink-button-gradient-start)_0%,var(--tvlink-button-gradient-end)_100%)] text-sm font-semibold text-white shadow-tvlink-button transition duration-150 hover:-translate-y-0.5 hover:shadow-tvlink-button-hover disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isAccessBlocked || Boolean(isAccessingPlatform)}
+                type="button"
+                onClick={() => void onAccessAsset(asset)}
+              >
+                <span>Open Now</span>
+                {isAccessingPlatform === asset.platform ? (
+                  <Spinner data-icon="inline-end" />
+                ) : (
+                  <ExternalLinkIcon className="h-4 w-4" strokeWidth={2} />
+                )}
+              </button>
+            )}
           </article>
         );
       })}
