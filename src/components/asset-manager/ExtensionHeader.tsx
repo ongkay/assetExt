@@ -43,7 +43,7 @@ export function ExtensionHeader({
         </div>
       </div>
       {user && onOpenProfile ? (
-        <UserAvatar isLoading={isProfileLoading} user={user} onOpenProfile={onOpenProfile} />
+        <UserAvatar isLoading={isProfileLoading} onOpenProfile={onOpenProfile} />
       ) : null}
     </header>
   );

@@ -18,9 +18,12 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/
 import { Spinner } from "@/components/ui/spinner";
 import { getExtensionApiBaseUrl } from "@/lib/api/extensionApiConfig";
 import type {
+  ExtensionAvatarUploadSuccess,
   ExtensionAssetResponse,
+  ExtensionApiError,
   ExtensionAssetSummary,
   ExtensionBootstrap,
+  ExtensionUser,
 } from "@/lib/api/extensionApiTypes";
 import { createUnblockedCookieGuardState, type CookieGuardState } from "@/lib/cookie-guard/cookieGuardState";
 import type { AssetProxyState } from "@/lib/proxy/assetProxy";
@@ -44,9 +47,19 @@ import { useThemePreference } from "@/lib/useThemePreference";
 
 import { PopupShell } from "./ui/PopupShell";
 
-type PopupView = "main" | "profile";
+export type PopupView = "main" | "profile";
 
-export function PopupApp() {
+type PopupAppProps = {
+  avatarUploadMode?: "direct-upload" | "open-options";
+  initialView?: PopupView;
+  onPopupViewChange?: (view: PopupView) => void;
+};
+
+export function PopupApp({
+  avatarUploadMode = "open-options",
+  initialView = "main",
+  onPopupViewChange,
+}: PopupAppProps) {
   const themeTarget = typeof document === "undefined" ? null : document.documentElement;
   const { isReady: isThemeReady, theme, setTheme } = useThemePreference(themeTarget);
   const apiBaseUrl = getExtensionApiBaseUrl();
@@ -54,7 +67,7 @@ export function PopupApp() {
   const [assetProxyState, setAssetProxyState] = useState<AssetProxyState | null>(null);
   const [cookieGuardState, setCookieGuardState] = useState<CookieGuardState | null>(null);
   const [peerGuardState, setPeerGuardState] = useState<PeerGuardState | null>(null);
-  const [popupView, setPopupView] = useState<PopupView>("main");
+  const [popupView, setPopupView] = useState<PopupView>(initialView);
   const [accessingPlatform, setAccessingPlatform] = useState<AssetPlatform | null>(null);
   const [assetAccessErrorMessage, setAssetAccessErrorMessage] = useState<string | null>(null);
   const [disablingProxyExtensionId, setDisablingProxyExtensionId] = useState<string | null>(null);
@@ -64,6 +77,10 @@ export function PopupApp() {
   const [uninstallingCookieExtensionId, setUninstallingCookieExtensionId] = useState<string | null>(null);
   const [cookieGuardActionErrorMessage, setCookieGuardActionErrorMessage] = useState<string | null>(null);
   const [redeemErrorMessage, setRedeemErrorMessage] = useState<string | null>(null);
+  const [avatarPreviewDataUrl, setAvatarPreviewDataUrl] = useState<string | null>(null);
+  const [avatarUploadErrorMessage, setAvatarUploadErrorMessage] = useState<string | null>(null);
+  const [avatarUploadSuccessMessage, setAvatarUploadSuccessMessage] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -73,6 +90,10 @@ export function PopupApp() {
   const isCookieGuardBlocked = cookieGuardState?.isBlocked === true;
   const isPeerGuardBlocked = peerGuardState?.isBlocked === true;
   const proxyConflictMessage = assetProxyState?.conflict.isActive ? assetProxyState.conflict.message : null;
+
+  useEffect(() => {
+    setPopupView(initialView);
+  }, [initialView]);
 
   const requestAssetAccess = useCallback(async (platform: AssetPlatform) => {
     setAccessingPlatform(platform);
@@ -270,14 +291,60 @@ export function PopupApp() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
+    setAvatarPreviewDataUrl(null);
+    setAvatarUploadErrorMessage(null);
+    setAvatarUploadSuccessMessage(null);
 
     await sendRuntimeMessage<{ redirectTo: string }>({
       type: runtimeMessageType.logoutRequested,
     });
 
     setIsLoggingOut(false);
-    setPopupView("main");
+    updatePopupView("main");
     await requestBootstrap();
+  };
+
+  const handleAvatarUpload = async (avatarFile: File) => {
+    const validationErrorMessage = getAvatarUploadValidationMessage(avatarFile);
+
+    if (validationErrorMessage) {
+      setAvatarPreviewDataUrl(null);
+      setAvatarUploadSuccessMessage(null);
+      setAvatarUploadErrorMessage(validationErrorMessage);
+      return;
+    }
+
+    setAvatarUploadErrorMessage(null);
+    setAvatarUploadSuccessMessage(null);
+    setIsUploadingAvatar(true);
+
+    try {
+      const avatarDataUrl = await readFileAsDataUrl(avatarFile);
+      setAvatarPreviewDataUrl(avatarDataUrl);
+
+      const uploadedUser = await uploadAvatarFromCurrentPage(avatarFile);
+      const avatarUploadResult = await sendRuntimeMessage<BootstrapCacheRecord>({
+        type: runtimeMessageType.bootstrapUserUpdatedRequested,
+        user: uploadedUser,
+      });
+
+      if (!avatarUploadResult.value) {
+        setAvatarPreviewDataUrl(null);
+        setAvatarUploadErrorMessage(
+          avatarUploadResult.errorMessage ?? "Avatar gagal diupload. Coba lagi beberapa saat.",
+        );
+        return;
+      }
+
+      updateBootstrapCache(avatarUploadResult.value);
+      setAvatarPreviewDataUrl(null);
+      setAvatarUploadSuccessMessage("Avatar berhasil diupdate.");
+    } catch (error) {
+      setAvatarPreviewDataUrl(null);
+      setAvatarUploadErrorMessage(getErrorMessage(error));
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   if (isCookieGuardBlocked) {
@@ -331,10 +398,21 @@ export function PopupApp() {
     return (
       <PopupShell isThemeReady={isThemeReady}>
         <ProfilePanel
+          avatarButtonLabel={avatarUploadMode === "direct-upload" ? "Upload avatar" : ""}
+          avatarPreviewDataUrl={avatarPreviewDataUrl}
+          avatarUploadErrorMessage={avatarUploadErrorMessage}
+          avatarUploadSuccessMessage={avatarUploadSuccessMessage}
           isLoggingOut={isLoggingOut}
+          isUploadingAvatar={isUploadingAvatar}
           theme={theme}
           user={snapshot.user}
-          onBack={() => setPopupView("main")}
+          onAvatarButtonClick={
+            avatarUploadMode === "open-options" ? () => void openProfileOptionsPage() : undefined
+          }
+          onAvatarUpload={
+            avatarUploadMode === "direct-upload" ? (file) => void handleAvatarUpload(file) : undefined
+          }
+          onBack={() => updatePopupView("main")}
           onLogout={handleLogout}
           onThemeChange={(newTheme) => {
             void setTheme(newTheme);
@@ -358,7 +436,7 @@ export function PopupApp() {
           title="TvLink Extension"
           user={snapshot.user}
           version={getExtensionVersion()}
-          onOpenProfile={() => setPopupView("profile")}
+          onOpenProfile={() => updatePopupView("profile")}
         />
 
         {snapshot.version.status === "update_available" ? (
@@ -495,6 +573,11 @@ export function PopupApp() {
       isSyncing: false,
       peerGuardState: currentBootstrapValue?.peerGuardState ?? createUnblockedPeerGuardState("ext-1"),
     }));
+  }
+
+  function updatePopupView(nextView: PopupView) {
+    setPopupView(nextView);
+    onPopupViewChange?.(nextView);
   }
 
   async function requestAssetProxyState() {
@@ -712,4 +795,140 @@ function getExtensionVersion(): string {
   }
 
   return chrome.runtime.getManifest().version;
+}
+
+const avatarUploadAcceptedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+const avatarUploadMaximumBytes = 2 * 1024 * 1024;
+
+function getAvatarUploadValidationMessage(file: File): string | null {
+  if (!avatarUploadAcceptedMimeTypes.includes(file.type)) {
+    return "Format avatar harus JPG, PNG, atau WEBP.";
+  }
+
+  if (file.size > avatarUploadMaximumBytes) {
+    return "Ukuran avatar maksimal 2 MB.";
+  }
+
+  return null;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fileReader = new FileReader();
+
+    fileReader.onerror = () => {
+      reject(new Error("File avatar tidak bisa dibaca."));
+    };
+
+    fileReader.onload = () => {
+      if (typeof fileReader.result !== "string") {
+        reject(new Error("File avatar tidak valid."));
+        return;
+      }
+
+      resolve(fileReader.result);
+    };
+
+    fileReader.readAsDataURL(file);
+  });
+}
+
+async function uploadAvatarFromCurrentPage(avatarFile: File): Promise<ExtensionUser> {
+  const formData = new FormData();
+  formData.set("avatarFile", avatarFile, avatarFile.name);
+
+  const response = await fetch(`${getExtensionApiBaseUrl()}/api/ext/avatar`, {
+    body: formData,
+    credentials: "include",
+    headers: await createAvatarUploadHeaders(),
+    method: "POST",
+  });
+  const responsePayload = await parseJsonResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getApiErrorMessage(responsePayload));
+  }
+
+  if (!isAvatarUploadSuccess(responsePayload)) {
+    throw new Error("Respons upload avatar tidak valid.");
+  }
+
+  return responsePayload.user;
+}
+
+async function createAvatarUploadHeaders(): Promise<Headers> {
+  const headers = new Headers({
+    "x-extension-version": getExtensionVersion(),
+  });
+
+  if (typeof chrome !== "undefined" && chrome.runtime?.id) {
+    headers.set("x-extension-id", chrome.runtime.id);
+  }
+
+  return headers;
+}
+
+async function parseJsonResponse(response: Response): Promise<unknown> {
+  const responseText = await response.text();
+
+  if (!responseText) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(responseText) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function getApiErrorMessage(responsePayload: unknown): string {
+  if (isExtensionApiErrorPayload(responsePayload)) {
+    return responsePayload.error.message;
+  }
+
+  return "Avatar gagal diupload. Coba lagi beberapa saat.";
+}
+
+function isAvatarUploadSuccess(responsePayload: unknown): responsePayload is ExtensionAvatarUploadSuccess {
+  return isRecord(responsePayload) && responsePayload.ok === true && isExtensionUser(responsePayload.user);
+}
+
+function isExtensionApiErrorPayload(
+  responsePayload: unknown,
+): responsePayload is { error: ExtensionApiError } {
+  return (
+    isRecord(responsePayload) &&
+    isRecord(responsePayload.error) &&
+    typeof responsePayload.error.code === "string" &&
+    typeof responsePayload.error.message === "string"
+  );
+}
+
+function isExtensionUser(value: unknown): value is ExtensionUser {
+  return (
+    isRecord(value) &&
+    (typeof value.avatarUrl === "string" || value.avatarUrl === null) &&
+    typeof value.email === "string" &&
+    typeof value.publicId === "string" &&
+    typeof value.username === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+async function openProfileOptionsPage() {
+  const profileOptionsUrl =
+    typeof chrome !== "undefined" && chrome.runtime?.getURL
+      ? chrome.runtime.getURL("options.html?view=profile")
+      : "options.html?view=profile";
+
+  if (typeof chrome !== "undefined" && chrome.tabs?.create) {
+    await chrome.tabs.create({ active: true, url: profileOptionsUrl });
+    return;
+  }
+
+  window.open(profileOptionsUrl, "_blank", "noopener,noreferrer");
 }

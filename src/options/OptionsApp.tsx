@@ -1,72 +1,42 @@
-import manifestData from "../../manifest.json";
-
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Logo } from "@/components/asset-manager/Logo";
-import { useThemePreference } from "@/lib/useThemePreference";
-
-const manifest =
-  typeof chrome !== "undefined" && chrome.runtime?.getManifest ? chrome.runtime.getManifest() : manifestData;
-
-const extensionVersion = manifest?.version ?? "0.0.0";
+import { PopupApp, type PopupView } from "@/popup/PopupApp";
 
 export function OptionsApp() {
-  const themeTarget = typeof document === "undefined" ? null : document.documentElement;
-  const { isDark, isReady, theme, setTheme } = useThemePreference(themeTarget);
-
   return (
-    <div
-      className={
-        isReady
-          ? "min-h-dvh bg-linear-to-b from-background via-background to-muted/20 px-6 py-8 text-foreground"
-          : "invisible min-h-dvh bg-linear-to-b from-background via-background to-muted/20 px-6 py-8 text-foreground"
-      }
-    >
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/8 ring-1 ring-primary/15">
-              <Logo className="h-5 w-5 shrink-0" title="Extension logo" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">TvLink Settings</h1>
-              <p className="text-sm text-muted-foreground">Version {extensionVersion}</p>
-              <p className="text-sm text-muted-foreground">
-                Atur preferensi tampilan ekstensi agar tetap nyaman dipakai di semua permukaan TvLink.
-              </p>
-            </div>
-          </div>
-
-          <Badge variant="outline" className="bg-background/80 capitalize shadow-xs">
-            {theme} mode
-          </Badge>
-        </div>
-
-        <Card className="rounded-2xl border border-border/70 bg-card/90 shadow-sm">
-          <CardHeader>
-            <CardTitle>Preferensi Tampilan</CardTitle>
-            <CardDescription>
-              Pilih mode visual yang digunakan popup, options, dan panel konten.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between rounded-xl border border-border/70 bg-background/70 px-4 py-3 shadow-xs">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Mode gelap</p>
-                <p className="text-sm text-muted-foreground">
-                  Aktifkan untuk memakai tema gelap di seluruh extension.
-                </p>
-              </div>
-              <Switch
-                aria-label="Toggle dark mode"
-                checked={isDark}
-                onCheckedChange={(checked) => void setTheme(checked ? "dark" : "light")}
-              />
-            </div>
-          </CardContent>
-        </Card>
+    <div className="min-h-dvh bg-[radial-gradient(circle_at_top,var(--tvlink-options-canvas-start)_0%,var(--tvlink-options-canvas-mid)_46%,var(--tvlink-options-canvas-end)_100%)] p-4">
+      <div className="mx-auto flex min-h-[calc(100dvh-2rem)] items-center justify-center">
+        <PopupApp
+          avatarUploadMode="direct-upload"
+          initialView={getOptionsView()}
+          onPopupViewChange={syncOptionsViewUrl}
+        />
       </div>
     </div>
   );
+}
+
+function getOptionsView(): PopupView {
+  if (typeof window === "undefined") {
+    return "main";
+  }
+
+  return new URLSearchParams(window.location.search).get("view") === "profile" ? "profile" : "main";
+}
+
+function syncOptionsViewUrl(view: PopupView) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextUrl = getOptionsViewUrl(view);
+  window.history.replaceState(null, "", nextUrl);
+}
+
+function getOptionsViewUrl(view: PopupView): string {
+  const relativeUrl = view === "profile" ? "options.html?view=profile" : "options.html";
+
+  if (typeof chrome !== "undefined" && chrome.runtime?.getURL) {
+    return chrome.runtime.getURL(relativeUrl);
+  }
+
+  return relativeUrl;
 }

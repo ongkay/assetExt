@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TVLink Profile</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23009cff'/%3E%3Cpath fill='white' d='M16 6a6 6 0 0 1 6 6 6 6 0 0 1-3.2 5.3A10.5 10.5 0 0 1 27 27H5a10.5 10.5 0 0 1 8.2-9.7A6 6 0 0 1 10 12a6 6 0 0 1 6-6Z'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#009cff',
+            primaryHover: '#0087e6',
+            primaryTint: 'rgba(0, 156, 255, 0.1)',
+            primarySoft: '#e8f6ff',
+            primaryBorder: '#bde8ff',
+            appBg: '#f3fbff',
+            surfaceSoft: '#fbfdff',
+            appBorder: '#d8e8f1',
+            appBorderStrong: '#c8dcea',
+            textStrong: '#18324a',
+            textBase: '#2d4962',
+            muted: '#6e8297',
+            mutedStrong: '#5a6f85',
+            success: '#059669',
+            successBg: '#dcfce7',
+            successBorder: 'rgba(5, 150, 105, 0.14)',
+            danger: '#dc2626',
+            dangerBg: '#fee2e2',
+          },
+          boxShadow: {
+            app: '0 20px 44px rgba(22, 50, 74, 0.12)',
+            soft: '0 12px 24px rgba(22, 50, 74, 0.08)',
+            button: '0 10px 20px rgba(0, 156, 255, 0.26)',
+            buttonHover: '0 14px 24px rgba(0, 156, 255, 0.32)',
+            avatar: '0 10px 18px rgba(21, 45, 68, 0.16)',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    @keyframes profile-orb-float {
+      0%, 100% {
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+
+      50% {
+        transform: translate3d(var(--orb-x), var(--orb-y), 0) scale(var(--orb-scale));
+      }
+    }
+
+    .profile-orb {
+      animation: profile-orb-float var(--orb-duration) ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .profile-orb {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 font-sans text-textBase antialiased" style="background: radial-gradient(circle at top, #ecf6ff 0%, #dcecff 48%, #d5e5f7 100%);">
+  <div class="mx-auto flex min-h-screen items-center justify-center">
+    <main class="w-full max-w-[370px] overflow-hidden border border-white/90 shadow-app" style="background: radial-gradient(circle at top right, rgba(0, 156, 255, 0.14), transparent 36%), linear-gradient(180deg, #ffffff 0%, #f3fbff 100%);">
+      <div class="flex min-h-[600px] flex-col p-4">
+        <header class="mb-4 flex items-center gap-3 border-b border-appBorder pb-4">
+          <a href="./home.html" aria-label="Kembali ke home" class="inline-grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/80 bg-white/90 text-textStrong shadow-sm backdrop-blur transition duration-200 hover:-translate-x-0.5 hover:border-primaryBorder hover:bg-primarySoft hover:text-primaryHover hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-x-0">
+            <i class="fa-solid fa-arrow-left text-sm" aria-hidden="true"></i>
+          </a>
+
+          <h1 class="text-lg font-extrabold leading-none tracking-wide text-textStrong">Profile</h1>
+        </header>
+
+        <section class="mb-4 overflow-hidden rounded-2xl border border-white/90 bg-white shadow-[0_18px_36px_rgba(22,50,74,0.1)]" aria-labelledby="profile-title">
+          <h2 id="profile-title" class="sr-only">User profile</h2>
+
+          <div class="relative h-[142px] overflow-hidden" style="background: radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.96), transparent 24%), radial-gradient(circle at 86% 20%, rgba(0, 156, 255, 0.2), transparent 30%), linear-gradient(135deg, #f8fdff 0%, #e5f6ff 38%, #b9e9ff 100%);">
+            <div class="profile-orb pointer-events-none absolute -left-8 top-6 h-28 w-28 rounded-full border border-white/70 bg-white/45 blur-[1px]" style="--orb-x: 16px; --orb-y: 8px; --orb-scale: 1.08; --orb-duration: 9s;"></div>
+            <div class="profile-orb pointer-events-none absolute -right-7 -top-6 h-24 w-24 rounded-full border border-white/60 bg-primary/10 blur-[0.5px]" style="--orb-x: -14px; --orb-y: 18px; --orb-scale: 1.12; --orb-duration: 11s;"></div>
+            <div class="profile-orb pointer-events-none absolute bottom-5 right-8 h-10 w-10 rounded-full border border-white/70 bg-white/35" style="--orb-x: -10px; --orb-y: -14px; --orb-scale: 0.92; --orb-duration: 8s;"></div>
+            <div class="profile-orb pointer-events-none absolute bottom-9 left-10 h-3 w-3 rounded-full bg-primary/25" style="--orb-x: 18px; --orb-y: -8px; --orb-scale: 1.4; --orb-duration: 7s;"></div>
+            <div class="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/80"></div>
+          </div>
+
+          <div class="relative px-5 pb-5 pt-[72px] text-center" style="background: linear-gradient(180deg, #ffffff 0%, #f8fcff 100%);">
+            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
+              <button type="button" id="avatarButton" aria-label="Ganti avatar" class="group relative h-[118px] w-[118px] rounded-full border-[5px] border-white text-[42px] font-extrabold uppercase text-white shadow-[0_18px_34px_rgba(0,156,255,0.18)] ring-1 ring-primaryBorder/80 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_44px_rgba(0,156,255,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-y-0">
+                <span id="avatarInitial" class="grid h-full w-full place-items-center rounded-full">A</span>
+                <img id="avatarPreview" src="" alt="Avatar profile" class="hidden h-full w-full rounded-full object-cover" />
+                <span class="absolute bottom-0 right-0 grid h-9 w-9 place-items-center rounded-full border-[3px] border-white bg-white text-primary shadow-[0_10px_18px_rgba(0,156,255,0.22)] transition duration-200 group-hover:bg-primary group-hover:text-white" aria-hidden="true">
+                  <i class="fa-solid fa-pen text-xs"></i>
+                </span>
+              </button>
+              <input id="avatarInput" type="file" accept="image/*" class="hidden" />
+            </div>
+
+            <p id="username" class="mx-auto max-w-full truncate text-xl font-extrabold tracking-tight text-textStrong">andipratama</p>
+
+            <div class="mx-auto mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-primaryBorder/80 bg-[#f6fbff] px-3.5 py-2 text-sm font-semibold text-mutedStrong shadow-[0_8px_16px_rgba(22,50,74,0.06)]">
+              <i class="fa-solid fa-envelope text-xs text-primary" aria-hidden="true"></i>
+              <span class="min-w-0 truncate">andi.pratama@example.com</span>
+            </div>
+          </div>
+        </section>
+
+        <footer class="mt-auto border-t border-appBorder pt-4">
+          <button type="button" class="group inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-dangerBg text-sm font-semibold text-danger shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white active:translate-y-0">
+            <svg class="h-4 w-4 transition duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m16 17 5-5-5-5" />
+              <path d="M21 12H9" />
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            </svg>
+            <span>Logout</span>
+          </button>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const username = document.getElementById('username').textContent.trim();
+    const avatarButton = document.getElementById('avatarButton');
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarInitial = document.getElementById('avatarInitial');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const avatarBackgrounds = [
+      'linear-gradient(135deg, #008cff 0%, #00b2ff 100%)',
+      'linear-gradient(135deg, #203c58 0%, #152d44 100%)',
+      'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)',
+      'linear-gradient(135deg, #0891b2 0%, #009cff 100%)',
+      'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+    ];
+
+    avatarInitial.textContent = username.charAt(0) || 'A';
+    avatarButton.style.background = avatarBackgrounds[Math.floor(Math.random() * avatarBackgrounds.length)];
+
+    avatarButton.addEventListener('click', () => {
+      avatarInput.click();
+    });
+
+    avatarInput.addEventListener('change', () => {
+      const file = avatarInput.files && avatarInput.files[0];
+
+      if (!file || !file.type.startsWith('image/')) {
+        return;
+      }
+
+      avatarPreview.src = URL.createObjectURL(file);
+      avatarPreview.classList.remove('hidden');
+      avatarInitial.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

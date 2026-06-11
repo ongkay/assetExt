@@ -2,6 +2,7 @@ import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import type {
   ExtensionAssetResponse,
   ExtensionBootstrap,
+  ExtensionUser,
   ExtensionTradingViewOwnedLayoutsSyncTrigger,
 } from "@/lib/api/extensionApiTypes";
 import type { PeerGuardState } from "@/lib/peer-guard/peerGuardState";
@@ -14,6 +15,7 @@ export const runtimeMessageType = {
   bootstrapRefreshRequested: "BOOTSTRAP_REFRESH_REQUESTED",
   assetAccessRequested: "ASSET_ACCESS_REQUESTED",
   assetSessionEnsureRequested: "ASSET_SESSION_ENSURE_REQUESTED",
+  bootstrapUserUpdatedRequested: "BOOTSTRAP_USER_UPDATED_REQUESTED",
   cookieGuardStatusRequested: "COOKIE_GUARD_STATUS_REQUESTED",
   cookieGuardRefreshRequested: "COOKIE_GUARD_REFRESH_REQUESTED",
   proxyConflictRefreshRequested: "PROXY_CONFLICT_REFRESH_REQUESTED",
@@ -54,6 +56,11 @@ export type AssetAccessRequestedMessage = {
 export type AssetSessionEnsureRequestedMessage = {
   platform: AssetPlatform;
   type: (typeof runtimeMessageType)["assetSessionEnsureRequested"];
+};
+
+export type BootstrapUserUpdatedRequestedMessage = {
+  type: (typeof runtimeMessageType)["bootstrapUserUpdatedRequested"];
+  user: ExtensionUser;
 };
 
 export type ProxyConflictRefreshRequestedMessage = {
@@ -196,6 +203,7 @@ export type RuntimeMessage =
   | BootstrapRefreshRequestedMessage
   | AssetAccessRequestedMessage
   | AssetSessionEnsureRequestedMessage
+  | BootstrapUserUpdatedRequestedMessage
   | CookieGuardStatusRequestedMessage
   | CookieGuardRefreshRequestedMessage
   | ProxyConflictRefreshRequestedMessage
@@ -239,6 +247,7 @@ export type BootstrapRuntimeValue = {
 
 export type BootstrapRuntimeResponse = RuntimeResponse<BootstrapRuntimeValue>;
 export type BootstrapRefreshRuntimeResponse = RuntimeResponse<BootstrapCacheRecord>;
+export type BootstrapUserUpdatedRuntimeResponse = RuntimeResponse<BootstrapCacheRecord>;
 export type AssetAccessRuntimeResponse = RuntimeResponse<ExtensionAssetResponse>;
 export type AssetSessionEnsureRuntimeResponse = RuntimeResponse<AssetSessionEnsureResult>;
 export type ProxyConflictRefreshRuntimeResponse = RuntimeResponse<AssetProxyState>;

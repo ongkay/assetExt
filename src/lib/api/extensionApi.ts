@@ -1,6 +1,7 @@
 import type { AssetPlatform } from "@/lib/asset-access/platforms";
 import type { ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
 import type {
+  ExtensionAvatarUploadSuccess,
   ExtensionApiError,
   ExtensionApiErrorCode,
   ExtensionApiResult,
@@ -94,15 +95,38 @@ export function postTradingViewOwnedLayoutsSync(
   });
 }
 
+export function postExtensionAvatar(
+  config: ExtensionApiConfig,
+  avatarFile: File,
+): Promise<ExtensionApiResult<ExtensionAvatarUploadSuccess>> {
+  const formData = new FormData();
+  formData.set("avatarFile", avatarFile);
+
+  return requestExtensionApi(config, "/api/ext/avatar", {
+    body: formData,
+    contentType: null,
+    method: "POST",
+  });
+}
+
 async function requestExtensionApi<TValue>(
   config: ExtensionApiConfig,
   path: string,
-  init: Pick<RequestInit, "body" | "method">,
+  init: {
+    body?: BodyInit;
+    contentType?: string | null;
+    method: "GET" | "POST";
+  },
 ): Promise<ExtensionApiResult<TValue>> {
+  const { body, contentType, method } = init;
   const response = await fetch(`${config.apiBaseUrl}${path}`, {
-    ...init,
+    body,
     credentials: "include",
-    headers: await getExtensionApiHeaders(config),
+    headers: await getExtensionApiHeaders(
+      config,
+      contentType === undefined ? "application/json" : contentType,
+    ),
+    method,
   });
   const responsePayload = await parseResponseJson(response);
 
@@ -121,11 +145,17 @@ async function requestExtensionApi<TValue>(
   };
 }
 
-async function getExtensionApiHeaders(config: ExtensionApiConfig): Promise<HeadersInit> {
+async function getExtensionApiHeaders(
+  config: ExtensionApiConfig,
+  contentType: string | null,
+): Promise<HeadersInit> {
   const headers = new Headers({
-    "content-type": "application/json",
     "x-extension-version": config.extensionVersion,
   });
+
+  if (contentType) {
+    headers.set("content-type", contentType);
+  }
 
   if (config.isDev) {
     if (config.extensionId) {

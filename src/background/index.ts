@@ -3,6 +3,7 @@ import {
   runtimeMessageType,
   type AssetAccessRuntimeResponse,
   type AssetSessionEnsureRuntimeResponse,
+  type BootstrapUserUpdatedRuntimeResponse,
   type BootstrapRefreshRuntimeResponse,
   type BootstrapRuntimeResponse,
   type CookieGuardRuntimeResponse,
@@ -22,6 +23,7 @@ import {
   logoutExtensionSession,
   readBootstrapState,
   replaceBootstrapCacheFromSnapshot,
+  replaceBootstrapCacheUser,
 } from "./core/bootstrap";
 import { runAssetAccess } from "./core/assetAccess";
 import { startHeartbeat, stopHeartbeat } from "./core/heartbeat";
@@ -232,6 +234,13 @@ async function handleRuntimeMessage(
         ok: true,
         value: assetProxyState,
       } satisfies ProxyConflictRefreshRuntimeResponse;
+    }
+
+    case runtimeMessageType.bootstrapUserUpdatedRequested: {
+      return {
+        ok: true,
+        value: await replaceBootstrapCacheUser(message.user),
+      } satisfies BootstrapUserUpdatedRuntimeResponse;
     }
 
     case runtimeMessageType.heartbeatStarted: {

@@ -26,7 +26,7 @@ Header dev override untuk local/manual verification saat `EXT_API_DEV_HEADER_OVE
 | --- | --- | --- |
 | `x-ext-dev-extension-id` | Ya | Menggantikan `x-extension-id` untuk request manual. |
 | `x-ext-dev-origin` | Ya | Menggantikan `origin` untuk request manual. |
-| `x-ext-dev-app-session` | Opsional untuk bootstrap, efektif wajib untuk asset/redeem/heartbeat | Raw token `app_session` untuk verifikasi manual berbasis dev override. |
+| `x-ext-dev-app-session` | Opsional untuk bootstrap, efektif wajib untuk asset/redeem/heartbeat/avatar | Raw token `app_session` untuk verifikasi manual berbasis dev override. |
 
 Catatan penting:
 
@@ -65,7 +65,8 @@ Status mapping:
 Catatan implementasi saat ini:
 
 - `EXT_SESSION_REVOKED`, `EXT_SUBSCRIPTION_REQUIRED`, `EXT_PLATFORM_UNSUPPORTED`, dan `EXT_MODE_REQUIRED` terdefinisi di helper error, tetapi belum dipakai oleh route `api/ext/*` saat ini.
-- Invalid JSON body pada `redeem` dan `heartbeat` dipetakan ke `EXT_REQUEST_INVALID`.
+- Invalid JSON body pada `redeem`, `heartbeat`, dan `tradingview/layouts/sync` dipetakan ke `EXT_REQUEST_INVALID`.
+- Invalid form-data body pada `avatar` dipetakan ke `EXT_REQUEST_INVALID`.
 - Invalid query pada `asset` dan `asset/sync` dipetakan ke `EXT_REQUEST_INVALID`.
 
 ## Endpoint Summary
@@ -75,6 +76,7 @@ Catatan implementasi saat ini:
 | `GET` | `/api/ext/bootstrap` | Handshake awal, auth state, version gate, subscription snapshot. |
 | `GET` | `/api/ext/asset` | Ambil payload asset aktif untuk platform tertentu. |
 | `GET` | `/api/ext/asset/sync` | Cek apakah revision asset client masih sinkron dengan server. |
+| `POST` | `/api/ext/avatar` | Ganti avatar user yang dipakai extension dan bootstrap profile. |
 | `POST` | `/api/ext/heartbeat` | Update session activity dan fingerprint extension. |
 | `POST` | `/api/ext/redeem` | Redeem CD-Key dan refresh bootstrap snapshot. |
 | `POST` | `/api/ext/logout` | Logout web session aktif dan revoke `app_session`. |
@@ -208,7 +210,7 @@ Catatan penting untuk `assets[].launchUrl`:
 - extension akan menormalkan value `TradingView` ke full chart URL sebelum dipakai,
 - untuk user `TradingView share`, value ini dipakai sebagai fallback setelah `owned layout terakhir`, sebelum kembali ke default hardcoded lama.
 
-`asset`, `asset/sync`, `redeem`, dan `heartbeat` membutuhkan sesi aktif. Pada verifikasi manual/Postman, sertakan `x-ext-dev-app-session` atau gunakan cookie web aktif yang setara.
+`asset`, `asset/sync`, `redeem`, `heartbeat`, `avatar`, dan `tradingview/layouts/sync` membutuhkan sesi aktif. Pada verifikasi manual/Postman, sertakan `x-ext-dev-app-session` atau gunakan cookie web aktif yang setara.
 
 ## `GET /api/ext/asset`
 
@@ -420,6 +422,42 @@ Catatan implementasi client:
 - sebelum bootstrap refresh dari popup, client akan mencoba sinkronisasi `local -> backend` terlebih dahulu agar delete/rename/create lokal tidak kalah oleh snapshot backend lama,
 - hydrate bootstrap snapshot ke local state akan di-skip sementara jika local owned-layout state masih punya perubahan yang belum berhasil tersync.
 
+## `POST /api/ext/avatar`
+
+Endpoint ini dipakai extension untuk mengganti avatar profile user dengan upload file langsung dari client extension.
+
+Request body:
+
+- `multipart/form-data`
+- field file wajib: `avatarFile`
+
+Aturan validasi file:
+
+- MIME type yang diizinkan: `image/jpeg`, `image/png`, `image/webp`
+- ukuran maksimum: `2 MB`
+
+Contoh response sukses:
+
+```json
+{
+  "ok": true,
+  "user": {
+    "avatarUrl": "https://project.insforge.app/storage/v1/object/public/avatars/users/member-1/avatar-1718176800000-ab12cd34.png",
+    "email": "seed.active.browser@assetnext.dev",
+    "publicId": "MEM-BRW-01",
+    "username": "seed-active-browser"
+  }
+}
+```
+
+Catatan penting:
+
+- endpoint ini memakai guard extension yang sama dengan endpoint protected lain,
+- server akan menyimpan `profiles.avatar_url` dan `profiles.avatar_storage_key` baru,
+- setelah update profile berhasil, server akan mencoba menghapus object avatar lama secara best-effort,
+- jika avatar lama berasal dari data legacy yang hanya punya `avatar_url` tanpa `avatar_storage_key`, file lama tidak bisa dihapus otomatis dan request tetap dianggap sukses,
+- jika upload file baru berhasil tetapi update database gagal, server akan mencoba menghapus file baru sebagai compensation path.
+
 ## `POST /api/ext/heartbeat`
 
 Body:
@@ -531,7 +569,7 @@ x-ext-dev-extension-id: <your-extension-id>
 Tambahkan salah satu:
 
 - unauth bootstrap: tanpa `x-ext-dev-app-session`
-- authenticated bootstrap/asset/redeem/heartbeat: `x-ext-dev-app-session: <raw-app-session-token>`
+- authenticated bootstrap/asset/redeem/heartbeat/avatar/tradingview-layout-sync: `x-ext-dev-app-session: <raw-app-session-token>`
 - logout: `Cookie: app_session=<raw-app-session-token>`
 
 Untuk Postman, isi `dev_app_session` dan `cookie_app_session` dengan token sesi yang sama jika ingin memverifikasi sequence logout lalu bootstrap ulang dengan token yang sama.

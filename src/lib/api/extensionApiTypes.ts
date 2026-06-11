@@ -34,6 +34,11 @@ export type ExtensionUser = {
   username: string;
 };
 
+export type ExtensionAvatarUploadSuccess = {
+  ok: true;
+  user: ExtensionUser;
+};
+
 export type ExtensionAssetSummary = {
   launchUrl?: string | null;
   mode: ExtensionMode;

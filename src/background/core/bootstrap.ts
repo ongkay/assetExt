@@ -1,6 +1,6 @@
 import { fetchExtensionBootstrap, postExtensionLogout } from "@/lib/api/extensionApi";
 import { getExtensionApiBaseUrl, isDev, type ExtensionApiConfig } from "@/lib/api/extensionApiConfig";
-import type { ExtensionBootstrap, ExtensionLogoutResponse } from "@/lib/api/extensionApiTypes";
+import type { ExtensionBootstrap, ExtensionLogoutResponse, ExtensionUser } from "@/lib/api/extensionApiTypes";
 import {
   clearBootstrapCache,
   createBootstrapCacheErrorRecord,
@@ -60,6 +60,29 @@ export async function replaceBootstrapCacheFromSnapshot(
   await hydrateTradingViewOwnedLayoutsFromBootstrapSnapshot(snapshot);
 
   return nextCache;
+}
+
+export async function replaceBootstrapCacheUser(user: ExtensionUser): Promise<BootstrapCacheRecord> {
+  const currentBootstrapCache = await readBootstrapCache();
+
+  if (
+    currentBootstrapCache?.isValid &&
+    currentBootstrapCache.snapshot.auth.status === "authenticated" &&
+    currentBootstrapCache.snapshot.user
+  ) {
+    const nextCache = createBootstrapCacheRecord({
+      ...currentBootstrapCache.snapshot,
+      user,
+    });
+
+    latestExplicitBootstrapCache = nextCache;
+    bootstrapWriteRevision += 1;
+    await writeBootstrapCache(nextCache);
+
+    return nextCache;
+  }
+
+  return forceRefreshBootstrapCache();
 }
 
 export async function logoutExtensionSession(): Promise<ExtensionLogoutResponse> {
