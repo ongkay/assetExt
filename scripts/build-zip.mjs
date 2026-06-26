@@ -8,10 +8,12 @@ const releaseDirectory = path.join(projectRoot, "dist", "releases");
 
 const extensionBuilds = [
   {
+    artifactSlug: "tvlink-client",
     manifestPath: path.join(projectRoot, "manifest.json"),
     buildDirectory: path.join(projectRoot, "dist", "ext-1"),
   },
   {
+    artifactSlug: "tvlink-server",
     manifestPath: path.join(projectRoot, "manifest.ext-2.json"),
     buildDirectory: path.join(projectRoot, "dist", "ext-2"),
   },
@@ -20,11 +22,27 @@ const extensionBuilds = [
 await rm(releaseDirectory, { recursive: true, force: true });
 await mkdir(releaseDirectory, { recursive: true });
 
+const manifests = await Promise.all(
+  extensionBuilds.map((extensionBuild) => readManifest(extensionBuild.manifestPath)),
+);
+const releaseVersion = manifests[0]?.version;
+
+if (!releaseVersion) {
+  throw new Error("Could not resolve the extension release version.");
+}
+
+for (const manifest of manifests) {
+  if (manifest.version !== releaseVersion) {
+    throw new Error(
+      `All extension manifests must share the same version. Found ${releaseVersion} and ${manifest.version}.`,
+    );
+  }
+}
+
 for (const extensionBuild of extensionBuilds) {
-  const manifest = await readManifest(extensionBuild.manifestPath);
   await assertBuildDirectoryReady(extensionBuild.buildDirectory);
 
-  const archiveFileName = `${toReleaseSlug(manifest.name)}-v${manifest.version}.zip`;
+  const archiveFileName = `${extensionBuild.artifactSlug}-v${releaseVersion}.zip`;
   const archivePath = path.join(releaseDirectory, archiveFileName);
 
   await createArchive({
@@ -34,6 +52,18 @@ for (const extensionBuild of extensionBuilds) {
 
   console.log(`Created ${path.relative(projectRoot, archivePath)}`);
 }
+const bundleArchivePath = path.join(releaseDirectory, `tvlink-v${releaseVersion}.zip`);
+
+await createBundleArchive({
+  archivePath: bundleArchivePath,
+  releaseVersion,
+  sourceDirectories: extensionBuilds.map((extensionBuild) => ({
+    buildDirectory: extensionBuild.buildDirectory,
+    bundleDirectoryName: `${extensionBuild.artifactSlug}-v${releaseVersion}`,
+  })),
+});
+
+console.log(`Created ${path.relative(projectRoot, bundleArchivePath)}`);
 
 async function readManifest(manifestPath) {
   const manifestContent = await readFile(manifestPath, "utf8");
@@ -63,14 +93,6 @@ async function assertBuildDirectoryReady(buildDirectory) {
     throw new Error(`Built manifest not found: ${path.relative(projectRoot, builtManifestPath)}`);
   }
 }
-
-function toReleaseSlug(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 function createArchive({ sourceDirectory, archivePath }) {
   return new Promise((resolve, reject) => {
     const output = createWriteStream(archivePath);
@@ -82,6 +104,25 @@ function createArchive({ sourceDirectory, archivePath }) {
 
     archive.pipe(output);
     archive.directory(sourceDirectory, false);
+    archive.finalize();
+  });
+}
+
+function createBundleArchive({ archivePath, sourceDirectories }) {
+  return new Promise((resolve, reject) => {
+    const output = createWriteStream(archivePath);
+    const archive = archiver("zip", { zlib: { level: 9 } });
+
+    output.on("close", resolve);
+    output.on("error", reject);
+    archive.on("error", reject);
+
+    archive.pipe(output);
+
+    for (const sourceDirectory of sourceDirectories) {
+      archive.directory(sourceDirectory.buildDirectory, sourceDirectory.bundleDirectoryName);
+    }
+
     archive.finalize();
   });
 }

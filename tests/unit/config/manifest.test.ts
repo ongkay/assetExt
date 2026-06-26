@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import manifest from "../../../manifest.json";
 
 describe("extension manifest", () => {
-  it("brands the main extension as ext-1 for the paired install flow", () => {
-    expect(manifest.name).toBe("TvLink ext-1");
+  it("keeps the current TvLink Client branding on the main extension entry", () => {
+    expect(manifest.name).toBe("TvLink Client");
     expect(manifest.action.default_title).toBe("TvLink ext-1");
   });
 
