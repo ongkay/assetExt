@@ -1,2 +1,3 @@
-// Reserved for future Vitest setup when unit tests are added to the template.
-export {};
+import { vi } from "vitest";
+
+vi.stubEnv("VITE_EXT_API_BASE_URL", "http://localhost:3000");

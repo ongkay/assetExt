@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "TvLink Client",
   "description": "TvLink extension client",
-  "version": "2.0.1",
+  "version": "1.0.1",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp6UnW1PX5llxzWkWyx8DXn+hEli99SDY9F7MG4GXWbS/nQGXAgSTst+sPeXmk8rwi/QV5nOkG+lZWLb9PFh1hfc6UnlIekeMDlPErrQICJ1U4O4n/i46+Sf2frUi9fC9xRo0ltbToKrJrV+mlxW9P8mcIc5ayuyaxv82TnHeguKjRUy7AgTEKfAWMd086RwBZCe+BGn7PPoJfJUq5jkEW8h2oBE+1tGEucqNYFqmgJvICxTcvzeEF1qZa01xi9lx3cct8TDzlmaiBI0F/q+FqXc7ra+oMU/2hOYSQTob11ztKATRiWuA7AcWtdw5YzKMwkuHRv+MTl66PXgJpCFt4QIDAQAB",
   "action": {
     "default_title": "TvLink ext-1",
@@ -36,6 +36,7 @@
   ],
   "host_permissions": [
     "http://localhost:3000/*",
+    "https://www.tvlink.id/*",
     "https://www.tradingview.com/*",
     "https://*.tradingview.com/*",
     "https://whoer.net/*",

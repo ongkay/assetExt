@@ -1,12 +1,11 @@
-import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
 import { createClient } from "@insforge/sdk";
+import { loadExtensionReleaseEnvFiles, readRequiredExtensionVersion } from "./extensionReleaseVersion.mjs";
 
 const extensionProjectRoot = process.cwd();
-const workspaceRoot = path.resolve(extensionProjectRoot, "..");
 const releaseDirectory = path.join(extensionProjectRoot, "dist", "releases");
 const extensionKey = "asset-extension-v2";
 const defaultBucketName = "extension-downloads";
@@ -14,25 +13,20 @@ const artifactDefinitions = [
   {
     artifactSlug: "tvlink",
     label: "TvLink Bundle",
-    manifestPath: path.join(extensionProjectRoot, "manifest.json"),
   },
   {
     artifactSlug: "tvlink-client",
     label: "TvLink Client",
-    manifestPath: path.join(extensionProjectRoot, "manifest.json"),
   },
   {
     artifactSlug: "tvlink-server",
     label: "TvLink Server",
-    manifestPath: path.join(extensionProjectRoot, "manifest.ext-2.json"),
   },
 ];
 
-loadEnvFile(path.join(workspaceRoot, ".env"));
-loadEnvFile(path.join(workspaceRoot, ".env.local"));
-loadEnvFile(path.join(extensionProjectRoot, ".env"));
-loadEnvFile(path.join(extensionProjectRoot, ".env.local"));
+loadExtensionReleaseEnvFiles(extensionProjectRoot);
 
+const releaseVersion = readRequiredExtensionVersion();
 const releaseMinimumVersion = readRequiredEnv("TVLINK_RELEASE_MINIMUM_VERSION");
 const releaseBucketName = process.env.TVLINK_RELEASE_STORAGE_BUCKET?.trim() || defaultBucketName;
 const insforgeBaseUrl = normalizeUrl(readRequiredEnv("NEXT_PUBLIC_INSFORGE_URL"));
@@ -46,23 +40,6 @@ const insforgeClient = createClient({
 });
 
 const currentExtensionConfig = await readCurrentExtensionConfig();
-
-const manifests = await Promise.all(
-  artifactDefinitions.map((artifact) => readManifest(artifact.manifestPath)),
-);
-const releaseVersion = manifests[0]?.version;
-
-if (!releaseVersion) {
-  throw new Error("Could not resolve the extension release version.");
-}
-
-for (const manifest of manifests) {
-  if (manifest.version !== releaseVersion) {
-    throw new Error(
-      `All extension manifests must share the same version. Found ${releaseVersion} and ${manifest.version}.`,
-    );
-  }
-}
 
 console.log(`Building TvLink extension release ${releaseVersion}...`);
 await runCommand("pnpm", ["build:zip"], { cwd: extensionProjectRoot });
@@ -248,58 +225,6 @@ function readRequiredEnv(key) {
   }
 
   return value;
-}
-
-async function readManifest(manifestPath) {
-  const manifestContent = await readFile(manifestPath, "utf8");
-  const manifest = JSON.parse(manifestContent);
-
-  if (typeof manifest.version !== "string" || manifest.version.trim().length === 0) {
-    throw new Error(`Invalid manifest version in ${path.relative(extensionProjectRoot, manifestPath)}.`);
-  }
-
-  return {
-    version: manifest.version.trim(),
-  };
-}
-
-function loadEnvFile(filePath) {
-  const envFile = tryReadEnvFile(filePath);
-
-  if (!envFile) {
-    return;
-  }
-
-  for (const line of envFile.split(/\r?\n/)) {
-    const trimmedLine = line.trim();
-
-    if (!trimmedLine || trimmedLine.startsWith("#")) {
-      continue;
-    }
-
-    const separatorIndex = trimmedLine.indexOf("=");
-
-    if (separatorIndex === -1) {
-      continue;
-    }
-
-    const key = trimmedLine.slice(0, separatorIndex).trim();
-
-    if (!key || process.env[key]) {
-      continue;
-    }
-
-    const rawValue = trimmedLine.slice(separatorIndex + 1).trim();
-    process.env[key] = rawValue.replace(/^['"]|['"]$/g, "");
-  }
-}
-
-function tryReadEnvFile(filePath) {
-  try {
-    return readFileSync(filePath, "utf8");
-  } catch {
-    return null;
-  }
 }
 
 async function runCommand(command, args, options) {

@@ -2,19 +2,21 @@ import { createWriteStream } from "node:fs";
 import { mkdir, readFile, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import archiver from "archiver";
+import { loadExtensionReleaseEnvFiles, readRequiredExtensionVersion } from "./extensionReleaseVersion.mjs";
 
 const projectRoot = process.cwd();
 const releaseDirectory = path.join(projectRoot, "dist", "releases");
+loadExtensionReleaseEnvFiles(projectRoot);
+
+const releaseVersion = readRequiredExtensionVersion();
 
 const extensionBuilds = [
   {
     artifactSlug: "tvlink-client",
-    manifestPath: path.join(projectRoot, "manifest.json"),
     buildDirectory: path.join(projectRoot, "dist", "ext-1"),
   },
   {
     artifactSlug: "tvlink-server",
-    manifestPath: path.join(projectRoot, "manifest.ext-2.json"),
     buildDirectory: path.join(projectRoot, "dist", "ext-2"),
   },
 ];
@@ -22,25 +24,9 @@ const extensionBuilds = [
 await rm(releaseDirectory, { recursive: true, force: true });
 await mkdir(releaseDirectory, { recursive: true });
 
-const manifests = await Promise.all(
-  extensionBuilds.map((extensionBuild) => readManifest(extensionBuild.manifestPath)),
-);
-const releaseVersion = manifests[0]?.version;
-
-if (!releaseVersion) {
-  throw new Error("Could not resolve the extension release version.");
-}
-
-for (const manifest of manifests) {
-  if (manifest.version !== releaseVersion) {
-    throw new Error(
-      `All extension manifests must share the same version. Found ${releaseVersion} and ${manifest.version}.`,
-    );
-  }
-}
-
 for (const extensionBuild of extensionBuilds) {
   await assertBuildDirectoryReady(extensionBuild.buildDirectory);
+  await assertBuiltManifestVersion(extensionBuild.buildDirectory, releaseVersion);
 
   const archiveFileName = `${extensionBuild.artifactSlug}-v${releaseVersion}.zip`;
   const archivePath = path.join(releaseDirectory, archiveFileName);
@@ -65,18 +51,16 @@ await createBundleArchive({
 
 console.log(`Created ${path.relative(projectRoot, bundleArchivePath)}`);
 
-async function readManifest(manifestPath) {
+async function assertBuiltManifestVersion(buildDirectory, releaseVersion) {
+  const manifestPath = path.join(buildDirectory, "manifest.json");
   const manifestContent = await readFile(manifestPath, "utf8");
   const manifest = JSON.parse(manifestContent);
 
-  if (typeof manifest.name !== "string" || typeof manifest.version !== "string") {
-    throw new Error(`Invalid manifest metadata in ${path.relative(projectRoot, manifestPath)}`);
+  if (manifest.version !== releaseVersion) {
+    throw new Error(
+      `Built manifest version mismatch in ${path.relative(projectRoot, manifestPath)}. Expected ${releaseVersion}, found ${manifest.version}.`,
+    );
   }
-
-  return {
-    name: manifest.name,
-    version: manifest.version,
-  };
 }
 
 async function assertBuildDirectoryReady(buildDirectory) {

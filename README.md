@@ -16,7 +16,7 @@ pnpm dev
 - Base URL API untuk extension dibaca dari env Vite `VITE_EXT_API_BASE_URL` di folder `extasset`.
 - Jika `VITE_EXT_API_BASE_URL` tidak diisi, extension fallback ke `http://localhost:3000`.
 - Setelah mengubah env extension, build ulang lalu reload unpacked extension dari `dist`.
-- Untuk release, lihat `extasset/.env.example`. Script release membaca env dari root repo (`NEXT_PUBLIC_INSFORGE_URL`, `INSFORGE_SERVICE_KEY`) dan env lokal `extasset` (`TVLINK_RELEASE_MINIMUM_VERSION`, optional `TVLINK_RELEASE_STORAGE_BUCKET`).
+- Untuk release, lihat `extasset/.env.example`. Script release membaca env dari root repo atau env lokal `extasset`: `TVLINK_EXTENSION_VERSION`, `TVLINK_RELEASE_MINIMUM_VERSION`, optional `TVLINK_RELEASE_STORAGE_BUCKET`, `NEXT_PUBLIC_INSFORGE_URL`, dan `INSFORGE_SERVICE_KEY`.
 
 ## Load in Chrome
 1. Open `chrome://extensions`
@@ -57,18 +57,20 @@ pnpm dev
 |---------|-------------|
 | `pnpm dev` | Start development server with HMR |
 | `pnpm build` | Build for production |
-| `pnpm build:zip` | Build lalu membuat tiga artifact zip release |
+| `pnpm build:zip` | Sync versi manifest dari env, build, lalu membuat tiga artifact zip release |
 | `pnpm release` | Build, zip, upload tiga artifact ke InsForge Storage, hapus artifact versi lama, lalu update `extension_app_configs` |
 | `pnpm lint` | Run ESLint |
 | `pnpm test` | Run unit tests |
 | `pnpm test:web` | Run Playwright browser tests |
 
 ## Release Flow
-1. Pastikan `manifest.json` dan `manifest.ext-2.json` memakai `version` yang sama.
+1. Isi `TVLINK_EXTENSION_VERSION` dengan versi extension yang ingin dirilis. Nilai ini akan disinkronkan ke `manifest.json`, `manifest.ext-2.json`, `dist/ext-1/manifest.json`, `dist/ext-2/manifest.json`, dan nama artifact zip.
 2. Isi `TVLINK_RELEASE_MINIMUM_VERSION` dengan minimum version yang ingin ditulis ke `extension_app_configs`.
 3. Jalankan `pnpm release`.
 4. Script akan:
+   - sync `version` di `manifest.json` dan `manifest.ext-2.json` dari `TVLINK_EXTENSION_VERSION`
    - build `ext-1` dan `ext-2`
+   - validasi kedua built manifest memakai `TVLINK_EXTENSION_VERSION`
    - membuat `tvlink-v<version>.zip`, `tvlink-client-v<version>.zip`, dan `tvlink-server-v<version>.zip`
    - upload ketiga file ke bucket `extension-downloads`
    - menghapus artifact release versi sebelumnya agar bucket tetap hemat storage
